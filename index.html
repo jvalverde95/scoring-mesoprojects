@@ -602,6 +602,66 @@ body {
 }
 .rb-close:hover { color: #fff; border-color: #444; }
 
+/* ── CHARTS PANEL ───────────────────────────────────── */
+.charts-panel{background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh);}
+.charts-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border2);}
+.charts-title{font-family:"DM Serif Display",serif;font-size:17px;font-style:italic;color:var(--ink);}
+.charts-tabs{display:flex;gap:6px;padding:10px 22px;background:var(--surface);border-bottom:1px solid var(--border2);flex-wrap:wrap;}
+.chart-tab{padding:5px 14px;font-family:"DM Sans",sans-serif;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink3);cursor:pointer;transition:all .15s;}
+.chart-tab.on{background:var(--black);color:#fff;border-color:var(--black);}
+.chart-body{padding:20px 24px;}
+.chart-section{display:none;}
+.chart-section.on{display:block;}
+.chart-note{font-size:10px;color:var(--ink4);margin-bottom:12px;font-style:italic;}
+
+/* ── BENCHMARK PANEL ───────────────────────────────────── */
+.bench-panel {
+  background: var(--black);
+  border-radius: var(--r-lg);
+  padding: 16px 20px 18px;
+  margin-bottom: 14px;
+  border: 1px solid #1E1E1E;
+}
+.bench-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.bench-title {
+  font-size: 9px; font-weight: 700; color: var(--gold);
+  letter-spacing: .16em; text-transform: uppercase;
+}
+.bench-proj {
+  font-family: 'DM Serif Display', serif;
+  font-size: 13px; font-style: italic; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 200px;
+}
+.bench-rows { display: flex; flex-direction: column; gap: 7px; }
+.bench-row {
+  display: grid; grid-template-columns: 26px 1fr 38px 38px;
+  align-items: center; gap: 8px;
+}
+.bench-id { font-size: 9px; font-weight: 700; color: var(--gold); }
+.bench-track { position: relative; background: #1E1E1E; border-radius: 2px; height: 6px; overflow: visible; }
+.bench-fill-proj { height: 6px; border-radius: 2px; background: var(--gold); transition: width .4s ease; }
+.bench-fill-avg {
+  position: absolute; top: 0; height: 6px; border-radius: 2px;
+  background: rgba(255,255,255,.18); transition: width .4s ease;
+}
+.bench-avg-line {
+  position: absolute; top: -3px; width: 2px; height: 12px;
+  background: rgba(255,255,255,.5); border-radius: 1px;
+  transition: left .4s ease;
+}
+.bench-val { font-size: 10px; font-weight: 700; color: #fff; text-align: right; }
+.bench-avg-val { font-size: 9px; color: #555; text-align: right; }
+.bench-legend {
+  display: flex; gap: 14px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid #1E1E1E;
+}
+.bench-leg-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #555; }
+.bench-leg-dot { width: 8px; height: 4px; border-radius: 1px; flex-shrink: 0; }
+
 /* ── ANIMATIONS ──────────────────────────────────────────── */
 @keyframes scoreFlash {
   0%   { transform: scale(1); }
@@ -808,6 +868,68 @@ body {
     <div class="port-empty" id="port-empty" style="display:none;">sin proyectos en este filtro</div>
   </div>
 
+  <!-- Charts Panel -->
+  <div class="charts-panel" id="charts-panel" style="display:none;">
+    <div class="charts-head">
+      <div>
+        <div class="card-ey">análisis de cartera</div>
+        <div class="charts-title">visualización y posicionamiento de proyectos</div>
+      </div>
+    </div>
+    <div class="charts-tabs">
+      <button class="chart-tab on" onclick="switchChart('bubble',this)">🔵 Valor vs Riesgo</button>
+      <button class="chart-tab" onclick="switchChart('bars',this)">📊 Ranking Score</button>
+      <button class="chart-tab" onclick="switchChart('dept',this)">🏢 Por Departamento</button>
+      <button class="chart-tab" onclick="switchChart('scatter',this)">⚡ Esfuerzo vs Impacto</button>
+      <button class="chart-tab" onclick="switchChart('heat',this)">🗺 Mapa D1 × D2</button>
+      <button class="chart-tab" onclick="switchChart('quad',this)">🎯 Cuadrante Estratégico</button>
+    </div>
+    <div class="chart-body">
+      <div class="chart-section on" id="chart-bubble">
+        <div class="chart-note">Eje X = D3 Valor de Negocio · Eje Y = D1 Compliance/Riesgo · Tamaño = D2 Prioridad Estratégica · Color = clasificación final</div>
+        <div style="position:relative;width:100%;height:420px;"><canvas id="c-bubble"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-bars">
+        <div class="chart-note">Top 30 proyectos por score final ponderado. Color = clasificación.</div>
+        <div style="position:relative;width:100%;height:520px;"><canvas id="c-bars"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-dept">
+        <div class="chart-note">Score medio por área/departamento (barras) y número de proyectos (línea).</div>
+        <div style="position:relative;width:100%;height:340px;"><canvas id="c-dept"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-scatter">
+        <div class="chart-note">Eje X = D5 Facilidad de implantación · Eje Y = D3 Valor de negocio · Tamaño = D1 Compliance · Cuadrante superior derecho = quick wins de alto valor.</div>
+        <div style="position:relative;width:100%;height:420px;"><canvas id="c-scatter"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-heat">
+        <div class="chart-note">Posicionamiento en la matriz Compliance (D1) × Estrategia (D2). Superior derecho = máxima prioridad absoluta.</div>
+        <div style="position:relative;width:100%;height:420px;"><canvas id="c-heat"></canvas></div>
+      </div>
+      <div class="chart-section" id="chart-quad">
+        <div class="chart-note">Cuadrante estratégico: Eje X = D3 ROI/Valor · Eje Y = D2 Urgencia estratégica · Tamaño = D1 Riesgo compliance</div>
+        <div style="position:relative;width:100%;height:380px;"><canvas id="c-quad"></canvas></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;font-size:10px;">
+          <div style="padding:9px 13px;background:#ECFDF5;border-radius:6px;border:1px solid #D1FAE5;">
+            <div style="font-weight:700;color:#0D5C2E;">↗ INVERTIR AHORA</div>
+            <div style="color:#166534;margin-top:1px;font-size:9px;">Alto valor + Alta urgencia estratégica</div>
+          </div>
+          <div style="padding:9px 13px;background:#EFF6FF;border-radius:6px;border:1px solid #BFDBFE;">
+            <div style="font-weight:700;color:#1E3A5F;">→ PLANIFICAR</div>
+            <div style="color:#1E40AF;margin-top:1px;font-size:9px;">Alto valor + Baja urgencia estratégica</div>
+          </div>
+          <div style="padding:9px 13px;background:#FEF2F2;border-radius:6px;border:1px solid #FECACA;">
+            <div style="font-weight:700;color:#991B1B;">↑ RESOLVER PRIMERO</div>
+            <div style="color:#DC2626;margin-top:1px;font-size:9px;">Bajo valor + Alta urgencia (compliance)</div>
+          </div>
+          <div style="padding:9px 13px;background:#F9FAFB;border-radius:6px;border:1px solid #D1D5DB;">
+            <div style="font-weight:700;color:#374151;">↓ BACKLOG</div>
+            <div style="color:#6B7280;margin-top:1px;font-size:9px;">Bajo valor + Baja urgencia</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Result -->
   <div class="result-card">
     <div class="rc-top">
@@ -841,6 +963,27 @@ body {
     <div class="card-ey">dimensiones de evaluación</div>
     <div style="font-family:'DM Serif Display',serif;font-size:17px;font-style:italic;color:var(--ink);padding-bottom:12px;border-bottom:1px solid var(--border2);">
       ajusta nota (1–10) y parámetros del algoritmo por criterio
+    </div>
+  </div>
+
+  <!-- Benchmark vs cartera -->
+  <div class="bench-panel" id="bench-panel" style="display:none;">
+    <div class="bench-hd">
+      <div>
+        <div class="bench-title">comparativa con la cartera</div>
+        <div class="bench-proj" id="bench-proj-name">—</div>
+      </div>
+      <div style="font-size:9px;color:#333;text-align:right;line-height:1.6;">
+        <span style="color:var(--gold);font-weight:700;">■</span> Este proyecto &nbsp;
+        <span style="color:rgba(255,255,255,.35);font-weight:700;">■</span> Media cartera<br>
+        <span style="color:rgba(255,255,255,.5);">|</span> Media cartera (línea)
+      </div>
+    </div>
+    <div class="bench-rows" id="bench-rows"></div>
+    <div class="bench-legend">
+      <div class="bench-leg-item"><div class="bench-leg-dot" style="background:var(--gold);"></div>Score proyecto actual</div>
+      <div class="bench-leg-item"><div class="bench-leg-dot" style="background:rgba(255,255,255,.18);"></div>Media cartera</div>
+      <div class="bench-leg-item" style="font-size:9px;color:#444;" id="bench-count"></div>
     </div>
   </div>
 
@@ -1369,42 +1512,125 @@ let portSort='score', portFilter='all';
 const CRIT_IDS=[];
 DIMS.forEach(d=>d.criterios.forEach(c=>CRIT_IDS.push(c.id)));
 
+/* ── CHART STATE ────────────────────────────────────── */
+const chartInst={};
+let curChart='bubble';
+function switchChart(name,btn){
+  curChart=name;
+  document.querySelectorAll('.chart-section').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.chart-tab').forEach(b=>b.classList.remove('on'));
+  const sec=document.getElementById('chart-'+name);
+  if(sec) sec.classList.add('on');
+  if(btn) btn.classList.add('on');
+  renderCharts();
+}
+function destroyC(id){if(chartInst[id]){chartInst[id].destroy();delete chartInst[id];}}
+
+/* ── LOAD EXCEL — robust reader ─────────────────────── */
 function loadExcel(inp) {
   const file=inp.files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const sn=wb.SheetNames.includes('Carga de Proyectos')?'Carga de Proyectos':wb.SheetNames[0];
-      const data=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true,cellNF:false,cellText:false});
+
+      // Pick best sheet
+      const pref=['Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
+      let sn=wb.SheetNames[0];
+      for(const p of pref){if(wb.SheetNames.includes(p)){sn=p;break;}}
+
+      const data=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true,blankrows:false});
+
+      // Auto-detect data start: find first row with ≥5 numeric cells in range 1-10
+      let dataStart=-1, nameCol=1, areaCol=2, firstScoreCol=3;
+      for(let r=0;r<Math.min(20,data.length);r++){
+        const row=data[r]; if(!row) continue;
+        let numCount=0;
+        for(let c=0;c<row.length;c++){
+          const v=Number(row[c]);
+          if(Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v)) numCount++;
+        }
+        if(numCount>=5){
+          dataStart=r;
+          // name col = first text col with length>3
+          for(let c=0;c<row.length;c++){
+            const s=String(row[c]||'').trim();
+            if(s.length>3&&isNaN(Number(s))){nameCol=c;break;}
+          }
+          // area col = next text col after name
+          for(let c=nameCol+1;c<row.length;c++){
+            const s=String(row[c]||'').trim();
+            if(s.length>2&&isNaN(Number(s))){areaCol=c;break;}
+          }
+          // first score col = first integer 1-10
+          for(let c=0;c<row.length;c++){
+            const v=Number(row[c]);
+            if(Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v)){firstScoreCol=c;break;}
+          }
+          break;
+        }
+      }
+      if(dataStart===-1){toast('Sin datos válidos en "'+sn+'"');inp.value='';return;}
+
       const projects=[];
-      for(let r=5;r<data.length;r++){
-        const row=data[r];
-        const nom=String(row[1]||'').trim(); if(!nom)continue;
-        const area=String(row[2]||'').trim();
-        let firstNum=-1;
-        for(let c=2;c<row.length;c++){const v=parseFloat(row[c]);if(!isNaN(v)&&v>=1&&v<=10){firstNum=c;break;}}
-        if(firstNum===-1)continue;
+      for(let r=dataStart;r<data.length;r++){
+        const row=data[r]; if(!row||row.length<firstScoreCol+4) continue;
+        const nom=String(row[nameCol]||'').trim();
+        if(!nom||nom.length<2) continue;
+        if(/^(nombre|proyecto|name|#|nº|columna)/i.test(nom)) continue;
+        const area=String(row[areaCol]||'').trim()||'Sin área';
+
         const scores={};
+        let nValid=0;
         CRIT_IDS.forEach((cid,idx)=>{
-          const v=parseFloat(row[firstNum+idx]);
-          scores[cid]=(!isNaN(v)&&v>=1&&v<=10)?v:5;
+          const raw=row[firstScoreCol+idx];
+          const v=parseFloat(raw);
+          const s=(Number.isFinite(v)&&v>=1&&v<=10)?Math.round(v):5;
+          scores[cid]=s;
+          if(Number.isFinite(v)&&v>=1&&v<=10) nValid++;
         });
-        // Try to get dates from later columns
-        const dateOffset=firstNum+CRIT_IDS.length+3;
-        let reqDate=null, regDate=null;
-        if(row[dateOffset]) try{const d=new Date(row[dateOffset]);if(!isNaN(d))reqDate=d.toISOString().split('T')[0];}catch(e){}
-        if(row[dateOffset+1]) try{const d=new Date(row[dateOffset+1]);if(!isNaN(d))regDate=d.toISOString().split('T')[0];}catch(e){}
+        if(nValid<4) continue;
+
+        // Dates: scan columns after scores
+        let reqDate=null,regDate=null;
+        const after=firstScoreCol+CRIT_IDS.length;
+        for(let c=after;c<Math.min(after+10,row.length);c++){
+          const v=row[c]; if(!v&&v!==0) continue;
+          let d=null;
+          if(v instanceof Date){d=v;}
+          else if(typeof v==='number'&&v>40000&&v<60000){
+            // Excel serial date
+            const ep=new Date(1899,11,30);
+            d=new Date(ep.getTime()+v*86400000);
+          } else {
+            const s=String(v).trim();
+            if(s.match(/\d{2}[\/-]\d{2}[\/-]\d{4}/)||s.match(/\d{4}-\d{2}-\d{2}/)) d=new Date(s.replace(/(\d{2})\/(\d{2})\/(\d{4})/,'$3-$2-$1'));
+          }
+          if(d&&!isNaN(d.getTime())&&d.getFullYear()>=2020&&d.getFullYear()<=2030){
+            const ds=d.toISOString().split('T')[0];
+            if(!reqDate) reqDate=ds;
+            else if(!regDate&&ds!==reqDate) regDate=ds;
+          }
+        }
         projects.push({nom,area,scores,reqDate,regDate});
       }
-      if(!projects.length){toast('No se encontraron proyectos válidos');return;}
+
+      if(!projects.length){
+        toast('Sin proyectos en "'+sn+'" (filas leídas: '+(data.length-dataStart)+')');
+        inp.value=''; return;
+      }
+
       portfolioData=projects.map(p=>computeProj(p));
       renderPortfolio();
       document.getElementById('portfolio').style.display='block';
+      if(document.getElementById('charts-panel'))
+        document.getElementById('charts-panel').style.display='block';
       document.getElementById('btn-clear').style.display='flex';
-      document.getElementById('import-info').textContent=`${portfolioData.length} proyectos cargados desde "${file.name}"`;
+      document.getElementById('ib-info').textContent=
+        `${portfolioData.length} proyectos · hoja "${sn}"`;
+      renderCharts();
       toast(`✓ ${portfolioData.length} proyectos importados`);
-    }catch(err){console.error(err);toast('Error al leer el Excel');}
+    }catch(err){console.error(err);toast('Error: '+err.message);}
     inp.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -1503,11 +1729,64 @@ function renderPortfolio() {
   document.getElementById('port-tbl').style.display=vis===0?'none':'table';
 }
 
+/* ── BENCHMARK vs PORTFOLIO ─────────────────────────── */
+function renderBenchmark(proj) {
+  if(!portfolioData.length) return;
+
+  // Compute portfolio averages per dimension
+  const dimAvgs = DIMS.map((_,di) => {
+    const vals = portfolioData.map(p => p.dimScores[di]);
+    return vals.reduce((a,b)=>a+b,0) / vals.length;
+  });
+
+  // Current project dim scores
+  const projDimScores = DIMS.map(d => scoreDim(d.criterios));
+
+  // Overall stats
+  const allScores = portfolioData.map(p=>p.sf).sort((a,b)=>a-b);
+  const avgScore = allScores.reduce((a,b)=>a+b,0)/allScores.length;
+  const rank = portfolioData.filter(p=>p.sf >= proj.sf).length;
+
+  document.getElementById('bench-panel').style.display = 'block';
+  document.getElementById('bench-proj-name').textContent = proj.nom;
+  document.getElementById('bench-count').textContent =
+    `${portfolioData.length} proyectos · Score medio cartera: ${avgScore.toFixed(2)} · Este proyecto: rank #${rank} de ${portfolioData.length}`;
+
+  const rows = DIMS.map((d, di) => {
+    const pv = projDimScores[di];
+    const av = dimAvgs[di];
+    const max = 10;
+    const pvPct = (pv/max*100).toFixed(1);
+    const avPct = (av/max*100).toFixed(1);
+    const diff = pv - av;
+    const diffStr = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+    const diffColor = diff >= 0.3 ? '#4ADE80' : diff <= -0.3 ? '#FCA5A5' : '#888';
+    return `<div class="bench-row">
+      <div class="bench-id">${d.id}</div>
+      <div>
+        <div style="font-size:9px;color:#555;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${d.nom.split(',')[0]}
+        </div>
+        <div class="bench-track">
+          <div class="bench-fill-avg" style="width:${avPct}%;"></div>
+          <div class="bench-fill-proj" style="width:${pvPct}%;opacity:.9;"></div>
+          <div class="bench-avg-line" style="left:${avPct}%;"></div>
+        </div>
+      </div>
+      <div class="bench-val">${pv.toFixed(1)}</div>
+      <div style="font-size:9px;font-weight:700;color:${diffColor};text-align:right;">${diffStr}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('bench-rows').innerHTML = rows;
+}
+
 function loadIntoEval(idx) {
   const p=portfolioData[idx]; if(!p)return;
   document.getElementById('f-name').value=p.nom;
   if(p.reqDate)document.getElementById('f-req').value=p.reqDate;
   if(p.regDate)document.getElementById('f-reg').value=p.regDate;
+  if(document.getElementById('f-area') && p.area) document.getElementById('f-area').value=p.area;
   DIMS.forEach(d=>d.criterios.forEach(c=>{
     const v=p.scores[c.id]||5; c.val=v;
     const sl=document.getElementById('sl-'+c.id);if(sl)sl.value=v;
@@ -1516,15 +1795,234 @@ function loadIntoEval(idx) {
     const bp=document.getElementById('bp-'+c.id);if(bp)bp.innerHTML=boostPreview(c);
   }));
   upd();
-  document.getElementById('dims-col').scrollIntoView({behavior:'smooth',block:'start'});
-  toast(`"${p.nom}" cargado en el evaluador`);
+  // Render benchmark AFTER upd() so dim scores are fresh
+  renderBenchmark(p);
+  document.getElementById('bench-panel').scrollIntoView({behavior:'smooth',block:'start'});
+  toast(`"${p.nom}" cargado · comparativa activada`);
+}
+
+/* ── CHARTS ─────────────────────────────────────────── */
+const CLS_BG={
+  'PRIORITARIO ESTRATÉGICO (D1)':'rgba(220,38,38,.8)',
+  'PRIORITARIO ESTRATÉGICO':'rgba(13,92,46,.85)',
+  'ALTA PRIORIDAD':'rgba(30,58,95,.8)',
+  'PRIORIDAD MEDIA':'rgba(146,64,14,.75)',
+  'BAJA PRIORIDAD':'rgba(55,65,81,.6)',
+  'DESCARTAR':'rgba(127,29,29,.6)',
+};
+const CLS_BORDER={
+  'PRIORITARIO ESTRATÉGICO (D1)':'#DC2626',
+  'PRIORITARIO ESTRATÉGICO':'#0D5C2E',
+  'ALTA PRIORIDAD':'#1E3A5F',
+  'PRIORIDAD MEDIA':'#92400E',
+  'BAJA PRIORIDAD':'#374151',
+  'DESCARTAR':'#7F1D1D',
+};
+const CHART_FONT={family:'DM Sans',size:10};
+
+function renderCharts(){
+  if(!portfolioData.length) return;
+  switch(curChart){
+    case 'bubble':  renderBubble();  break;
+    case 'bars':    renderBars();    break;
+    case 'dept':    renderDept();    break;
+    case 'scatter': renderScatter(); break;
+    case 'heat':    renderHeat();    break;
+    case 'quad':    renderQuad();    break;
+  }
+}
+
+function sn(nom){
+  const m=nom.match(/^(\d+)\s*[-–]\s*(.{0,28})/);
+  return m?m[1]+' '+m[2].trim():nom.substring(0,28);
+}
+
+// ① BUBBLE: D3 x-axis · D1 y-axis · size=D2 · color=classification
+function renderBubble(){
+  destroyC('bubble');
+  const allCls=[...new Set(portfolioData.map(p=>clsf(p.sf).et))];
+  const datasets=allCls.map(cls=>{
+    const pts=portfolioData.filter(p=>clsf(p.sf).et===cls).map(p=>({
+      x:+p.dimScores[2].toFixed(2), y:+p.dimScores[0].toFixed(2),
+      r:Math.max(4,p.dimScores[1]*2),
+      nom:sn(p.nom), score:p.sf, area:p.area||''
+    }));
+    return{label:cls,data:pts,
+      backgroundColor:CLS_BG[cls]||'rgba(100,100,100,.6)',
+      borderColor:CLS_BORDER[cls]||'#888',borderWidth:1.5};
+  });
+  chartInst.bubble=new Chart(document.getElementById('c-bubble'),{
+    type:'bubble',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:CHART_FONT,boxWidth:10,padding:10}},
+        tooltip:{callbacks:{label:d=>[`${d.raw.nom}`,`Score: ${d.raw.score.toFixed(2)} · ${d.raw.area}`,`D3 Valor: ${d.raw.x} · D1 Compliance: ${d.raw.y}`]}}
+      },
+      scales:{
+        x:{title:{display:true,text:'D3 — Valor de Negocio',font:CHART_FONT,color:'#8A8A8A'},
+           min:0,max:10,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:CHART_FONT}},
+        y:{title:{display:true,text:'D1 — Compliance / Riesgo',font:CHART_FONT,color:'#8A8A8A'},
+           min:0,max:10,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:CHART_FONT}},
+      }
+    }
+  });
+}
+
+// ② BARS: top 30 by score
+function renderBars(){
+  destroyC('bars');
+  const top=portfolioData.slice().sort((a,b)=>b.sf-a.sf).slice(0,30);
+  chartInst.bars=new Chart(document.getElementById('c-bars'),{
+    type:'bar',
+    data:{
+      labels:top.map(p=>sn(p.nom)),
+      datasets:[{
+        label:'Score final',
+        data:top.map(p=>+p.sf.toFixed(2)),
+        backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+        borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
+        borderWidth:1,borderRadius:3,
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:d=>`Score: ${d.raw} — ${clsf(d.raw).et}`}}},
+      scales:{
+        x:{min:0,max:10,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:CHART_FONT}},
+        y:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}},
+      }
+    }
+  });
+}
+
+// ③ DEPT: avg score by area
+function renderDept(){
+  destroyC('dept');
+  const byArea={};
+  portfolioData.forEach(p=>{
+    const a=p.area||'Sin área';
+    if(!byArea[a]) byArea[a]={sum:0,n:0};
+    byArea[a].sum+=p.sf; byArea[a].n++;
+  });
+  const sorted=Object.entries(byArea).sort((a,b)=>b[1].sum/b[1].n - a[1].sum/a[1].n);
+  const labels=sorted.map(([a])=>a);
+  const avgs=sorted.map(([,v])=>+(v.sum/v.n).toFixed(2));
+  const counts=sorted.map(([,v])=>v.n);
+  chartInst.dept=new Chart(document.getElementById('c-dept'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Score medio',data:avgs,backgroundColor:'rgba(196,151,74,.75)',borderColor:'#C4974A',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {label:'Nº proyectos',data:counts,type:'line',borderColor:'rgba(30,58,95,.7)',backgroundColor:'rgba(30,58,95,.1)',borderWidth:2,pointRadius:4,yAxisID:'y2'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'bottom',labels:{font:CHART_FONT,boxWidth:10}}},
+      scales:{
+        y:{title:{display:true,text:'Score medio',font:CHART_FONT},min:0,max:10,ticks:{font:CHART_FONT}},
+        y2:{position:'right',title:{display:true,text:'Nº proyectos',font:CHART_FONT},grid:{display:false},ticks:{font:CHART_FONT}},
+        x:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}},
+      }
+    }
+  });
+}
+
+// ④ SCATTER: D5 ease (x) vs D3 value (y), size=D1
+function renderScatter(){
+  destroyC('scatter');
+  const datasets=[{
+    label:'Proyectos',
+    data:portfolioData.map(p=>({
+      x:+p.dimScores[4].toFixed(2), y:+p.dimScores[2].toFixed(2),
+      r:Math.max(4,p.dimScores[0]*1.8),
+      nom:sn(p.nom),score:p.sf
+    })),
+    backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+    borderColor:'rgba(255,255,255,.5)',borderWidth:1.5,
+  }];
+  // Quadrant lines
+  chartInst.scatter=new Chart(document.getElementById('c-scatter'),{
+    type:'bubble',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D5 Facilidad: ${d.raw.x} · D3 Valor: ${d.raw.y}`,`Score: ${d.raw.score.toFixed(2)}`]}},
+        annotation:{annotations:{
+          vLine:{type:'line',xMin:5.5,xMax:5.5,borderColor:'rgba(0,0,0,.15)',borderWidth:1,borderDash:[4,4]},
+          hLine:{type:'line',yMin:5.5,yMax:5.5,borderColor:'rgba(0,0,0,.15)',borderWidth:1,borderDash:[4,4]},
+        }}
+      },
+      scales:{
+        x:{title:{display:true,text:'D5 — Facilidad de implantación →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+        y:{title:{display:true,text:'D3 — Valor de negocio ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+      }
+    }
+  });
+}
+
+// ⑤ HEATMAP D1 × D2 (scatter with density)
+function renderHeat(){
+  destroyC('heat');
+  const datasets=[{
+    label:'Proyectos',
+    data:portfolioData.map(p=>({
+      x:+p.dimScores[0].toFixed(2), y:+p.dimScores[1].toFixed(2),
+      r:Math.max(4,p.sf*1.4),
+      nom:sn(p.nom),score:p.sf
+    })),
+    backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+    borderColor:'rgba(255,255,255,.4)',borderWidth:1,
+  }];
+  chartInst.heat=new Chart(document.getElementById('c-heat'),{
+    type:'bubble',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D1: ${d.raw.x} · D2: ${d.raw.y}`,`Score final: ${d.raw.score.toFixed(2)}`]}}
+      },
+      scales:{
+        x:{title:{display:true,text:'D1 — Compliance / Riesgo →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+        y:{title:{display:true,text:'D2 — Prioridad Estratégica ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+      }
+    }
+  });
+}
+
+// ⑥ STRATEGIC QUAD: D3 (x) vs D2 (y)
+function renderQuad(){
+  destroyC('quad');
+  const datasets=[{
+    label:'Proyectos',
+    data:portfolioData.map(p=>({
+      x:+p.dimScores[2].toFixed(2), y:+p.dimScores[1].toFixed(2),
+      r:Math.max(4,p.dimScores[0]*1.6),
+      nom:sn(p.nom),score:p.sf,cls:clsf(p.sf).et
+    })),
+    backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+    borderColor:'rgba(255,255,255,.4)',borderWidth:1.5,
+  }];
+  chartInst.quad=new Chart(document.getElementById('c-quad'),{
+    type:'bubble',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D3 Valor: ${d.raw.x} · D2 Estrategia: ${d.raw.y}`,`Score: ${d.raw.score.toFixed(2)} · ${d.raw.cls}`]}}
+      },
+      scales:{
+        x:{title:{display:true,text:'D3 — ROI / Valor de negocio →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+        y:{title:{display:true,text:'D2 — Urgencia Estratégica ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+      }
+    }
+  });
 }
 
 function clearPortfolio() {
   portfolioData=[];
   document.getElementById('portfolio').style.display='none';
   document.getElementById('btn-clear').style.display='none';
-  document.getElementById('import-info').textContent='Importa el Excel para evaluar y comparar múltiples proyectos';
+  document.getElementById('bench-panel').style.display='none';
+  if(document.getElementById('charts-panel'))
+    document.getElementById('charts-panel').style.display='none';
+  document.getElementById('ib-info').textContent='Importa el Excel para evaluar y comparar múltiples proyectos';
   toast('Cartera limpiada');
 }
 
