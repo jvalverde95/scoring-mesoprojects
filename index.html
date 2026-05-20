@@ -100,7 +100,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .wb.fin:hover{background:var(--gd)}
 
 /* STEPS */
-.step{display:none;padding:24px 30px 40px;max-width:860px;margin:0 auto;width:100%}
+.step{display:none;padding:20px 28px 40px;width:100%}
 .step.on{display:block}
 
 /* STEP 0 */
@@ -434,6 +434,38 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
   border-radius:20px;font-size:9px;color:var(--ink4);
 }
 
+
+/* ── SUMMARY 2-COL LAYOUT ─────────────────────────────── */
+.sum-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  gap:16px;
+  align-items:start;
+}
+.sum-col-left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sum-col-right{display:flex;flex-direction:column;gap:14px;min-width:0;position:sticky;top:72px}
+
+/* ── DIM MINI LIST (right col) ────────────────────────── */
+.dim-mini-list{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
+.dml-header{padding:12px 16px;border-bottom:1px solid var(--b2);display:flex;align-items:center;justify-content:space-between}
+.dml-title{font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink)}
+.dml-total{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400}
+.dml-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--b2);cursor:pointer;transition:background .1s}
+.dml-row:last-child{border-bottom:none}
+.dml-row:hover{background:var(--surf)}
+.dml-id{font-size:9px;font-weight:700;color:var(--g);width:22px;flex-shrink:0}
+.dml-name{font-size:10px;color:var(--ink3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dml-bar-wrap{width:80px;background:var(--b2);border-radius:2px;height:3px;overflow:hidden;flex-shrink:0}
+.dml-bar-fill{height:3px;border-radius:2px;transition:width .4s}
+.dml-val{font-family:'DM Serif Display',serif;font-size:16px;min-width:28px;text-align:right;flex-shrink:0}
+
+/* ── QUICK STATS ──────────────────────────────────────── */
+.qstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qstat{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:12px 14px;box-shadow:var(--sh)}
+.qstat-lbl{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.qstat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)}
+.qstat-sub{font-size:9px;color:var(--ink4);margin-top:2px}
+
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
 </style>
 </head>
@@ -636,7 +668,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 
     <!-- STEP SUMMARY -->
     <div class="step" id="step-summary">
-      <div class="sum-hero">
+
+      <!-- HERO negro full width -->
+      <div class="sum-hero" style="margin-bottom:16px">
         <img src="data:image/png;base64,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" class="sh-logo" alt="mesoestetic">
         <div class="sh-div"></div>
         <div class="sh-l">
@@ -653,21 +687,69 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
         </div>
       </div>
 
-      <div class="sum-rec" id="sum-rec">Completa la evaluación para ver la recomendación.</div>
-      <div class="sum-dims" id="sum-dims"></div>
+      <!-- 2-col layout -->
+      <div class="sum-layout">
 
-      <div class="sum-radar">
-        <div style="font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px">perfil multidimensional</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b2)">scoring por dimensión</div>
-        <div class="radar-wrap"><canvas id="radar"></canvas></div>
-      </div>
+        <!-- COLUMNA IZQUIERDA: contenido principal -->
+        <div class="sum-col-left">
 
-      <div class="sum-acts">
-        <button class="sa p" onclick="window.print()">↓ exportar pdf</button>
-        <button class="sa p" onclick="guardar()">↓ guardar json</button>
-        <button class="sa g" onclick="resetAll()">↺ nueva evaluación</button>
-        <button class="sa g" onclick="goStep(0)">← editar datos</button>
-      </div>
+          <div class="sum-rec" id="sum-rec">Completa la evaluación para ver la recomendación.</div>
+
+          <!-- Radar -->
+          <div class="sum-radar" style="margin-bottom:0">
+            <div style="font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px">perfil multidimensional</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b2)">scoring por dimensión</div>
+            <div class="radar-wrap"><canvas id="radar"></canvas></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="sum-acts" style="margin-bottom:0">
+            <button class="sa p" onclick="window.print()">↓ exportar pdf</button>
+            <button class="sa p" onclick="guardar()">↓ guardar json</button>
+            <button class="sa g" onclick="resetAll()">↺ nueva evaluación</button>
+            <button class="sa g" onclick="goStep(0)">← editar datos</button>
+          </div>
+
+        </div><!-- /col-left -->
+
+        <!-- COLUMNA DERECHA: sticky scorecard + dimensiones -->
+        <div class="sum-col-right">
+
+          <!-- Quick stats -->
+          <div class="qstats" id="qstats">
+            <div class="qstat">
+              <div class="qstat-lbl">score base</div>
+              <div class="qstat-val" id="qs-base">—</div>
+              <div class="qstat-sub">sin aging factor</div>
+            </div>
+            <div class="qstat">
+              <div class="qstat-lbl">aging factor</div>
+              <div class="qstat-val" id="qs-aging">×1.00</div>
+              <div class="qstat-sub" id="qs-aging-sub">sin fecha de solicitud</div>
+            </div>
+            <div class="qstat">
+              <div class="qstat-lbl">dimensión más alta</div>
+              <div class="qstat-val" id="qs-best">—</div>
+              <div class="qstat-sub" id="qs-best-sub">—</div>
+            </div>
+            <div class="qstat">
+              <div class="qstat-lbl">dimensión más baja</div>
+              <div class="qstat-val" id="qs-worst">—</div>
+              <div class="qstat-sub" id="qs-worst-sub">—</div>
+            </div>
+          </div>
+
+          <!-- Dim list -->
+          <div class="dim-mini-list">
+            <div class="dml-header">
+              <div class="dml-title">dimensiones</div>
+              <div class="dml-total" id="dml-total" style="color:var(--ink4)">—</div>
+            </div>
+            <div id="dml-rows"></div>
+          </div>
+
+        </div><!-- /col-right -->
+      </div><!-- /sum-layout -->
 
       <!-- CARTERA -->
       <div class="ib">
@@ -675,9 +757,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
           <div class="ib-lbl">carga masiva de proyectos</div>
           <div class="ib-info" id="ib-info">Importa el Excel para comparar y clasificar múltiples proyectos</div>
         </div>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
           <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)">
-          <button class="btn-imp" onclick="document.getElementById('excel-input').click()">↑ cargar excel</button>
+          <button class="btn-imp" onclick="document.getElementById('excel-input').click()" title="Carga puntual del Excel">↑ cargar</button>
+          <button class="btn-imp" id="btn-live" onclick="connectLiveExcel()" title="Conecta el fichero y se actualiza solo cada vez que guardas en Excel" style="background:#065438">⚡ conectar live</button>
+          <button class="btn-imp ghost" onclick="manualRefresh()" id="btn-refresh" style="display:none" title="Forzar recarga ahora">↻ refrescar</button>
           <button class="btn-imp ghost" id="btn-clear" onclick="clearPortfolio()" style="display:none">✕ limpiar</button>
         </div>
       </div>
@@ -1150,115 +1234,199 @@ function switchChart(name,btn){
 function destroyC(id){if(chartInst[id]){chartInst[id].destroy();delete chartInst[id];}}
 
 /* ── LOAD EXCEL — robust reader ─────────────────────── */
+/* ═══════════════════════════════════════════════════
+   EXCEL LOADER — robusto + live reload (File System Access API)
+   ═══════════════════════════════════════════════════ */
+let _liveFileHandle = null;
+let _liveInterval   = null;
+let _liveLastMod    = null;
+let _liveSheetName  = null;
+let _savedHoras     = {};
+
+/* Core parser: arrayBuffer → raw project array */
+function parseExcelBuffer(buffer) {
+  const wb = XLSX.read(buffer, {type:'array', cellDates:true, cellNF:false, cellText:false});
+  const pref = ['Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
+  let sn = wb.SheetNames[0];
+  for (const p of pref) { if (wb.SheetNames.includes(p)) { sn=p; break; } }
+  _liveSheetName = sn;
+
+  const data = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:'', raw:true, blankrows:false});
+  const isRanking = sn === 'Ranking Proyectos';
+
+  // Detect data start: col B = project name (long string), cols D+ = integers 1-10
+  let dataStart=-1, nameCol=1, areaCol=2, firstScoreCol=3;
+  for (let r=0; r<Math.min(20, data.length); r++) {
+    const row = data[r]; if (!row || row.length < 5) continue;
+    const colB = String(row[1]||'').trim();
+    if (colB.length < 4 || !isNaN(Number(colB))) continue; // not a project name
+    // Count integers 1-10 starting from col D (idx 3) to skip rank/name/area
+    let cnt = 0;
+    for (let c=3; c<Math.min(row.length,28); c++) {
+      const v = Number(row[c]);
+      if (Number.isInteger(v) && v>=1 && v<=10) cnt++;
+    }
+    if (cnt >= 4 || isRanking) { dataStart=r; break; }
+  }
+  if (dataStart===-1) throw new Error('Sin filas de datos en "'+sn+'"');
+
+  const projects = [];
+  for (let r=dataStart; r<data.length; r++) {
+    const row = data[r]; if (!row || row.length < 4) continue;
+    const nom = String(row[nameCol]||'').trim();
+    if (!nom || nom.length < 3) continue;
+    if (/^(nombre|proyecto|name|nº|#|rank)/i.test(nom)) continue;
+    const area = String(row[areaCol]||'').trim() || 'Sin área';
+
+    const scores = {};
+    let nValid = 0;
+
+    if (isRanking) {
+      // Ranking sheet: cols F-K (idx 5-10) = D1..D6 dim averages
+      const dimAvgs = [5,6,7,8,9,10].map(c => {
+        const v = parseFloat(row[c]); return Number.isFinite(v) ? v : 5;
+      });
+      DIMS.forEach((d, di) => {
+        d.criterios.forEach(c => { scores[c.id] = Math.round(Math.max(1,Math.min(10,dimAvgs[di]))); });
+      });
+      nValid = 12;
+    } else {
+      // Carga Herramienta: cols D..Y (idx 3..24) = 22 criteria
+      CRIT_IDS.forEach((cid, idx) => {
+        const raw = row[firstScoreCol+idx];
+        const v = parseFloat(raw);
+        const s = (Number.isFinite(v)&&v>=1&&v<=10) ? Math.round(v) : 5;
+        scores[cid] = s;
+        if (Number.isFinite(v)&&v>=1&&v<=10) nValid++;
+      });
+    }
+    if (nValid < 4) continue;
+
+    // Parse dates
+    let reqDate=null, regDate=null;
+    const dStart = isRanking ? 4 : (firstScoreCol+CRIT_IDS.length);
+    for (let c=dStart; c<Math.min(dStart+8, row.length); c++) {
+      const v = row[c]; if (!v) continue;
+      let d = null;
+      if (v instanceof Date) { d=v; }
+      else if (typeof v==='number' && v>40000 && v<60000) {
+        d = new Date(new Date(1899,11,30).getTime() + v*86400000);
+      } else {
+        const s = String(v).trim();
+        const m1 = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m1) d=new Date(m1[3]+'-'+m1[2]+'-'+m1[1]);
+        else if (m2) d=new Date(s);
+      }
+      if (d&&!isNaN(d.getTime())&&d.getFullYear()>=2000&&d.getFullYear()<=2035) {
+        const ds=d.toISOString().split('T')[0];
+        if (!reqDate) reqDate=ds;
+        else if (!regDate&&ds!==reqDate) { regDate=ds; break; }
+      }
+    }
+    projects.push({nom, area, scores, reqDate, regDate});
+  }
+  if (!projects.length) throw new Error('Sin proyectos válidos en "'+sn+'"');
+  return projects;
+}
+
+/* Apply projects to app, preserving horas */
+function applyProjects(projects, filename) {
+  const prevHoras = {};
+  portfolioData.forEach(p => { if (p.horas!=null) prevHoras[p.nom]=p.horas; });
+  Object.assign(prevHoras, _savedHoras);
+
+  portfolioData = projects.map(p => {
+    const proj = computeProj(p);
+    proj.horas = prevHoras[p.nom] ?? null;
+    return proj;
+  });
+  portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
+
+  renderPortfolio(); renderPools();
+  const el=document.getElementById('portfolio'); if(el) el.style.display='block';
+  const cp=document.getElementById('charts-panel'); if(cp) cp.style.display='block';
+  const bc=document.getElementById('btn-clear'); if(bc) bc.style.display='flex';
+  renderCharts();
+}
+
+/* One-time file input load */
 function loadExcel(inp) {
-  const file=inp.files[0]; if(!file)return;
+  const file=inp.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true,cellNF:false,cellText:false});
-
-      // Pick best sheet
-      const pref=['Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
-      let sn=wb.SheetNames[0];
-      for(const p of pref){if(wb.SheetNames.includes(p)){sn=p;break;}}
-
-      const data=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true,blankrows:false});
-
-      // Auto-detect data start: find first row with ≥5 numeric cells in range 1-10
-      let dataStart=-1, nameCol=1, areaCol=2, firstScoreCol=3;
-      for(let r=0;r<Math.min(20,data.length);r++){
-        const row=data[r]; if(!row) continue;
-        let numCount=0;
-        for(let c=0;c<row.length;c++){
-          const v=Number(row[c]);
-          if(Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v)) numCount++;
-        }
-        if(numCount>=5){
-          dataStart=r;
-          // name col = first text col with length>3
-          for(let c=0;c<row.length;c++){
-            const s=String(row[c]||'').trim();
-            if(s.length>3&&isNaN(Number(s))){nameCol=c;break;}
-          }
-          // area col = next text col after name
-          for(let c=nameCol+1;c<row.length;c++){
-            const s=String(row[c]||'').trim();
-            if(s.length>2&&isNaN(Number(s))){areaCol=c;break;}
-          }
-          // first score col = first integer 1-10
-          for(let c=0;c<row.length;c++){
-            const v=Number(row[c]);
-            if(Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v)){firstScoreCol=c;break;}
-          }
-          break;
-        }
-      }
-      if(dataStart===-1){toast('Sin datos válidos en "'+sn+'"');inp.value='';return;}
-
-      const projects=[];
-      for(let r=dataStart;r<data.length;r++){
-        const row=data[r]; if(!row||row.length<firstScoreCol+4) continue;
-        const nom=String(row[nameCol]||'').trim();
-        if(!nom||nom.length<2) continue;
-        if(/^(nombre|proyecto|name|#|nº|columna)/i.test(nom)) continue;
-        const area=String(row[areaCol]||'').trim()||'Sin área';
-
-        const scores={};
-        let nValid=0;
-        CRIT_IDS.forEach((cid,idx)=>{
-          const raw=row[firstScoreCol+idx];
-          const v=parseFloat(raw);
-          const s=(Number.isFinite(v)&&v>=1&&v<=10)?Math.round(v):5;
-          scores[cid]=s;
-          if(Number.isFinite(v)&&v>=1&&v<=10) nValid++;
-        });
-        if(nValid<4) continue;
-
-        // Dates: scan columns after scores
-        let reqDate=null,regDate=null;
-        const after=firstScoreCol+CRIT_IDS.length;
-        for(let c=after;c<Math.min(after+10,row.length);c++){
-          const v=row[c]; if(!v&&v!==0) continue;
-          let d=null;
-          if(v instanceof Date){d=v;}
-          else if(typeof v==='number'&&v>40000&&v<60000){
-            // Excel serial date
-            const ep=new Date(1899,11,30);
-            d=new Date(ep.getTime()+v*86400000);
-          } else {
-            const s=String(v).trim();
-            if(s.match(/\d{2}[\/-]\d{2}[\/-]\d{4}/)||s.match(/\d{4}-\d{2}-\d{2}/)) d=new Date(s.replace(/(\d{2})\/(\d{2})\/(\d{4})/,'$3-$2-$1'));
-          }
-          if(d&&!isNaN(d.getTime())&&d.getFullYear()>=2020&&d.getFullYear()<=2030){
-            const ds=d.toISOString().split('T')[0];
-            if(!reqDate) reqDate=ds;
-            else if(!regDate&&ds!==reqDate) regDate=ds;
-          }
-        }
-        projects.push({nom,area,scores,reqDate,regDate});
-      }
-
-      if(!projects.length){
-        toast('Sin proyectos en "'+sn+'" (filas leídas: '+(data.length-dataStart)+')');
-        inp.value=''; return;
-      }
-
-      portfolioData=projects.map(p=>computeProj(p));
-      // Preserve horas if reloading
-      portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
-      renderPortfolio();
-      renderPools();
-      const _portEl=document.getElementById('portfolio');if(_portEl)_portEl.style.display='block';
-      const _cp=document.getElementById('charts-panel');if(_cp)_cp.style.display='block';
-      document.getElementById('btn-clear').style.display='flex';
-      document.getElementById('ib-info').textContent=
-        `${portfolioData.length} proyectos · hoja "${sn}"`;
-      renderCharts();
-      toast(`✓ ${portfolioData.length} proyectos importados`);
-    }catch(err){console.error(err);toast('Error: '+err.message);}
+    try {
+      const projects=parseExcelBuffer(e.target.result);
+      applyProjects(projects, file.name);
+      const ei=document.getElementById('ib-info');
+      if(ei) ei.textContent=portfolioData.length+' proyectos · "'+_liveSheetName+'" · '+file.name;
+      toast('✓ '+portfolioData.length+' proyectos importados');
+    } catch(err) { console.error(err); toast('Error: '+err.message); }
     inp.value='';
   };
   reader.readAsArrayBuffer(file);
+}
+
+/* Live reload — File System Access API (Chrome/Edge) */
+async function connectLiveExcel() {
+  if (!('showOpenFilePicker' in window)) {
+    toast('Live reload no disponible. Usa Chrome o Edge.');
+    document.getElementById('excel-input').click(); return;
+  }
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types:[{description:'Excel',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx','.xls']}}]
+    });
+    _liveFileHandle=handle; _liveLastMod=null;
+    clearInterval(_liveInterval);
+    await refreshLiveExcel(true);
+    _liveInterval=setInterval(()=>refreshLiveExcel(false), 3000);
+    updateLiveBadge(true);
+    toast('🔴 Live conectado — actualiza automáticamente al guardar el Excel');
+  } catch(e) { if(e.name!=='AbortError') toast('Error: '+e.message); }
+}
+
+async function refreshLiveExcel(force=false) {
+  if (!_liveFileHandle) return;
+  try {
+    const file=await _liveFileHandle.getFile();
+    const mod=file.lastModified;
+    if (!force && mod===_liveLastMod) return;
+    _liveLastMod=mod;
+    const buf=await file.arrayBuffer();
+    const projects=parseExcelBuffer(buf);
+    applyProjects(projects, file.name);
+    const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const ei=document.getElementById('ib-info');
+    if(ei) ei.textContent='🔴 Live · '+portfolioData.length+' proyectos · "'+_liveSheetName+'" · '+ts;
+    if(!force) toast('↻ Actualizado · '+portfolioData.length+' proyectos · '+ts);
+  } catch(e) { console.warn('Live reload error:',e.message); }
+}
+
+function disconnectLiveExcel() {
+  clearInterval(_liveInterval); _liveInterval=null;
+  _liveFileHandle=null; _liveLastMod=null;
+  updateLiveBadge(false);
+}
+
+function manualRefresh() {
+  if (_liveFileHandle) refreshLiveExcel(true);
+  else { toast('Sin fichero live conectado'); document.getElementById('excel-input').click(); }
+}
+
+function updateLiveBadge(active) {
+  const btn=document.getElementById('btn-live');
+  const btnRef=document.getElementById('btn-refresh');
+  if (!btn) return;
+  if (active) {
+    btn.textContent='⏹ live activo'; btn.style.background='#8A1A20';
+    btn.onclick=()=>{ disconnectLiveExcel(); clearPortfolio(); };
+    if(btnRef) btnRef.style.display='flex';
+  } else {
+    btn.textContent='⚡ conectar live'; btn.style.background='#065438';
+    btn.onclick=connectLiveExcel;
+    if(btnRef) btnRef.style.display='none';
+  }
 }
 
 function computeProj(proj) {
@@ -1763,6 +1931,7 @@ function renderQuad(){
 }
 
 function clearPortfolio() {
+  disconnectLiveExcel();
   portfolioData=[];
   const _portEl2=document.getElementById('portfolio');if(_portEl2)_portEl2.style.display='none';
   document.getElementById('btn-clear').style.display='none';
@@ -2112,6 +2281,39 @@ function updSummary() {
       <div class="sd-bar"><div class="sd-fill" style="width:${ds*10}%;background:${col}"></div></div>
     </div>`;
   }).join('');
+
+  // Quick stats
+  const dimScoresArr = DIMS.map(d => ({id:d.id, nom:d.nom, score:scoreDim(d.criterios)}));
+  const best  = dimScoresArr.reduce((a,b) => b.score>a.score?b:a);
+  const worst = dimScoresArr.reduce((a,b) => b.score<a.score?b:a);
+  const setSafe = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  setSafe('qs-base',  sb.toFixed(2));
+  setSafe('qs-aging', af>1.001 ? '×'+af.toFixed(3) : '×1.000');
+  setSafe('qs-aging-sub', af>1.001 ? '+'+((af-1)*100).toFixed(1)+'% por antigüedad' : 'sin fecha de solicitud');
+  setSafe('qs-best',  best.score.toFixed(1));
+  setSafe('qs-best-sub', best.id+' — '+best.nom.split(',')[0]);
+  setSafe('qs-worst', worst.score.toFixed(1));
+  setSafe('qs-worst-sub', worst.id+' — '+worst.nom.split(',')[0]);
+
+  // Quick stats colors
+  const qbest = document.getElementById('qs-best');
+  if(qbest) qbest.style.color = scColorHex(best.score);
+  const qworst = document.getElementById('qs-worst');
+  if(qworst) qworst.style.color = scColorHex(worst.score);
+
+  // Dim mini list
+  const dmlRows = document.getElementById('dml-rows');
+  const dmlTotal = document.getElementById('dml-total');
+  if(dmlRows) dmlRows.innerHTML = DIMS.map((d,di) => {
+    const ds = scoreDim(d.criterios), col = scColorHex(ds);
+    return `<div class="dml-row" onclick="goStep(${di+1})">
+      <div class="dml-id">${d.id}</div>
+      <div class="dml-name">${d.nom.split(',')[0]}</div>
+      <div class="dml-bar-wrap"><div class="dml-bar-fill" style="width:${ds*10}%;background:${col}"></div></div>
+      <div class="dml-val" style="color:${col}">${ds.toFixed(1)}</div>
+    </div>`;
+  }).join('');
+  if(dmlTotal) { dmlTotal.textContent = sf.toFixed(1); dmlTotal.style.color = scColorHex(sf); }
 
   // Radar
   const data = DIMS.map(d => parseFloat(scoreDim(d.criterios).toFixed(2)));
