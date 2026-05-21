@@ -45,7 +45,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 #shell{display:flex;margin-top:52px;min-height:calc(100vh - 52px)}
 
 /* LEFT NAV */
-#lnav{width:60px;min-width:60px;background:var(--k);border-right:1px solid #111;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:3px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+#lnav{width:68px;min-width:68px;background:var(--k);border-right:1px solid #111;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:3px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
 .ndot{width:42px;height:42px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1.5px solid transparent;transition:all .18s;gap:1px}
 .ndot:hover{border-color:#444;background:rgba(255,255,255,.05)}
 .ndot.active{border-color:var(--g)!important;background:rgba(196,151,74,.08)!important}
@@ -55,7 +55,20 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .ndot.active .nd-id,.ndot.active .nd-sc{color:var(--g)}
 .ndot.done .nd-id{color:#AAA}
 .ndot.done .nd-sc{color:#888}
-.nav-sep{width:26px;height:1px;background:#2A2A2A;margin:6px 0}
+.nav-sep{width:34px;height:1px;background:#1E1E1E;margin:5px 0}
+/* ── NAV ICON BUTTONS (charts, config, pools) ─── */
+.nav-ico{
+  width:44px;height:44px;border-radius:var(--r);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;border:1.5px solid transparent;transition:all .18s;gap:2px;
+}
+.nav-ico:hover{border-color:#333;background:rgba(255,255,255,.04)}
+.nav-ico.active{border-color:var(--g);background:rgba(196,151,74,.08)}
+.nav-ico-sym{font-size:16px;line-height:1}
+.nav-ico-lbl{font-size:6px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;transition:color .18s}
+.nav-ico.active .nav-ico-lbl{color:var(--g)}
+.nav-ico:hover .nav-ico-lbl{color:#AAA}
+
 .nsum{width:42px;height:42px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:none;transition:all .18s;margin-top:2px;gap:1px}
 .nsum:hover{background:rgba(255,255,255,.04)}
 .nsum.active{background:rgba(196,151,74,.06)}
@@ -466,6 +479,46 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .qstat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)}
 .qstat-sub{font-size:9px;color:var(--ink4);margin-top:2px}
 
+
+/* ── CONFIG / POOLS / CHARTS STEPS ─────────────────── */
+.cfg-section{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh)}
+.cfg-sec-title{font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--ink);margin-bottom:4px}
+.cfg-sec-sub{font-size:11px;color:var(--ink4);margin-bottom:16px}
+.cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cfg-field{display:flex;flex-direction:column;gap:5px}
+.cfg-field label{font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.12em;text-transform:uppercase}
+.cfg-inp{padding:8px 11px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--w);border:1.5px solid var(--b);border-radius:var(--r);transition:border-color .15s;width:100%}
+.cfg-inp:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px rgba(196,151,74,.08)}
+.cfg-note{font-size:9px;color:var(--ink3);margin-top:3px}
+.cfg-apply{padding:9px 20px;font-family:'DM Sans',inherit;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:var(--k);color:var(--w);border:none;border-radius:var(--r);cursor:pointer;margin-top:12px}
+.cfg-apply:hover{background:#1A1A1A}
+.cfg-apply.g{background:var(--g)}.cfg-apply.g:hover{background:var(--gd)}
+.cfg-reset{background:transparent;color:var(--ink3);border:1px solid var(--b);margin-left:8px}
+.cfg-reset:hover{border-color:var(--ink);color:var(--ink)}
+
+/* dim weight rows */
+.dim-cfg-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b2)}
+.dim-cfg-row:last-child{border-bottom:none}
+.dim-cfg-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.dim-cfg-name{flex:1;font-size:12px;color:var(--ink);font-weight:500}
+.dim-cfg-sub{font-size:9px;color:var(--ink4);margin-top:1px}
+.dim-cfg-pct{display:flex;align-items:center;gap:6px}
+.dim-cfg-slider{width:120px;-webkit-appearance:none;height:2px;background:var(--b2);border-radius:1px;outline:none;cursor:pointer}
+.dim-cfg-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--k);border:2px solid var(--w);box-shadow:0 0 0 1.5px var(--k);cursor:pointer}
+.dim-cfg-val{width:44px;padding:3px 6px;text-align:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--ink);border:1.5px solid var(--b);border-radius:var(--r);background:var(--w)}
+.dim-cfg-val:focus{outline:none;border-color:var(--g)}
+.dim-cfg-val.err{border-color:var(--d1);color:var(--d1);background:var(--d1t)}
+.cfg-total{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);margin-top:10px}
+.cfg-total.ok{background:#EAFAF1;border:1px solid rgba(10,82,40,.15)}
+.cfg-total.err{background:var(--d1t);border:1px solid rgba(204,31,38,.15)}
+.cfg-total-lbl{font-size:10px;font-weight:600}
+.cfg-total-val{font-family:'DM Serif Display',serif;font-size:22px}
+
+/* pool config visual */
+.pool-cfg-visual{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.pool-cfg-card{border-radius:var(--rl);padding:14px 16px;border:1px solid}
+.pool-viz-bar{height:6px;border-radius:3px;margin:8px 0 4px;transition:width .3s}
+.pool-range-lbl{font-size:9px;color:var(--ink4);margin-top:4px}
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
 </style>
 </head>
@@ -575,9 +628,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
   <div id="lnav">
     <div id="nav-dots"></div>
     <div class="nav-sep"></div>
+    <!-- Bottom nav: resumen, gráficas, pools, config -->
     <div class="nsum" id="nav-sum" onclick="goStep('summary')">
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSI2MiIgeT0iMzAiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj44NTwvdGV4dD4KICA8dGV4dCB4PSI1MCIgeT0iNzIiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjayxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NZTwvdGV4dD4KPC9zdmc+" alt="resumen">
       <div class="nsum-lbl">res.</div>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-ico" id="nav-charts" onclick="goStep('charts')" title="Gráficas de cartera">
+      <div class="nav-ico-sym">📊</div>
+      <div class="nav-ico-lbl">gráficas</div>
+    </div>
+    <div class="nav-ico" id="nav-pools" onclick="goStep('pools')" title="Clasificación por nivel">
+      <div class="nav-ico-sym">🗂</div>
+      <div class="nav-ico-lbl">pools</div>
+    </div>
+    <div class="nav-ico" id="nav-config" onclick="goStep('config')" title="Configuración">
+      <div class="nav-ico-sym">⚙</div>
+      <div class="nav-ico-lbl">config</div>
     </div>
   </div>
 
@@ -664,7 +731,171 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
     </div>
 
     <!-- STEPS 1-6: rendered by JS -->
+    <div id="dim-steps"></div>    <!-- STEPS 1-6: rendered by JS -->
     <div id="dim-steps"></div>
+
+    <!-- STEP: CHARTS -->
+    <div class="step" id="step-charts">
+      <div class="s-title">gráficas de cartera</div>
+      <div class="s-sub">Visualización y posicionamiento estratégico de los proyectos cargados</div>
+      <div id="charts-step-empty" style="padding:40px;text-align:center;color:var(--ink4);background:var(--w);border:1px solid var(--b);border-radius:var(--rl)">
+        <div style="font-size:32px;margin-bottom:12px">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px">Sin datos de cartera</div>
+        <div style="font-size:12px">Carga un Excel de proyectos desde el resumen para ver las gráficas</div>
+        <button class="cfg-apply" style="margin-top:16px" onclick="goStep('summary')">Ir a cargar Excel →</button>
+      </div>
+      <div id="charts-step-content" style="display:none">
+        <div class="chart-panel">
+          <div class="chart-tabs" style="padding:10px 18px">
+            <button class="ctab on" onclick="switchChart('bubble',this)">Valor vs Riesgo</button>
+            <button class="ctab" onclick="switchChart('bars',this)">Ranking</button>
+            <button class="ctab" onclick="switchChart('dept',this)">Por Área</button>
+            <button class="ctab" onclick="switchChart('scatter',this)">Esfuerzo vs Impacto</button>
+            <button class="ctab" onclick="switchChart('heat',this)">Mapa D1×D2</button>
+            <button class="ctab" onclick="switchChart('quad',this)">Cuadrante</button>
+          </div>
+          <div class="chart-body">
+            <div class="csec on" id="chart2-bubble"><div class="chart-note">X=D3 Valor · Y=D1 Compliance · Tamaño=D2 · Color=clasificación</div><div style="position:relative;height:440px"><canvas id="c2-bubble"></canvas></div></div>
+            <div class="csec" id="chart2-bars"><div class="chart-note">Top 30 proyectos por score final</div><div style="position:relative;height:520px"><canvas id="c2-bars"></canvas></div></div>
+            <div class="csec" id="chart2-dept"><div class="chart-note">Score medio por área · línea = número de proyectos</div><div style="position:relative;height:360px"><canvas id="c2-dept"></canvas></div></div>
+            <div class="csec" id="chart2-scatter"><div class="chart-note">X=D5 Facilidad · Y=D3 Valor · Tamaño=D1 — superior derecho = quick wins</div><div style="position:relative;height:440px"><canvas id="c2-scatter"></canvas></div></div>
+            <div class="csec" id="chart2-heat"><div class="chart-note">Compliance (D1) × Estrategia (D2)</div><div style="position:relative;height:440px"><canvas id="c2-heat"></canvas></div></div>
+            <div class="csec" id="chart2-quad">
+              <div class="chart-note">X=D3 ROI · Y=D2 Urgencia · Tamaño=D1</div>
+              <div style="position:relative;height:400px"><canvas id="c2-quad"></canvas></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;font-size:10px">
+                <div style="padding:8px 11px;background:var(--s1t);border-radius:6px;border:1px solid rgba(10,82,40,.12)"><div style="font-weight:700;color:var(--s1c)">↗ invertir ahora</div><div style="color:var(--s1c);font-size:9px;opacity:.7;margin-top:1px">Alto valor + Alta urgencia</div></div>
+                <div style="padding:8px 11px;background:var(--s2t);border-radius:6px;border:1px solid rgba(26,58,110,.12)"><div style="font-weight:700;color:var(--s2c)">→ planificar</div><div style="color:var(--s2c);font-size:9px;opacity:.7;margin-top:1px">Alto valor + Baja urgencia</div></div>
+                <div style="padding:8px 11px;background:var(--d1t);border-radius:6px;border:1px solid rgba(204,31,38,.12)"><div style="font-weight:700;color:var(--d1)">↑ resolver primero</div><div style="color:var(--d1);font-size:9px;opacity:.7;margin-top:1px">Bajo valor + Alta urgencia</div></div>
+                <div style="padding:8px 11px;background:var(--s4t);border-radius:6px;border:1px solid rgba(58,66,72,.12)"><div style="font-weight:700;color:var(--s4c)">↓ backlog</div><div style="color:var(--s4c);font-size:9px;opacity:.7;margin-top:1px">Bajo valor + Baja urgencia</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP: POOLS -->
+    <div class="step" id="step-pools">
+      <div class="s-title">clasificación por nivel</div>
+      <div class="s-sub">Proyectos agrupados por estimación técnica de horas — edita las horas directamente en cada proyecto</div>
+      <div class="cfg-section" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div style="font-size:11px;font-weight:600;color:var(--ink)">Umbrales de clasificación:</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="pool-tag pool-S" style="font-size:9px">Corto &lt;</span>
+            <input type="number" class="thr-inp" id="thr-s2" value="30" min="1" style="width:60px;padding:5px 8px;font-size:12px" oninput="syncThresholds('s',this.value)">
+            <span style="font-size:10px;color:var(--ink3)">horas</span>
+            <span class="pool-tag pool-M" style="font-size:9px">Medio &lt;</span>
+            <input type="number" class="thr-inp" id="thr-m2" value="100" min="1" style="width:60px;padding:5px 8px;font-size:12px" oninput="syncThresholds('m',this.value)">
+            <span style="font-size:10px;color:var(--ink3)">horas · Largo ≥ <span id="thr-l-lbl2" style="font-weight:700">100h</span></span>
+          </div>
+        </div>
+        <div class="pool-cfg-visual" id="pool-cfg-visual">
+          <div class="pool-cfg-card" style="background:var(--d3t);border-color:rgba(8,123,80,.15)">
+            <div style="font-size:9px;font-weight:700;color:var(--d3);letter-spacing:.08em;text-transform:uppercase">🟢 Corto</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-s-count">—</div>
+            <div class="pool-range-lbl">Hasta <span id="pcv-s-range">30</span>h</div>
+            <div class="pool-viz-bar" id="pcv-s-bar" style="background:var(--d3);width:30%"></div>
+          </div>
+          <div class="pool-cfg-card" style="background:var(--d4t);border-color:rgba(192,120,0,.15)">
+            <div style="font-size:9px;font-weight:700;color:var(--d4);letter-spacing:.08em;text-transform:uppercase">🟡 Medio</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-m-count">—</div>
+            <div class="pool-range-lbl"><span id="pcv-m-range">30–100</span>h</div>
+            <div class="pool-viz-bar" id="pcv-m-bar" style="background:var(--d4);width:40%"></div>
+          </div>
+          <div class="pool-cfg-card" style="background:var(--d1t);border-color:rgba(204,31,38,.15)">
+            <div style="font-size:9px;font-weight:700;color:var(--d1);letter-spacing:.08em;text-transform:uppercase">🔴 Largo</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-l-count">—</div>
+            <div class="pool-range-lbl">Más de <span id="pcv-l-range">100</span>h</div>
+            <div class="pool-viz-bar" id="pcv-l-bar" style="background:var(--d1);width:30%"></div>
+          </div>
+        </div>
+      </div>
+      <div id="pool-step-empty" style="padding:32px;text-align:center;color:var(--ink4);background:var(--w);border:1px solid var(--b);border-radius:var(--rl)">
+        <div style="font-size:28px;margin-bottom:10px">🗂</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px">Sin proyectos en la cartera</div>
+        <div style="font-size:11px">Carga un Excel para clasificar proyectos por nivel</div>
+        <button class="cfg-apply" style="margin-top:14px" onclick="goStep('summary')">Cargar Excel →</button>
+      </div>
+      <div id="pool-step-grid" class="pool-grid" style="background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;display:none"></div>
+    </div>
+
+    <!-- STEP: CONFIG -->
+    <div class="step" id="step-config">
+      <div class="s-title">configuración del modelo</div>
+      <div class="s-sub">Ajusta los pesos de las dimensiones y parámetros del algoritmo sigmoid boost</div>
+
+      <!-- Pesos dimensiones -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">pesos por dimensión</div>
+        <div class="cfg-sec-sub">Define cuánto contribuye cada dimensión al score final. La suma debe ser exactamente 100%.</div>
+        <div id="cfg-dim-rows"></div>
+        <div class="cfg-total ok" id="cfg-total">
+          <div>
+            <div class="cfg-total-lbl" id="cfg-total-lbl" style="color:var(--s1c)">✓ Total correcto</div>
+            <div style="font-size:9px;color:var(--ink4);margin-top:2px">Suma de todos los pesos</div>
+          </div>
+          <div class="cfg-total-val" id="cfg-total-val">100%</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="cfg-apply" onclick="applyCfgWeights()">✓ Aplicar pesos</button>
+          <button class="cfg-apply cfg-reset" onclick="resetCfgWeights()">↺ Restaurar defecto</button>
+        </div>
+      </div>
+
+      <!-- Umbrales de scoring -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">umbrales de clasificación</div>
+        <div class="cfg-sec-sub">Define los valores mínimos de score para cada nivel de prioridad.</div>
+        <div class="cfg-row">
+          <div class="cfg-field">
+            <label>Prioritario Estratégico ≥</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-s1" value="8.5" min="1" max="10" step="0.1">
+            <div class="cfg-note">Score mínimo para clasificar como Prioritario</div>
+          </div>
+          <div class="cfg-field">
+            <label>Alta Prioridad ≥</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-s2" value="7.0" min="1" max="10" step="0.1">
+          </div>
+          <div class="cfg-field">
+            <label>Prioridad Media ≥</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-s3" value="5.5" min="1" max="10" step="0.1">
+          </div>
+          <div class="cfg-field">
+            <label>Baja Prioridad ≥</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-s4" value="4.0" min="1" max="10" step="0.1">
+            <div class="cfg-note">Por debajo = Descartar</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="cfg-apply" onclick="applyCfgThresholds()">✓ Aplicar umbrales</button>
+          <button class="cfg-apply cfg-reset" onclick="resetCfgThresholds()">↺ Restaurar defecto</button>
+        </div>
+      </div>
+
+      <!-- Umbrales pools -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">umbrales de nivel de proyecto (pools)</div>
+        <div class="cfg-sec-sub">Define las horas que separan proyectos Cortos, Medianos y Largos.</div>
+        <div class="cfg-row">
+          <div class="cfg-field">
+            <label>Corto — horas máximas</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-short" value="30" min="1">
+            <div class="cfg-note">Proyectos con menos de este tiempo = Corto</div>
+          </div>
+          <div class="cfg-field">
+            <label>Medio — horas máximas</label>
+            <input type="number" class="cfg-inp" id="cfg-thr-medium" value="100" min="1">
+            <div class="cfg-note">Entre Corto y este valor = Medio. Por encima = Largo</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="cfg-apply" onclick="applyCfgPools()">✓ Aplicar umbrales pools</button>
+          <button class="cfg-apply cfg-reset" onclick="resetCfgPools()">↺ Restaurar defecto</button>
+        </div>
+      </div>
+    </div>
 
     <!-- STEP SUMMARY -->
     <div class="step" id="step-summary">
@@ -1024,13 +1255,7 @@ function scColorHex(s) {
   if (s >= 4.0) return '#3A3A3A';
   return '#991B1B';
 }
-function clsf(s) {
-  if (s>=8.5) return {et:'PRIORITARIO ESTRATÉGICO',bg:'var(--green-lt)',c:'var(--green)',b:'rgba(22,101,52,.25)'};
-  if (s>=7.0) return {et:'ALTA PRIORIDAD',         bg:'var(--blue-lt)', c:'var(--blue)', b:'rgba(30,58,95,.2)'};
-  if (s>=5.5) return {et:'PRIORIDAD MEDIA',         bg:'var(--amber-lt)',c:'var(--amber)',b:'rgba(146,64,14,.2)'};
-  if (s>=4.0) return {et:'BAJA PRIORIDAD',          bg:'var(--gray-lt)', c:'var(--gray)', b:'rgba(55,65,81,.2)'};
-  return           {et:'DESCARTAR / REPLANTEAR',    bg:'var(--red-lt)',  c:'var(--red)',  b:'rgba(153,27,27,.2)'};
-}
+// clsf() defined in wizard block with dynamic scoreThr
 function recf(s, autoP, af, regDays) {
   let extra = '';
   if (af > 1.05) extra = ` El factor antigüedad (×${af.toFixed(2)}) ha elevado el score base en ${((af-1)*100).toFixed(0)}%.`;
@@ -2067,27 +2292,63 @@ function showRecalcBar(cid, did) {
 let currentStep = 0;
 let radarChart = null;
 
+// Dynamic scoring thresholds (configurable)
+let scoreThr = {s1:8.5, s2:7.0, s3:5.5, s4:4.0};
+
+function clsf(s) {
+  if (s>=scoreThr.s1) return {et:'PRIORITARIO ESTRATÉGICO',bg:'var(--s1t)',c:'var(--s1c)',b:'rgba(10,82,40,.2)'};
+  if (s>=scoreThr.s2) return {et:'ALTA PRIORIDAD',         bg:'var(--s2t)',c:'var(--s2c)',b:'rgba(26,58,110,.2)'};
+  if (s>=scoreThr.s3) return {et:'PRIORIDAD MEDIA',         bg:'var(--s3t)',c:'var(--s3c)',b:'rgba(122,74,0,.2)'};
+  if (s>=scoreThr.s4) return {et:'BAJA PRIORIDAD',          bg:'var(--s4t)',c:'var(--s4c)',b:'rgba(58,66,72,.18)'};
+  return               {et:'DESCARTAR / REPLANTEAR',        bg:'var(--d1t)',c:'var(--d1)', b:'rgba(204,31,38,.2)'};
+}
+
 function goStep(t) {
-  const idx = (t === 'summary') ? 7 : parseInt(t);
+  const specialSteps = ['summary','charts','pools','config'];
+  const isSpecial = specialSteps.includes(t);
+  const idx = isSpecial ? t : parseInt(t);
+
   document.querySelectorAll('.step').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.ndot').forEach((n, i) => {
-    n.classList.toggle('active', i + 1 === idx);
-    n.classList.toggle('done', i + 1 < idx && idx !== 7);
+  // Clear all nav active states
+  document.querySelectorAll('.ndot').forEach((n,i) => {
+    n.classList.toggle('active', !isSpecial && i+1===idx);
+    n.classList.toggle('done', !isSpecial && i+1<idx);
   });
-  if (idx === 7) {
+  ['nav-sum','nav-charts','nav-pools','nav-config'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+
+  if (t === 'summary') {
     document.getElementById('step-summary').classList.add('on');
-    document.querySelectorAll('.ndot').forEach(n => n.classList.remove('active'));
     document.getElementById('nav-sum').classList.add('active');
+    document.querySelectorAll('.ndot').forEach(n => n.classList.remove('active'));
     updSummary();
+  } else if (t === 'charts') {
+    document.getElementById('step-charts').classList.add('on');
+    document.getElementById('nav-charts').classList.add('active');
+    document.querySelectorAll('.ndot').forEach(n => n.classList.remove('active'));
+    renderChartsStep();
+  } else if (t === 'pools') {
+    document.getElementById('step-pools').classList.add('on');
+    document.getElementById('nav-pools').classList.add('active');
+    document.querySelectorAll('.ndot').forEach(n => n.classList.remove('active'));
+    renderPoolsStep();
+  } else if (t === 'config') {
+    document.getElementById('step-config').classList.add('on');
+    document.getElementById('nav-config').classList.add('active');
+    document.querySelectorAll('.ndot').forEach(n => n.classList.remove('active'));
+    renderCfgDimRows();
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');
     document.getElementById('nav-sum').classList.remove('active');
   }
-  currentStep = idx;
+
+  currentStep = isSpecial ? t : idx;
   updateProg();
-  updateWizHeader(idx);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateWizHeader(isSpecial ? t : idx);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function stepNav(dir) {
@@ -2097,7 +2358,9 @@ function stepNav(dir) {
 }
 
 function updateProg() {
-  const pct = currentStep === 7 ? 100 : Math.round((currentStep / 7) * 100);
+  const pct = (currentStep==='summary'||currentStep===7) ? 100 :
+              (currentStep==='charts'||currentStep==='pools'||currentStep==='config') ? 100 :
+              Math.round((parseInt(currentStep)||0)/7*100);
   const el = document.getElementById('wiz-prog');
   if (el) el.style.width = pct + '%';
 }
@@ -2136,6 +2399,31 @@ function updateWizHeader(step) {
     btnNext.textContent = '↺ nueva evaluación';
     btnNext.className = 'wb fin';
     btnNext.onclick = () => resetAll();
+  } else if (step==='charts') {
+    badge.style.cssText='background:#EEF3FC;font-size:16px;'; badge.textContent='📊';
+    nameEl.textContent='gráficas de cartera';
+    metaEl.textContent='visualización y posicionamiento estratégico · '+portfolioData.length+' proyectos';
+    scoreEl.textContent=portfolioData.length||'—'; scoreEl.style.color='var(--ink4)';
+    btnPrev.style.visibility='hidden';
+    btnNext.textContent='ver resumen →'; btnNext.className='wb next';
+    btnNext.onclick=()=>goStep('summary');
+  } else if (step==='pools') {
+    badge.style.cssText='background:var(--d4t);font-size:16px;'; badge.textContent='🗂';
+    nameEl.textContent='clasificación por nivel';
+    metaEl.textContent='proyectos agrupados por estimación de horas';
+    const estim=portfolioData.filter(p=>p.horas!=null).length;
+    scoreEl.textContent=estim||'—'; scoreEl.style.color='var(--ink4)';
+    btnPrev.style.visibility='hidden';
+    btnNext.textContent='ver config →'; btnNext.className='wb next';
+    btnNext.onclick=()=>goStep('config');
+  } else if (step==='config') {
+    badge.style.cssText='background:var(--surf);font-size:16px;'; badge.textContent='⚙';
+    nameEl.textContent='configuración del modelo';
+    metaEl.textContent='pesos · umbrales de scoring · umbrales de pools';
+    scoreEl.textContent='—'; scoreEl.style.color='var(--ink4)';
+    btnPrev.style.visibility='hidden';
+    btnNext.textContent='ver resumen →'; btnNext.className='wb next';
+    btnNext.onclick=()=>goStep('summary');
   } else {
     const d = DIMS[step - 1];
     badge.style.cssText = `background:${DT[step-1]};color:${DC[step-1]};font-size:10px;font-weight:800;`;
@@ -2206,6 +2494,312 @@ function renderDimSteps() {
           </div>`).join('')}
       </div>
     </div>`).join('');
+}
+
+
+/* ── CHARTS STEP ──────────────────────────────────── */
+const chart2Inst = {};
+let curChart2 = 'bubble';
+
+function switchChart(name, btn) {
+  curChart2 = name;
+  // Update tabs in BOTH panels (summary and charts step)
+  document.querySelectorAll('.chart-tabs .ctab').forEach(b => b.classList.remove('on'));
+  if (btn) {
+    // Activate matching tabs in both panels
+    document.querySelectorAll('.chart-tabs .ctab').forEach(b => {
+      if (b.textContent.trim() === btn.textContent.trim()) b.classList.add('on');
+    });
+  }
+  // Hide all chart sections in both panels
+  document.querySelectorAll('.csec').forEach(s => s.classList.remove('on'));
+  // Show in summary panel
+  const s1 = document.getElementById('chart-'+name); if(s1) s1.classList.add('on');
+  // Show in charts step panel
+  const s2 = document.getElementById('chart2-'+name); if(s2) s2.classList.add('on');
+  renderChartsStep();
+}
+
+function renderChartsStep() {
+  if (!portfolioData.length) {
+    document.getElementById('charts-step-empty').style.display='block';
+    document.getElementById('charts-step-content').style.display='none';
+    return;
+  }
+  document.getElementById('charts-step-empty').style.display='none';
+  document.getElementById('charts-step-content').style.display='block';
+
+  // Render chart in chart2 canvas
+  const canvasId = 'c2-' + curChart2;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  if (chart2Inst[curChart2]) { chart2Inst[curChart2].destroy(); delete chart2Inst[curChart2]; }
+
+  const CLS_BG={
+    'PRIORITARIO ESTRATÉGICO (D1)':'rgba(204,31,38,.8)',
+    'PRIORITARIO ESTRATÉGICO':'rgba(10,82,40,.85)',
+    'ALTA PRIORIDAD':'rgba(26,58,110,.8)',
+    'PRIORIDAD MEDIA':'rgba(122,74,0,.75)',
+    'BAJA PRIORIDAD':'rgba(58,66,72,.6)',
+    'DESCARTAR / REPLANTEAR':'rgba(138,26,32,.6)',
+  };
+  const CLS_BORDER={
+    'PRIORITARIO ESTRATÉGICO (D1)':'#CC1F26',
+    'PRIORITARIO ESTRATÉGICO':'#0A5228',
+    'ALTA PRIORIDAD':'#1A3A6E',
+    'PRIORIDAD MEDIA':'#7A4A00',
+    'BAJA PRIORIDAD':'#3A4248',
+    'DESCARTAR / REPLANTEAR':'#8A1A20',
+  };
+  const FONT = {family:'DM Sans',size:10};
+  const sn = p => p.nom.length>32 ? p.nom.substring(0,30)+'…' : p.nom;
+
+  if (curChart2==='bubble') {
+    const allCls=[...new Set(portfolioData.map(p=>clsf(p.sf).et))];
+    chart2Inst.bubble = new Chart(canvas, {type:'bubble',
+      data:{datasets:allCls.map(cls=>({label:cls,
+        data:portfolioData.filter(p=>clsf(p.sf).et===cls).map(p=>({
+          x:+p.dimScores[2].toFixed(2),y:+p.dimScores[0].toFixed(2),
+          r:Math.max(5,p.dimScores[1]*2.5),nom:sn(p),score:p.sf,area:p.area||''})),
+        backgroundColor:CLS_BG[cls]||'rgba(100,100,100,.6)',
+        borderColor:CLS_BORDER[cls]||'#888',borderWidth:1.5}))},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{font:FONT,boxWidth:10,padding:10}},
+          tooltip:{callbacks:{label:d=>[d.raw.nom,'Score: '+d.raw.score.toFixed(2)+' · '+d.raw.area,'D3: '+d.raw.x+' · D1: '+d.raw.y]}}},
+        scales:{x:{title:{display:true,text:'D3 — Valor de negocio →',font:FONT,color:'#888'},min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}},
+                y:{title:{display:true,text:'D1 — Compliance / Riesgo ↑',font:FONT,color:'#888'},min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}}}}});
+  } else if (curChart2==='bars') {
+    const top=[...portfolioData].sort((a,b)=>b.sf-a.sf).slice(0,30);
+    chart2Inst.bars = new Chart(canvas, {type:'bar',
+      data:{labels:top.map(p=>sn(p)),
+        datasets:[{label:'Score',data:top.map(p=>+p.sf.toFixed(2)),
+          backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+          borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
+          borderWidth:1,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>`Score: ${d.raw} — ${clsf(d.raw).et}`}}},
+        scales:{x:{min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}},
+                y:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}}}}});
+  } else if (curChart2==='dept') {
+    const byArea={};
+    portfolioData.forEach(p=>{const a=p.area||'Sin área';if(!byArea[a])byArea[a]={sum:0,n:0};byArea[a].sum+=p.sf;byArea[a].n++;});
+    const sorted=Object.entries(byArea).sort((a,b)=>b[1].sum/b[1].n-a[1].sum/a[1].n);
+    chart2Inst.dept = new Chart(canvas, {type:'bar',
+      data:{labels:sorted.map(([a])=>a),datasets:[
+        {label:'Score medio',data:sorted.map(([,v])=>+(v.sum/v.n).toFixed(2)),backgroundColor:'rgba(196,151,74,.75)',borderColor:'#C4974A',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+        {label:'Nº proyectos',data:sorted.map(([,v])=>v.n),type:'line',borderColor:'rgba(26,58,110,.7)',backgroundColor:'rgba(26,58,110,.1)',borderWidth:2,pointRadius:4,yAxisID:'y2'}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{font:FONT,boxWidth:10}}},
+        scales:{y:{title:{display:true,text:'Score medio',font:FONT},min:0,max:10,ticks:{font:FONT}},
+                y2:{position:'right',title:{display:true,text:'Nº proyectos',font:FONT},grid:{display:false},ticks:{font:FONT}},
+                x:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}}}}});
+  } else if (curChart2==='scatter') {
+    chart2Inst.scatter = new Chart(canvas, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:portfolioData.map(p=>({x:+p.dimScores[4].toFixed(2),y:+p.dimScores[2].toFixed(2),r:Math.max(5,p.dimScores[0]*2),nom:sn(p),score:p.sf})),
+        backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+        borderColor:'rgba(255,255,255,.5)',borderWidth:1.5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D5: '+d.raw.x+' · D3: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        scales:{x:{title:{display:true,text:'D5 — Facilidad de implantación →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
+                y:{title:{display:true,text:'D3 — Valor de negocio ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  } else if (curChart2==='heat') {
+    chart2Inst.heat = new Chart(canvas, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:portfolioData.map(p=>({x:+p.dimScores[0].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.sf*1.5),nom:sn(p),score:p.sf})),
+        backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+        borderColor:'rgba(255,255,255,.4)',borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D1: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        scales:{x:{title:{display:true,text:'D1 — Compliance / Riesgo →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
+                y:{title:{display:true,text:'D2 — Prioridad Estratégica ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  } else if (curChart2==='quad') {
+    chart2Inst.quad = new Chart(canvas, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:portfolioData.map(p=>({x:+p.dimScores[2].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.dimScores[0]*1.8),nom:sn(p),score:p.sf})),
+        backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
+        borderColor:'rgba(255,255,255,.4)',borderWidth:1.5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D3: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        scales:{x:{title:{display:true,text:'D3 — ROI / Valor →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
+                y:{title:{display:true,text:'D2 — Urgencia Estratégica ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  }
+}
+
+/* ── POOLS STEP ───────────────────────────────────── */
+function syncThresholds(which, val) {
+  const s = parseInt(document.getElementById('thr-s')?.value||30);
+  const m = parseInt(document.getElementById('thr-m')?.value||100);
+  const s2 = parseInt(document.getElementById('thr-s2')?.value||30);
+  const m2 = parseInt(document.getElementById('thr-m2')?.value||100);
+  // Sync both threshold inputs
+  if (which==='s') {
+    const el=document.getElementById('thr-s'); if(el) el.value=val;
+    const el2=document.getElementById('thr-s2'); if(el2) el2.value=val;
+  } else {
+    const el=document.getElementById('thr-m'); if(el) el.value=val;
+    const el2=document.getElementById('thr-m2'); if(el2) el2.value=val;
+  }
+  const sv=parseInt(document.getElementById('thr-s')?.value||30);
+  const mv=parseInt(document.getElementById('thr-m')?.value||100);
+  const lbl=document.getElementById('thr-l-lbl'); if(lbl) lbl.textContent=mv+'h';
+  const lbl2=document.getElementById('thr-l-lbl2'); if(lbl2) lbl2.textContent=mv+'h';
+  // Update pool config visual ranges
+  const pcvSr=document.getElementById('pcv-s-range'); if(pcvSr) pcvSr.textContent=sv;
+  const pcvMr=document.getElementById('pcv-m-range'); if(pcvMr) pcvMr.textContent=sv+'–'+mv;
+  const pcvLr=document.getElementById('pcv-l-range'); if(pcvLr) pcvLr.textContent=mv;
+  renderPoolsStep();
+  if(portfolioData.length) renderPortfolio();
+}
+function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); }
+
+function renderPoolsStep() {
+  const thrS=parseInt(document.getElementById('thr-s')?.value||30);
+  const thrM=parseInt(document.getElementById('thr-m')?.value||100);
+  const pools={L:[],M:[],S:[],null:[]};
+  portfolioData.forEach(p=>{
+    const h=p.horas!=null?parseFloat(p.horas):null;
+    const pool=h===null?null:h<thrS?'S':h<thrM?'M':'L';
+    (pools[pool]||pools[null]).push(p);
+  });
+  ['L','M','S'].forEach(k=>pools[k].sort((a,b)=>b.sf-a.sf));
+  // Update counts in visual cards
+  ['s','m','l'].forEach(k=>{
+    const el=document.getElementById('pcv-'+k+'-count');
+    if(el) el.textContent=pools[k.toUpperCase()]?.length||0;
+    const bar=document.getElementById('pcv-'+k+'-bar');
+    const total=portfolioData.length||1;
+    if(bar) bar.style.width=Math.round(((pools[k.toUpperCase()]?.length||0)/total)*100)+'%';
+  });
+  const empty=document.getElementById('pool-step-empty');
+  const grid=document.getElementById('pool-step-grid');
+  if(!portfolioData.length){if(empty)empty.style.display='block';if(grid)grid.style.display='none';return;}
+  if(empty)empty.style.display='none';if(grid)grid.style.display='grid';
+
+  const poolDefs=[
+    {k:'L',lbl:'Largos (≥'+thrM+'h)',sub:'Alta complejidad',bg:'#FEF0F1',c:'var(--d1)'},
+    {k:'M',lbl:'Medianos ('+thrS+'–'+thrM+'h)',sub:'Complejidad media',bg:'var(--d4t)',c:'var(--d4)'},
+    {k:'S',lbl:'Cortos (<'+thrS+'h)',sub:'Quick wins',bg:'var(--d3t)',c:'var(--d3)'},
+  ];
+  grid.innerHTML=poolDefs.map(pd=>{
+    const items=pools[pd.k];
+    const itemsHtml=items.length===0?'<div class="pool-empty">Sin proyectos en este pool</div>':
+      items.map(p=>{const cl=clsf(p.sf);return`<div class="pool-item">
+        <div><div class="pi-name" title="${p.nom}">${p.nom.substring(0,48)}</div>
+        <div class="pi-meta">${p.area||'—'}${p.horas?'·'+p.horas+'h':''}</div></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px;padding:1px 6px">${cl.et.split(' ')[0]}</span>
+          <span class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</span>
+        </div>
+      </div>`;}).join('');
+    return`<div class="pool-col">
+      <div class="pool-col-hd" style="background:${pd.bg}">
+        <div><div class="pool-tag" style="font-size:9px;color:${pd.c}">${pd.lbl}</div>
+        <div style="font-size:9px;color:${pd.c};opacity:.6;margin-top:2px">${pd.sub}</div></div>
+        <div class="pool-cnt-badge">${items.length}</div>
+      </div>
+      <div style="max-height:420px;overflow-y:auto">${itemsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── CONFIG STEP ──────────────────────────────────── */
+const DIM_CLR_LIST = ['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
+const DIM_BG_LIST  = ['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
+
+function renderCfgDimRows() {
+  const cont = document.getElementById('cfg-dim-rows');
+  if (!cont) return;
+  cont.innerHTML = DIMS.map((d,i) => `
+    <div class="dim-cfg-row">
+      <div class="dim-cfg-badge" style="background:${DIM_BG_LIST[i]};color:${DIM_CLR_LIST[i]}">${d.id}</div>
+      <div>
+        <div class="dim-cfg-name">${d.nom}</div>
+        <div class="dim-cfg-sub">Peso actual: ${Math.round(d.peso*100)}%</div>
+      </div>
+      <div class="dim-cfg-pct">
+        <input type="range" class="dim-cfg-slider" min="1" max="60" step="1"
+          value="${Math.round(d.peso*100)}" id="cfg-slider-${d.id}"
+          oninput="onCfgSlider('${d.id}',this.value)">
+        <input type="number" class="dim-cfg-val" min="1" max="60" step="1"
+          value="${Math.round(d.peso*100)}" id="cfg-val-${d.id}"
+          oninput="onCfgVal('${d.id}',this.value)">
+        <span style="font-size:11px;color:var(--ink3)">%</span>
+      </div>
+    </div>`).join('');
+  updateCfgTotal();
+}
+
+function onCfgSlider(id, val) {
+  const inp = document.getElementById('cfg-val-'+id);
+  if (inp) inp.value = val;
+  updateCfgTotal();
+}
+function onCfgVal(id, val) {
+  const sl = document.getElementById('cfg-slider-'+id);
+  if (sl) sl.value = val;
+  updateCfgTotal();
+}
+function updateCfgTotal() {
+  const total = DIMS.reduce((s,d)=>{
+    const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);
+    return s+(isNaN(v)?0:v);
+  },0);
+  const ok = total===100;
+  const el=document.getElementById('cfg-total'); if(el){el.className='cfg-total '+(ok?'ok':'err');}
+  const lbl=document.getElementById('cfg-total-lbl');
+  if(lbl){lbl.textContent=ok?'✓ Total correcto':'✗ Total incorrecto — debe ser 100%';lbl.style.color=ok?'var(--s1c)':'var(--d1)';}
+  const val=document.getElementById('cfg-total-val'); if(val) val.textContent=total+'%';
+  DIMS.forEach(d=>{
+    const inp=document.getElementById('cfg-val-'+d.id);
+    if(inp) inp.className='dim-cfg-val'+(ok?'':' err');
+  });
+}
+function applyCfgWeights() {
+  const total=DIMS.reduce((s,d)=>{const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);return s+(isNaN(v)?0:v);},0);
+  if(total!==100){toast('Los pesos deben sumar 100% (ahora suman '+total+'%)');return;}
+  DIMS.forEach(d=>{
+    const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);
+    d.peso=v/100;
+  });
+  renderWeightEditor();
+  if(portfolioData.length){portfolioData=portfolioData.map(p=>computeProj(p));renderPortfolio();}
+  upd();
+  toast('✓ Pesos aplicados — recalculando scoring...');
+}
+function resetCfgWeights() {
+  const defs=[0.30,0.20,0.20,0.12,0.10,0.08];
+  DIMS.forEach((d,i)=>{d.peso=defs[i];const sl=document.getElementById('cfg-slider-'+d.id);const vl=document.getElementById('cfg-val-'+d.id);if(sl)sl.value=Math.round(defs[i]*100);if(vl)vl.value=Math.round(defs[i]*100);});
+  updateCfgTotal(); applyCfgWeights();
+}
+function applyCfgThresholds() {
+  scoreThr.s1=parseFloat(document.getElementById('cfg-thr-s1')?.value||8.5);
+  scoreThr.s2=parseFloat(document.getElementById('cfg-thr-s2')?.value||7.0);
+  scoreThr.s3=parseFloat(document.getElementById('cfg-thr-s3')?.value||5.5);
+  scoreThr.s4=parseFloat(document.getElementById('cfg-thr-s4')?.value||4.0);
+  if(portfolioData.length){portfolioData=portfolioData.map(p=>computeProj(p));renderPortfolio();}
+  upd(); toast('✓ Umbrales de clasificación actualizados');
+}
+function resetCfgThresholds() {
+  scoreThr={s1:8.5,s2:7.0,s3:5.5,s4:4.0};
+  ['s1','s2','s3','s4'].forEach(k=>{const el=document.getElementById('cfg-thr-'+k);if(el)el.value=scoreThr[k];});
+  toast('Umbrales restaurados a valores por defecto');
+}
+function applyCfgPools() {
+  const s=parseInt(document.getElementById('cfg-thr-short')?.value||30);
+  const m=parseInt(document.getElementById('cfg-thr-medium')?.value||100);
+  const thrS=document.getElementById('thr-s'); if(thrS) thrS.value=s;
+  const thrS2=document.getElementById('thr-s2'); if(thrS2) thrS2.value=s;
+  const thrM=document.getElementById('thr-m'); if(thrM) thrM.value=m;
+  const thrM2=document.getElementById('thr-m2'); if(thrM2) thrM2.value=m;
+  syncThresholds('s',s); syncThresholds('m',m);
+  toast('✓ Umbrales de pools aplicados');
+}
+function resetCfgPools() {
+  ['cfg-thr-short','thr-s','thr-s2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=30;});
+  ['cfg-thr-medium','thr-m','thr-m2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=100;});
+  syncThresholds('s',30); toast('Pools restaurados');
 }
 
 /* upd() — clean version, only touches DOM that exists in wizard */
@@ -2372,6 +2966,379 @@ function handleLandingExcel(inp) {
     // Go to summary to show portfolio
     goStep('summary');
   }, 100);
+}
+
+
+/* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
+const NAV_PAGES = ['charts','pools','config'];
+
+// Patch goStep to handle new pages
+const _origGoStep = goStep;
+function goStep(t) {
+  // Deactivate icon nav buttons
+  ['nav-charts','nav-pools','nav-config'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+
+  if (NAV_PAGES.includes(t)) {
+    document.querySelectorAll('.step').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.ndot').forEach(n => { n.classList.remove('active'); n.classList.remove('done'); });
+    document.getElementById('nav-sum')?.classList.remove('active');
+    const panel = document.getElementById('step-' + t);
+    if (panel) panel.classList.add('on');
+    const navEl = document.getElementById('nav-' + t);
+    if (navEl) navEl.classList.add('active');
+    currentStep = t;
+    updateProg();
+    updateWizHeader(t);
+    window.scrollTo({top:0, behavior:'smooth'});
+
+    // Refresh content
+    if (t === 'charts') refreshChartsStep();
+    if (t === 'pools')  refreshPoolsStep();
+    if (t === 'config') renderConfigStep();
+  } else {
+    _origGoStep(t);
+  }
+}
+
+/* ═══ CHARTS STEP ═══════════════════════════════════════ */
+const chartInst2 = {};
+
+function refreshChartsStep() {
+  const empty = document.getElementById('charts-step-empty');
+  const content = document.getElementById('charts-step-content');
+  if (!portfolioData.length) {
+    if(empty) empty.style.display='block';
+    if(content) content.style.display='none';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  if(content) content.style.display='block';
+  renderCharts2();
+}
+
+function switchChart(name, btn) {
+  // Works for both summary charts and charts-step
+  const prefix = btn?.closest('#step-charts') ? 'chart2-' : 'chart-';
+  document.querySelectorAll('.csec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.ctab').forEach(b => b.classList.remove('on'));
+  const sec = document.getElementById(prefix + name);
+  if (sec) sec.classList.add('on');
+  if (btn) btn.classList.add('on');
+  if (prefix === 'chart2-') renderCharts2(name);
+  else renderCharts();
+}
+
+
+const CLS_BG2 = {
+  'PRIORITARIO ESTRATÉGICO (D1)':'rgba(204,31,38,.8)',
+  'PRIORITARIO ESTRATÉGICO':'rgba(10,82,40,.85)',
+  'ALTA PRIORIDAD':'rgba(26,58,110,.8)',
+  'PRIORIDAD MEDIA':'rgba(192,120,0,.75)',
+  'BAJA PRIORIDAD':'rgba(55,65,81,.6)',
+  'DESCARTAR':'rgba(127,29,29,.6)',
+};
+
+function sn(nom){ const m=nom.match(/^(\d+)\s*[-–]\s*(.{0,26})/); return m?m[1]+' '+m[2].trim():nom.substring(0,26); }
+
+function renderCharts2(name) {
+  const active = name || document.querySelector('#step-charts .csec.on')?.id?.replace('chart2-','') || 'bubble';
+  const p = portfolioData;
+
+  if (active === 'bubble') {
+    const id = 'c2-bubble';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const allCls = [...new Set(p.map(x => clsf(x.sf).et))];
+    const datasets = allCls.map(cls => ({
+      label: cls,
+      data: p.filter(x => clsf(x.sf).et===cls).map(x => ({
+        x: +x.dimScores[2].toFixed(2), y: +x.dimScores[0].toFixed(2),
+        r: Math.max(5, x.dimScores[1]*2.2),
+        nom: sn(x.nom), score: x.sf, area: x.area||''
+      })),
+      backgroundColor: CLS_BG2[cls]||'rgba(196,151,74,.7)',
+      borderColor:'rgba(255,255,255,.5)', borderWidth:1.5
+    }));
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bubble', data:{datasets},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{font:CHART_FONT,boxWidth:10,padding:10}},
+          tooltip:{callbacks:{label:d=>[d.raw.nom,'Score: '+d.raw.score.toFixed(2)+' · '+d.raw.area,'D3 Valor: '+d.raw.x+' · D1 Compliance: '+d.raw.y]}}},
+        scales:{x:{title:{display:true,text:'D3 — Valor de Negocio →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{title:{display:true,text:'D1 — Compliance / Riesgo ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  }
+  if (active === 'bars') {
+    const id = 'c2-bars';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const top = [...p].sort((a,b)=>b.sf-a.sf).slice(0,30);
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bar',
+      data:{labels:top.map(x=>sn(x.nom)), datasets:[{label:'Score final',
+        data:top.map(x=>+x.sf.toFixed(2)),
+        backgroundColor:top.map(x=>CLS_BG2[clsf(x.sf).et]||'rgba(196,151,74,.7)'),
+        borderRadius:3}]},
+      options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}}}}});
+  }
+  if (active === 'dept') {
+    const id = 'c2-dept';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const byArea = {};
+    p.forEach(x=>{ const a=x.area||'Sin área'; if(!byArea[a]) byArea[a]={sum:0,n:0}; byArea[a].sum+=x.sf; byArea[a].n++; });
+    const sorted = Object.entries(byArea).sort((a,b)=>b[1].sum/b[1].n-a[1].sum/a[1].n);
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bar',
+      data:{labels:sorted.map(([a])=>a), datasets:[
+        {label:'Score medio',data:sorted.map(([,v])=>+(v.sum/v.n).toFixed(2)),backgroundColor:'rgba(196,151,74,.75)',borderColor:'#C4974A',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+        {label:'Nº proyectos',data:sorted.map(([,v])=>v.n),type:'line',borderColor:'rgba(26,58,110,.7)',backgroundColor:'rgba(26,58,110,.1)',borderWidth:2,pointRadius:4,yAxisID:'y2'}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{font:CHART_FONT,boxWidth:10}}},
+        scales:{y:{title:{display:true,text:'Score medio',font:CHART_FONT},min:0,max:10,ticks:{font:CHART_FONT}},
+          y2:{position:'right',title:{display:true,text:'Nº proyectos',font:CHART_FONT},grid:{display:false},ticks:{font:CHART_FONT}},
+          x:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}}}}});
+  }
+  if (active === 'scatter') {
+    const id = 'c2-scatter';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:p.map(x=>({x:+x.dimScores[4].toFixed(2),y:+x.dimScores[2].toFixed(2),r:Math.max(4,x.dimScores[0]*1.8),nom:sn(x.nom),score:x.sf})),
+        backgroundColor:p.map(x=>CLS_BG2[clsf(x.sf).et]||'rgba(196,151,74,.7)'),borderColor:'rgba(255,255,255,.4)',borderWidth:1.5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D5: '+d.raw.x+' · D3: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        scales:{x:{title:{display:true,text:'D5 — Facilidad de implantación →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{title:{display:true,text:'D3 — Valor de negocio ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  }
+  if (active === 'heat') {
+    const id = 'c2-heat';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:p.map(x=>({x:+x.dimScores[0].toFixed(2),y:+x.dimScores[1].toFixed(2),r:Math.max(4,x.sf*1.4),nom:sn(x.nom),score:x.sf})),
+        backgroundColor:p.map(x=>CLS_BG2[clsf(x.sf).et]||'rgba(196,151,74,.7)'),borderColor:'rgba(255,255,255,.4)',borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D1: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        scales:{x:{title:{display:true,text:'D1 — Compliance →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{title:{display:true,text:'D2 — Estrategia ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  }
+  if (active === 'quad') {
+    const id = 'c2-quad';
+    if (chartInst2[id]) { chartInst2[id].destroy(); delete chartInst2[id]; }
+    const cv = document.getElementById(id); if(!cv) return;
+    chartInst2[id] = new Chart(cv, {type:'bubble',
+      data:{datasets:[{label:'Proyectos',
+        data:p.map(x=>({x:+x.dimScores[2].toFixed(2),y:+x.dimScores[1].toFixed(2),r:Math.max(4,x.dimScores[0]*1.6),nom:sn(x.nom),score:x.sf,cls:clsf(x.sf).et})),
+        backgroundColor:p.map(x=>CLS_BG2[clsf(x.sf).et]||'rgba(196,151,74,.7)'),borderColor:'rgba(255,255,255,.4)',borderWidth:1.5}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D3: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)+' · '+d.raw.cls]}}},
+        scales:{x:{title:{display:true,text:'D3 — ROI / Valor →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
+          y:{title:{display:true,text:'D2 — Urgencia Estratégica ↑',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
+  }
+}
+
+/* ═══ POOLS STEP ════════════════════════════════════════ */
+function syncThresholds(which, val) {
+  // Sync thr-s/thr-m inputs between summary and pools step
+  const v = parseInt(val) || (which==='s'?30:100);
+  if (which === 's') {
+    const a=document.getElementById('thr-s'), b=document.getElementById('thr-s2');
+    if(a) a.value=v; if(b) b.value=v;
+  } else {
+    const a=document.getElementById('thr-m'), b=document.getElementById('thr-m2');
+    if(a) a.value=v; if(b) b.value=v;
+    const lbl=document.getElementById('thr-l-lbl'); if(lbl) lbl.textContent=v+'h';
+    const lbl2=document.getElementById('thr-l-lbl2'); if(lbl2) lbl2.textContent=v+'h';
+  }
+  updThresholds();
+  refreshPoolsStep();
+}
+
+function refreshPoolsStep() {
+  const thr = getThr();
+  // Update range labels
+  const setSafe = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  setSafe('pcv-s-range', thr.s);
+  setSafe('pcv-m-range', thr.s+'–'+thr.m);
+  setSafe('pcv-l-range', thr.m);
+  // Sync inputs
+  const ts=document.getElementById('thr-s2'); if(ts) ts.value=thr.s;
+  const tm=document.getElementById('thr-m2'); if(tm) tm.value=thr.m;
+  const tll=document.getElementById('thr-l-lbl2'); if(tll) tll.textContent=thr.m+'h';
+
+  const empty = document.getElementById('pool-step-empty');
+  const grid  = document.getElementById('pool-step-grid');
+  if (!portfolioData.length) {
+    if(empty) empty.style.display='block';
+    if(grid)  grid.style.display='none';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  if(grid)  grid.style.display='grid';
+
+  // Count per pool
+  const counts = {S:0,M:0,L:0,null:0};
+  portfolioData.forEach(p => { const pool=getPool(p); counts[pool||'null']++; });
+  setSafe('pcv-s-count', counts.S);
+  setSafe('pcv-m-count', counts.M);
+  setSafe('pcv-l-count', counts.L);
+
+  // Render pools grid (reuse renderPools logic but target pool-step-grid)
+  const pools = {L:[],M:[],S:[]};
+  portfolioData.forEach(p => { const pool=getPool(p); if(pool) pools[pool].push(p); });
+  ['L','M','S'].forEach(k => pools[k].sort((a,b)=>b.sf-a.sf));
+  const defs=[
+    {key:'L',label:'Largo (≥'+thr.m+'h)',sub:'Alta complejidad técnica',cls:'pool-L',color:'var(--d1)',bg:'var(--d1t)'},
+    {key:'M',label:'Medio ('+thr.s+'–'+thr.m+'h)',sub:'Complejidad media',cls:'pool-M',color:'var(--d4)',bg:'var(--d4t)'},
+    {key:'S',label:'Corto (<'+thr.s+'h)',sub:'Quick wins',cls:'pool-S',color:'var(--d3)',bg:'var(--d3t)'},
+  ];
+  grid.innerHTML = defs.map(pd => {
+    const items = pools[pd.key];
+    return `<div class="pool-col">
+      <div class="pool-col-hd" style="background:${pd.bg}">
+        <div>
+          <div class="pool-tag ${pd.cls}" style="font-size:9px">${pd.label}</div>
+          <div style="font-size:9px;color:${pd.color};opacity:.7;margin-top:3px">${pd.sub}</div>
+        </div>
+        <span class="pool-cnt-badge">${items.length}</span>
+      </div>
+      <div style="max-height:480px;overflow-y:auto">
+        ${items.length===0
+          ? '<div class="pool-empty">Sin proyectos</div>'
+          : items.map(p=>{
+              const cl=clsf(p.sf);
+              return `<div class="pool-item">
+                <div><div class="pi-name" title="${p.nom}">${p.nom.substring(0,50)}</div>
+                  <div class="pi-meta">${p.area||'—'} · ${p.horas!=null?p.horas+'h':'sin estimar'}</div></div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px">${cl.et.split(' ')[0]}</span>
+                  <div class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</div>
+                </div>
+              </div>`;
+            }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══ CONFIG STEP ═══════════════════════════════════════ */
+const DIM_COLORS_HEX = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+const DIM_TONES_HEX  = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
+let cfgWeights = DIMS.map(d => Math.round(d.peso*100));
+
+function renderConfigStep() {
+  cfgWeights = DIMS.map(d => Math.round(d.peso*100));
+  const cont = document.getElementById('cfg-dim-rows'); if(!cont) return;
+  cont.innerHTML = DIMS.map((d,i) => `
+    <div class="dim-cfg-row">
+      <div class="dim-cfg-badge" style="background:${DIM_TONES_HEX[i]};color:${DIM_COLORS_HEX[i]}">${d.id}</div>
+      <div>
+        <div class="dim-cfg-name">${d.nom.split(',')[0]}</div>
+        <div class="dim-cfg-sub">${d.criterios.length} criterios</div>
+      </div>
+      <div class="dim-cfg-pct">
+        <input type="range" class="dim-cfg-slider" min="1" max="60" step="1"
+          value="${cfgWeights[i]}" id="cfg-sl-${d.id}"
+          oninput="setCfgWeight(${i},this.value)">
+        <input type="number" class="dim-cfg-val" min="1" max="99" value="${cfgWeights[i]}"
+          id="cfg-inp-${d.id}" oninput="setCfgWeight(${i},this.value)">
+        <span style="font-size:10px;color:var(--ink3)">%</span>
+      </div>
+    </div>`).join('');
+  updateCfgTotal();
+  // Sync threshold inputs
+  const t1=document.getElementById('cfg-thr-short'); if(t1) t1.value=getThr().s;
+  const t2=document.getElementById('cfg-thr-medium'); if(t2) t2.value=getThr().m;
+}
+
+function setCfgWeight(i, val) {
+  const v = parseInt(val)||1;
+  cfgWeights[i] = v;
+  const sl=document.getElementById('cfg-sl-'+DIMS[i].id); if(sl) sl.value=v;
+  const inp=document.getElementById('cfg-inp-'+DIMS[i].id); if(inp) inp.value=v;
+  updateCfgTotal();
+}
+
+function updateCfgTotal() {
+  const total = cfgWeights.reduce((a,b)=>a+b,0);
+  const ok = total===100;
+  const totalEl = document.getElementById('cfg-total');
+  const lbl = document.getElementById('cfg-total-lbl');
+  const val = document.getElementById('cfg-total-val');
+  if(totalEl) { totalEl.className='cfg-total '+(ok?'ok':'err'); }
+  if(lbl) { lbl.textContent=ok?'✓ Total correcto':'✗ Suma incorrecta'; lbl.style.color=ok?'var(--s1c)':'var(--d1)'; }
+  if(val) val.textContent=total+'%';
+  // Mark err on inputs
+  DIMS.forEach((d,i) => {
+    const inp=document.getElementById('cfg-inp-'+d.id);
+    if(inp) inp.className='dim-cfg-val'+(total!==100?' err':'');
+  });
+}
+
+function applyCfgWeights() {
+  const total = cfgWeights.reduce((a,b)=>a+b,0);
+  if (total !== 100) { toast('La suma debe ser 100%. Actualmente: '+total+'%'); return; }
+  DIMS.forEach((d,i) => { d.peso = cfgWeights[i]/100; });
+  // Update summary weight editor too
+  renderWeightEditor();
+  upd();
+  if (portfolioData.length) { renderPortfolio(); renderCharts2(); }
+  toast('✓ Pesos aplicados al modelo');
+}
+
+function resetCfgWeights() {
+  const def=[30,20,20,12,10,8];
+  DIMS.forEach((d,i) => { d.peso=def[i]/100; cfgWeights[i]=def[i]; });
+  renderConfigStep(); renderWeightEditor(); upd();
+  toast('↺ Pesos restaurados');
+}
+
+
+
+/* ═══ PATCH updateWizHeader for new pages ═══════════════ */
+const _orig_updateWizHeader = updateWizHeader;
+function updateWizHeader(step) {
+  const badge=document.getElementById('wh-badge');
+  const nameEl=document.getElementById('wh-name');
+  const metaEl=document.getElementById('wh-meta');
+  const scoreEl=document.getElementById('wh-score');
+  const btnPrev=document.getElementById('btn-prev');
+  const btnNext=document.getElementById('btn-next');
+
+  if (step==='charts') {
+    if(badge){badge.style.cssText='background:#EEF3FC;font-size:16px;';badge.textContent='📊';}
+    if(nameEl) nameEl.textContent='gráficas de cartera';
+    if(metaEl) metaEl.textContent=portfolioData.length+' proyectos · visualización y posicionamiento';
+    if(scoreEl){scoreEl.textContent=portfolioData.length||'—';scoreEl.style.color='var(--ink)';}
+    if(btnPrev){btnPrev.style.visibility='hidden';}
+    if(btnNext){btnNext.textContent='ir al resumen →';btnNext.className='wb next';btnNext.onclick=()=>goStep('summary');}
+    return;
+  }
+  if (step==='pools') {
+    if(badge){badge.style.cssText='background:#FAF5E6;font-size:16px;';badge.textContent='🗂';}
+    if(nameEl) nameEl.textContent='clasificación por nivel';
+    if(metaEl) metaEl.textContent='pools de ejecución · estimación técnica de horas';
+    const counts={L:0,M:0,S:0}; portfolioData.forEach(p=>{const pool=getPool(p);if(pool)counts[pool]++;});
+    if(scoreEl){scoreEl.textContent=counts.L+'/'+counts.M+'/'+counts.S;scoreEl.style.color='var(--ink)';scoreEl.style.fontSize='22px';}
+    if(btnPrev){btnPrev.style.visibility='hidden';}
+    if(btnNext){btnNext.textContent='ir al resumen →';btnNext.className='wb next';btnNext.onclick=()=>goStep('summary');}
+    return;
+  }
+  if (step==='config') {
+    if(badge){badge.style.cssText='background:var(--surf);font-size:16px;';badge.textContent='⚙';}
+    if(nameEl) nameEl.textContent='configuración del modelo';
+    if(metaEl) metaEl.textContent='pesos de dimensiones · umbrales de scoring y pools';
+    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
+    if(btnPrev){btnPrev.style.visibility='hidden';}
+    if(btnNext){btnNext.textContent='aplicar y volver →';btnNext.className='wb fin';btnNext.onclick=()=>goStep('summary');}
+    return;
+  }
+  _orig_updateWizHeader(step);
 }
 
 /* INIT */
