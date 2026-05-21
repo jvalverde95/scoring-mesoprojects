@@ -1470,88 +1470,120 @@ let _savedHoras     = {};
 
 /* Core parser: arrayBuffer → raw project array */
 function parseExcelBuffer(buffer) {
-  const wb = XLSX.read(buffer, {type:'array', cellDates:true, cellNF:false, cellText:false});
-  const pref = ['Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
+  const wb = XLSX.read(buffer, {type:'array', cellDates:true, raw:true, cellNF:false});
+
+  // Sheet priority — support our modelo + legacy formats
+  const PREF = ['📊 Cartera','Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
   let sn = wb.SheetNames[0];
-  for (const p of pref) { if (wb.SheetNames.includes(p)) { sn=p; break; } }
+  for (const p of PREF) { if (wb.SheetNames.includes(p)) { sn=p; break; } }
   _liveSheetName = sn;
 
-  const data = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:'', raw:true, blankrows:false});
+  const raw = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:null, raw:true, blankrows:false});
+
+  // ── Detect sheet format ────────────────────────────────────────────────
+  const isModelo  = sn === '📊 Cartera';
   const isRanking = sn === 'Ranking Proyectos';
 
-  // Detect data start: col B = project name (long string), cols D+ = integers 1-10
-  let dataStart=-1, nameCol=1, areaCol=2, firstScoreCol=3;
-  for (let r=0; r<Math.min(20, data.length); r++) {
-    const row = data[r]; if (!row || row.length < 5) continue;
-    const colB = String(row[1]||'').trim();
-    if (colB.length < 4 || !isNaN(Number(colB))) continue; // not a project name
-    // Count integers 1-10 starting from col D (idx 3) to skip rank/name/area
-    let cnt = 0;
-    for (let c=3; c<Math.min(row.length,28); c++) {
-      const v = Number(row[c]);
-      if (Number.isInteger(v) && v>=1 && v<=10) cnt++;
-    }
-    if (cnt >= 4 || isRanking) { dataStart=r; break; }
+  // ── Find header row and data start ────────────────────────────────────
+  // Look for row where col B looks like a project name (length > 5, not a header label)
+  let dataStart = -1;
+  for (let r = 0; r < Math.min(15, raw.length); r++) {
+    const row = raw[r]; if (!row) continue;
+    const b = String(row[1]||'').trim();
+    // Skip header rows (short labels or contain "nombre/proyecto")
+    if (!b || b.length < 4) continue;
+    if (/^(nombre|proyecto|name|nº|#|rank|columna|título)/i.test(b)) continue;
+    // Data row: col B = project name + either criteria cols (integers 1-10) or score col has float
+    const hasCriteria = isModelo
+      ? (typeof raw[r][5] === 'number')   // modelo: col F = first criterion
+      : [3,4,5,6,7].some(c => { const v=Number(raw[r][c]); return Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v); });
+    if (hasCriteria || b.length > 8) { dataStart = r; break; }
   }
-  if (dataStart===-1) throw new Error('Sin filas de datos en "'+sn+'"');
+  if (dataStart === -1) throw new Error('No se encontraron filas de datos en "' + sn + '"');
 
   const projects = [];
-  for (let r=dataStart; r<data.length; r++) {
-    const row = data[r]; if (!row || row.length < 4) continue;
-    const nom = String(row[nameCol]||'').trim();
+
+  for (let r = dataStart; r < raw.length; r++) {
+    const row = raw[r]; if (!row) continue;
+
+    // ── Project name ──────────────────────────────────────────────────
+    const nom = String(row[1]||'').trim();
     if (!nom || nom.length < 3) continue;
-    if (/^(nombre|proyecto|name|nº|#|rank)/i.test(nom)) continue;
-    const area = String(row[areaCol]||'').trim() || 'Sin área';
+    if (/^(nombre|proyecto|name|nº|#|rank|—|total)/i.test(nom)) continue;
+
+    const area     = String(row[2]||'').trim() || 'Sin área';
+    const sponsor  = String(row[3]||'').trim() || '';
+    const fechaRaw = row[4];
+    let reqDate = null;
+
+    // Parse date from col E
+    if (fechaRaw) {
+      const s = String(fechaRaw).trim();
+      // DD/MM/YYYY
+      const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      // YYYY-MM-DD
+      const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m1) reqDate = `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+      else if (m2) reqDate = s.substring(0,10);
+      else if (typeof fechaRaw==='number' && fechaRaw>40000 && fechaRaw<70000) {
+        const d = new Date(new Date(1899,11,30).getTime() + fechaRaw*86400000);
+        reqDate = d.toISOString().split('T')[0];
+      }
+    }
 
     const scores = {};
-    let nValid = 0;
 
-    if (isRanking) {
-      // Ranking sheet: cols F-K (idx 5-10) = D1..D6 dim averages
+    if (isModelo) {
+      // ── mesoestetic_scoring_modelo.xlsx ────────────────────────────────
+      // Cols F-AA (idx 5-26) = 22 criteria in order
+      // Col AJ (idx 35) = pre-computed Score Final (use as reference, but recalc in app)
+      let nValid = 0;
+      CRIT_IDS.forEach((cid, j) => {
+        const v = parseFloat(row[5 + j]);
+        const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? Math.round(v) : 5;
+        scores[cid] = s;
+        if (Number.isFinite(v) && v >= 1 && v <= 10) nValid++;
+      });
+      if (nValid < 4) continue;
+
+      // Also read horas from col AM (idx 38)
+      const horasVal = parseFloat(row[38]);
+      if (Number.isFinite(horasVal) && horasVal > 0) {
+        // Will be attached after computeProj
+        scores.__horas = horasVal;
+      }
+
+    } else if (isRanking) {
+      // ── Ranking sheet: cols F-K (idx 5-10) = D1-D6 dim averages ─────────
       const dimAvgs = [5,6,7,8,9,10].map(c => {
         const v = parseFloat(row[c]); return Number.isFinite(v) ? v : 5;
       });
       DIMS.forEach((d, di) => {
         d.criterios.forEach(c => { scores[c.id] = Math.round(Math.max(1,Math.min(10,dimAvgs[di]))); });
       });
-      nValid = 12;
-    } else {
-      // Carga Herramienta: cols D..Y (idx 3..24) = 22 criteria
-      CRIT_IDS.forEach((cid, idx) => {
-        const raw = row[firstScoreCol+idx];
-        const v = parseFloat(raw);
-        const s = (Number.isFinite(v)&&v>=1&&v<=10) ? Math.round(v) : 5;
-        scores[cid] = s;
-        if (Number.isFinite(v)&&v>=1&&v<=10) nValid++;
-      });
-    }
-    if (nValid < 4) continue;
 
-    // Parse dates
-    let reqDate=null, regDate=null;
-    const dStart = isRanking ? 4 : (firstScoreCol+CRIT_IDS.length);
-    for (let c=dStart; c<Math.min(dStart+8, row.length); c++) {
-      const v = row[c]; if (!v) continue;
-      let d = null;
-      if (v instanceof Date) { d=v; }
-      else if (typeof v==='number' && v>40000 && v<60000) {
-        d = new Date(new Date(1899,11,30).getTime() + v*86400000);
-      } else {
-        const s = String(v).trim();
-        const m1 = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-        const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (m1) d=new Date(m1[3]+'-'+m1[2]+'-'+m1[1]);
-        else if (m2) d=new Date(s);
+    } else {
+      // ── Legacy Carga Herramienta: criteria start at col D (idx 3) ──────
+      // Auto-detect first score col
+      let firstScoreCol = 3;
+      for (let c = 2; c < Math.min(row.length, 10); c++) {
+        const v = Number(row[c]);
+        if (Number.isFinite(v) && v >= 1 && v <= 10 && Number.isInteger(v)) { firstScoreCol = c; break; }
       }
-      if (d&&!isNaN(d.getTime())&&d.getFullYear()>=2000&&d.getFullYear()<=2035) {
-        const ds=d.toISOString().split('T')[0];
-        if (!reqDate) reqDate=ds;
-        else if (!regDate&&ds!==reqDate) { regDate=ds; break; }
-      }
+      let nValid = 0;
+      CRIT_IDS.forEach((cid, j) => {
+        const v = parseFloat(row[firstScoreCol + j]);
+        const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? Math.round(v) : 5;
+        scores[cid] = s;
+        if (Number.isFinite(v) && v >= 1 && v <= 10) nValid++;
+      });
+      if (nValid < 4) continue;
     }
-    projects.push({nom, area, scores, reqDate, regDate});
+
+    projects.push({nom, area, sponsor, scores, reqDate, regDate: null});
   }
-  if (!projects.length) throw new Error('Sin proyectos válidos en "'+sn+'"');
+
+  if (!projects.length) throw new Error('Sin proyectos válidos en "' + sn + '"');
   return projects;
 }
 
@@ -1563,7 +1595,9 @@ function applyProjects(projects, filename) {
 
   portfolioData = projects.map(p => {
     const proj = computeProj(p);
-    proj.horas = prevHoras[p.nom] ?? null;
+    // Priority: horas from Excel (__horas) > horas from previous session > null
+    const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
+    proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
     return proj;
   });
   portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
@@ -1584,8 +1618,11 @@ function loadExcel(inp) {
       const projects=parseExcelBuffer(e.target.result);
       applyProjects(projects, file.name);
       const ei=document.getElementById('ib-info');
-      if(ei) ei.textContent=portfolioData.length+' proyectos · "'+_liveSheetName+'" · '+file.name;
-      toast('✓ '+portfolioData.length+' proyectos importados');
+      const withSponsor=portfolioData.filter(p=>p.sponsor).length;
+      const withHoras=portfolioData.filter(p=>p.horas!=null).length;
+      if(ei) ei.textContent=portfolioData.length+' proyectos · hoja "'+_liveSheetName+'" · '+
+        (withHoras?withHoras+' con horas · ':'')+(withSponsor?withSponsor+' con sponsor · ':'')+file.name;
+      toast('✓ '+portfolioData.length+' proyectos importados de "'+_liveSheetName+'"');
     } catch(err) { console.error(err); toast('Error: '+err.message); }
     inp.value='';
   };
@@ -1656,6 +1693,7 @@ function updateLiveBadge(active) {
 
 function computeProj(proj) {
   if (proj.horas === undefined) proj.horas = null;
+  if (proj.sponsor === undefined) proj.sponsor = '';
   // Temporarily apply scores to DIMS copies for computation
   const dimScores=DIMS.map(d=>{
     let num=0,den=0;
