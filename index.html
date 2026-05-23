@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>mesoestetic · project scoring</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -28,7 +28,72 @@ html{scroll-behavior:smooth}
   --r:4px;--rl:8px;
   --sh:0 1px 2px rgba(0,0,0,.04),0 2px 10px rgba(0,0,0,.06);
 }
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var(--ink);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+/* ═══ GLOBAL REDESIGN — white, no italic, Inter ══════════════════ */
+/* 1. Kill all italic font-style everywhere */
+*{font-style:normal!important}
+/* 2. Replace DM Serif Display with Inter bold */
+.wh-name,.s-title,.cfg-sec-title,.sum-hero .sh-name,
+.port-h1,.pool-title,.chart-hd .charttitle,
+.sradar .sradar-title,
+.ado-modal-title,.land-h1,.wdt,
+.dml-title,.qstat-val,.sum-radar .sr-title{
+  font-family:'Inter',sans-serif!important;
+  font-weight:700!important;
+  font-style:normal!important;
+}
+/* 3. Big score numbers — Inter extrabold instead of serif */
+.wh-score,.sh-score,.c-val,.sd-val,.pi-score,.dml-val,
+.pool-cnt-badge,.land-stat-val,.rb-score,.qstat-val{
+  font-family:'Inter',sans-serif!important;
+  font-weight:800!important;
+  font-style:normal!important;
+}
+/* 4. White backgrounds everywhere */
+body{background:#FFFFFF!important}
+#shell{background:#FFFFFF}
+.step{background:#FFFFFF}
+.cfg-section{background:#FFFFFF;border:1px solid #EBEBEB!important}
+.sum-radar{background:#FFFFFF}
+.port-wrap{background:#FFFFFF}
+.chart-panel{background:#FFFFFF}
+.pool-panel{background:#FFFFFF}
+.ib{background:#FFFFFF}
+.c-card{background:#FFFFFF}
+.sd-box{background:#FFFFFF}
+.dim-mini-list{background:#FFFFFF}
+.qstat{background:#FFFFFF}
+.land-right{background:#FFFFFF!important}
+/* 5. Surfaces → very light gray */
+:root{--surf:#F8F8F8!important}
+.cfg-section .cfg-row .cfg-field,.wh{background:#FFFFFF}
+/* 6. Card shadows sharper on white */
+.c-card,.cfg-section,.sd-box,.sum-radar,.port-wrap,.chart-panel,.pool-panel,.ib,.dim-mini-list{
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 1px 8px rgba(0,0,0,.04)!important
+}
+/* 7. Dim banner — no italic */
+.dim-banner{font-style:normal!important;background:#F8F8F8;border-left:3px solid var(--g)}
+/* 8. Step titles */
+.s-title{font-size:20px!important;font-weight:700!important;letter-spacing:-.01em}
+.s-sub{color:#888!important}
+/* 9. Wizard header — cleaner */
+.wh{border-bottom:1px solid #EBEBEB!important;box-shadow:0 1px 0 #EBEBEB!important}
+.wh-name{font-size:15px!important;font-weight:700!important;letter-spacing:-.01em}
+/* 10. Summary hero — keep black bg but no italic text */
+.sh-name{font-size:18px!important;font-weight:700!important}
+.sh-sl{font-size:8px!important;letter-spacing:.14em}
+/* 11. Config section titles */
+.cfg-sec-title{font-size:14px!important;font-weight:700!important;letter-spacing:-.01em}
+/* 12. Port/chart section titles */
+.port-h1,.pool-panel-title,.chart-hd *{font-style:normal!important;font-weight:700!important}
+/* 13. Radar canvas wrapper */
+.sum-radar{border:1px solid #EBEBEB!important}
+/* 14. Landing page */
+.land-h1{font-family:'Inter',sans-serif!important;font-weight:800!important;line-height:1.1!important}
+.land-sub{color:#666!important}
+/* 15. ADO modal */
+.ado-modal-title{font-size:16px!important;font-weight:700!important}
+
+body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color:var(--ink);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
 
 /* TOPBAR */
 #bar{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;background:var(--k);display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #141414}
@@ -98,10 +163,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .wh{background:var(--w);border-bottom:1px solid var(--b);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:52px;z-index:100;box-shadow:var(--sh)}
 .wh-l{display:flex;align-items:center;gap:11px}
 .wh-badge{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
-.wh-name{font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--ink)}
+.wh-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
 .wh-meta{font-size:9px;color:var(--ink4);margin-top:1px}
 .wh-r{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.wh-score{font-family:'DM Serif Display',serif;font-size:38px;line-height:1;transition:color .2s;min-width:50px;text-align:right}
+.wh-score{font-family:'Inter',sans-serif;font-size:38px;font-weight:800;line-height:1;transition:color .2s;min-width:50px;text-align:right}
 .wh-sl{font-size:8px;color:var(--ink4);text-transform:uppercase;letter-spacing:.1em;text-align:right;margin-top:2px}
 .wh-btns{display:flex;gap:6px}
 .wb{padding:7px 14px;font-family:'DM Sans',inherit;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-radius:var(--r);cursor:pointer;transition:all .15s;border:none}
@@ -117,7 +182,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .step.on{display:block}
 
 /* STEP 0 */
-.s-title{font-family:'DM Serif Display',serif;font-size:22px;font-style:italic;color:var(--ink);margin-bottom:4px}
+.s-title{font-family:'Inter',sans-serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.01em}
 .s-sub{font-size:11px;color:var(--ink4);margin-bottom:20px}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ff{display:flex;flex-direction:column;gap:4px}
@@ -132,7 +197,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .reg-cd.safe{background:var(--d3t);color:var(--d3)}
 
 /* DIM STEP */
-.dim-banner{background:var(--surf);border:1px solid var(--b2);border-radius:var(--rl);padding:12px 16px;margin-bottom:18px;font-size:11px;color:var(--ink3);line-height:1.65;font-style:italic;border-left:3px solid var(--g)}
+.dim-banner{background:#F8F8F8;border:1px solid var(--b2);border-radius:var(--rl);padding:12px 16px;margin-bottom:18px;font-size:11px;color:var(--ink3);line-height:1.65;border-left:3px solid var(--g)}
 .c-list{display:flex;flex-direction:column;gap:12px}
 .c-card{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh);transition:border-color .15s}
 .c-card:focus-within{border-color:var(--g)}
@@ -145,7 +210,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .c-tag{font-size:8px;font-weight:600;color:var(--g);letter-spacing:.06em;text-transform:uppercase}
 .auto-tag{font-size:8px;font-weight:700;color:var(--d1);background:var(--d1t);padding:2px 7px;border-radius:3px}
 .c-right{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;width:148px}
-.c-val{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;transition:color .2s}
+.c-val{font-family:'Inter',sans-serif;font-size:48px;font-weight:800;line-height:1;transition:color .2s}
 .c-boost{font-size:9px;color:var(--g);font-weight:600}
 .c-slider{-webkit-appearance:none;appearance:none;width:136px;height:2px;background:var(--b2);border-radius:1px;outline:none;cursor:pointer}
 .c-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--k);border:2.5px solid var(--w);box-shadow:0 0 0 1.5px var(--k);cursor:pointer;transition:transform .12s}
@@ -162,7 +227,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .bp-wrap{width:100%;height:22px;display:flex;align-items:flex-end}
 .bp-bar{width:100%;border-radius:2px 2px 0 0;transition:height .2s}
 .bp-lbl{font-size:7px;color:#C8C8C8}
-.p-tog{display:inline-block;font-size:9px;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline;margin-top:7px}
+.p-tog{display:inline-block;font-size:9px;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline;margin-top:7px;font-style:normal}
 .c-params{padding:10px 14px 12px;background:var(--surf);border-top:1px dashed var(--b2);margin-top:8px;border-radius:0 0 var(--rl) var(--rl)}
 .p-ttl{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
 .p-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
@@ -180,7 +245,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .sh-div{width:1px;height:44px;background:#1E1E1E;flex-shrink:0}
 .sh-l{flex:1;min-width:0}
 .sh-ey{font-size:8px;font-weight:600;color:#383838;letter-spacing:.18em;text-transform:uppercase;margin-bottom:5px}
-.sh-name{font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:var(--w);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-name{font-family:'Inter',sans-serif;font-size:18px;font-weight:700;color:var(--w);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sh-meta{font-size:10px;color:#484848}
 .sh-dates{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
 .sh-dp{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:600;border:1px solid #242424;color:#484848}
@@ -188,19 +253,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .sh-dp.danger{background:rgba(204,31,38,.1);color:#FC9CA0;border-color:rgba(204,31,38,.25)}
 .sh-r{text-align:right;flex-shrink:0;position:relative;z-index:1}
 .sh-sl{font-size:8px;color:#3A3A3A;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px}
-.sh-score{font-family:'DM Serif Display',serif;font-size:64px;line-height:1}
+.sh-score{font-family:'Inter',sans-serif;font-size:60px;font-weight:800;line-height:1}
 .sh-base{font-size:9px;color:#3A3A3A;margin-top:3px}
 .sh-cls{display:inline-block;margin-top:6px;padding:4px 12px;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border:1px solid;border-radius:20px}
-.sum-rec{padding:12px 15px;border-radius:var(--r);font-size:12px;line-height:1.65;border:1px solid;margin-bottom:16px}
+.sum-rec{padding:12px 15px;border-radius:var(--r);font-size:12px;line-height:1.65;border:1px solid;margin-bottom:16px;font-style:normal}
 .sum-dims{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
 .sd-box{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:10px 6px;text-align:center;box-shadow:var(--sh);cursor:pointer;transition:all .15s}
 .sd-box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.08)}
 .sd-id{font-size:8px;font-weight:700;color:var(--g);margin-bottom:2px}
-.sd-val{font-family:'DM Serif Display',serif;font-size:21px}
+.sd-val{font-family:'Inter',sans-serif;font-size:20px;font-weight:800}
 .sd-name{font-size:8px;color:var(--ink4);margin-top:2px;line-height:1.3}
 .sd-bar{background:var(--b2);height:2px;border-radius:1px;margin-top:6px;overflow:hidden}
 .sd-fill{height:2px;border-radius:1px;transition:width .4s}
-.sum-radar{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:16px 20px;margin-bottom:16px;box-shadow:var(--sh)}
+.sum-radar{background:#FFFFFF;border:1px solid #EBEBEB;border-radius:var(--rl);padding:16px 20px;margin-bottom:16px;box-shadow:var(--sh)}
 .radar-wrap{position:relative;width:100%;height:250px}
 .sum-acts{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:22px}
 .sa{padding:9px 16px;font-family:'DM Sans',inherit;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;border-radius:var(--r);cursor:pointer;transition:all .15s;border:none}
@@ -223,7 +288,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 /* PORTFOLIO TABLE */
 .port-wrap{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);margin-bottom:12px}
 .port-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--b2)}
-.port-h1{font-family:'DM Serif Display',serif;font-size:15px;font-style:italic;color:var(--ink)}
+.port-h1{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--ink)}
 .port-h2{font-size:9px;color:var(--ink4);margin-top:2px}
 .port-sorts{display:flex;gap:5px}
 .psort-btn{padding:3px 9px;font-family:'DM Sans',inherit;font-size:8px;background:transparent;color:var(--ink3);border:1px solid var(--b);border-radius:var(--r);cursor:pointer}
@@ -251,12 +316,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .pool-M{background:var(--d4t);color:#7A4A00;border:1px solid rgba(122,74,0,.15)}
 .pool-S{background:var(--d3t);color:#065438;border:1px solid rgba(6,84,56,.15)}
 .pool-none{color:#C0C0C0;font-size:10px}
-.port-empty{padding:34px;text-align:center;color:#C0C0C0;font-size:12px;font-style:italic}
+.port-empty{padding:34px;text-align:center;color:#C0C0C0;font-size:12px}
 
 /* POOL PANEL */
 .pool-panel{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);margin-bottom:12px}
 .pool-hd{background:var(--k);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.pool-title{font-family:'DM Serif Display',serif;font-size:15px;font-style:italic;color:var(--w)}
+.pool-title{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--w)}
 .pool-thr{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .thr-inp{width:48px;padding:3px 5px;text-align:center;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;color:var(--ink);background:var(--w);border:1px solid #333;border-radius:var(--r)}
 .thr-inp:focus{outline:none;border-color:var(--g)}
@@ -270,8 +335,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .pool-item:hover{background:var(--surf)}
 .pi-name{font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:165px}
 .pi-meta{font-size:8px;color:var(--ink4);margin-top:1px}
-.pi-score{font-family:'DM Serif Display',serif;font-size:15px}
-.pool-empty{padding:16px;text-align:center;color:#C0C0C0;font-size:11px;font-style:italic}
+.pi-score{font-family:'Inter',sans-serif;font-size:15px;font-weight:800}
+.pool-empty{padding:16px;text-align:center;color:#C0C0C0;font-size:11px}
 
 /* CHARTS */
 .chart-panel{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);margin-bottom:12px}
@@ -282,13 +347,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .chart-body{padding:16px 20px}
 .csec{display:none}
 .csec.on{display:block}
-.chart-note{font-size:9px;color:var(--ink4);margin-bottom:9px;font-style:italic}
+.chart-note{font-size:9px;color:var(--ink4);margin-bottom:9px}
 
 /* BENCH */
 .bench-panel{background:var(--k);border-radius:var(--rl);padding:14px 16px 16px;margin-bottom:12px;border:1px solid #1A1A1A}
 .bench-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .bench-title{font-size:8px;font-weight:700;color:var(--g);letter-spacing:.14em;text-transform:uppercase}
-.bench-proj{font-family:'DM Serif Display',serif;font-size:12px;font-style:italic;color:var(--w);max-width:195px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bench-proj{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--w);max-width:195px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .b-row{display:grid;grid-template-columns:24px 1fr 34px 34px;align-items:center;gap:6px;margin-bottom:7px}
 .b-id{font-size:8px;font-weight:700;color:var(--g)}
 .b-track{position:relative;background:#1A1A1A;border-radius:2px;height:5px;overflow:visible}
@@ -301,7 +366,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .wdrawer{position:fixed;top:52px;right:0;bottom:0;z-index:150;width:272px;background:var(--w);border-left:1px solid var(--b);box-shadow:-4px 0 18px rgba(0,0,0,.07);transform:translateX(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;overflow-y:auto}
 .wdrawer.open{transform:translateX(0)}
 .wd-hd{padding:15px 17px 12px;border-bottom:1px solid var(--b2);background:var(--k);position:relative}
-.wd-title{font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--w);margin-bottom:1px}
+.wd-title{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:var(--w);margin-bottom:1px}
 .wd-sub{font-size:8px;color:#999}
 .wd-close{position:absolute;top:14px;right:15px;background:none;border:none;color:#555;font-size:15px;cursor:pointer;line-height:1}
 .wd-body{padding:13px 17px;flex:1}
@@ -320,7 +385,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 
 /* RECALC BAR */
 #rbar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--k);border-top:2px solid var(--g);padding:9px 22px;flex-direction:row;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 -4px 18px rgba(0,0,0,.18)}
-.rb-score{font-family:'DM Serif Display',serif;font-size:19px;color:var(--g)}
+.rb-score{font-family:'Inter',sans-serif;font-size:19px;font-weight:800;color:var(--g)}
 .rb-title{font-size:9px;font-weight:700;color:var(--w);letter-spacing:.08em;text-transform:uppercase}
 .rb-detail{font-size:9px;color:#484848;margin-top:1px}
 .rb-cls{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid}
@@ -372,11 +437,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
   width:10px;height:1px;background:var(--g);
 }
 .land-h1{
-  font-family:'DM Serif Display',serif;font-size:46px;
-  font-style:italic;color:#fff;line-height:1.1;
+  font-family:'Inter',sans-serif;font-size:44px;
+  font-weight:800;color:#fff;line-height:1.1;
   margin-bottom:20px;position:relative;z-index:1;
 }
-.land-h1 span{color:var(--g)}
+.land-h1 span{color:var(--g);font-weight:800}
 .land-sub{
   font-size:13px;color:#666;line-height:1.7;
   max-width:380px;margin-bottom:36px;
@@ -400,28 +465,28 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
   position:relative;z-index:1;
 }
 .land-stat-val{
-  font-family:'DM Serif Display',serif;font-size:28px;
-  font-style:italic;color:#fff;
+  font-family:'Inter',sans-serif;font-size:28px;
+  font-weight:800;color:#fff;
 }
 .land-stat-lbl{font-size:9px;color:#555;margin-top:2px;letter-spacing:.04em}
 
 .land-right{
-  background:var(--surf);
+  background:#FFFFFF;
   display:flex;flex-direction:column;justify-content:center;
-  padding:60px 56px;gap:20px;
+  padding:60px 56px;gap:16px;
 }
 .land-section-title{
-  font-size:9px;font-weight:700;color:#C0C0C0;
+  font-size:9px;font-weight:700;color:#BBBBBB;
   letter-spacing:.18em;text-transform:uppercase;
-  margin-bottom:20px;
+  margin-bottom:14px;
 }
 .land-feature{
   display:flex;align-items:flex-start;gap:14px;
-  padding:16px 18px;background:var(--w);
-  border:1px solid var(--b);border-radius:var(--rl);
-  box-shadow:var(--sh);transition:all .15s;cursor:default;
+  padding:14px 16px;background:#FAFAFA;
+  border:1px solid #EBEBEB;border-radius:var(--rl);
+  box-shadow:none;transition:all .15s;cursor:default;
 }
-.land-feature:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.land-feature:hover{background:#F5F5F5;border-color:#DEDEDE}
 .land-feat-icon{
   width:36px;height:36px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -461,8 +526,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 /* ── DIM MINI LIST (right col) ────────────────────────── */
 .dim-mini-list{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
 .dml-header{padding:12px 16px;border-bottom:1px solid var(--b2);display:flex;align-items:center;justify-content:space-between}
-.dml-title{font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink)}
-.dml-total{font-family:'DM Serif Display',serif;font-size:28px;font-weight:400}
+.dml-title{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:var(--ink)}
+.dml-total{font-family:'Inter',sans-serif;font-size:28px;font-weight:400}
 .dml-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--b2);cursor:pointer;transition:background .1s}
 .dml-row:last-child{border-bottom:none}
 .dml-row:hover{background:var(--surf)}
@@ -470,19 +535,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .dml-name{font-size:10px;color:var(--ink3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dml-bar-wrap{width:80px;background:var(--b2);border-radius:2px;height:3px;overflow:hidden;flex-shrink:0}
 .dml-bar-fill{height:3px;border-radius:2px;transition:width .4s}
-.dml-val{font-family:'DM Serif Display',serif;font-size:16px;min-width:28px;text-align:right;flex-shrink:0}
+.dml-val{font-family:'Inter',sans-serif;font-size:16px;min-width:28px;text-align:right;flex-shrink:0}
 
 /* ── QUICK STATS ──────────────────────────────────────── */
 .qstats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .qstat{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:12px 14px;box-shadow:var(--sh)}
 .qstat-lbl{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
-.qstat-val{font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)}
+.qstat-val{font-family:'Inter',sans-serif;font-size:22px;color:var(--ink)}
 .qstat-sub{font-size:9px;color:var(--ink4);margin-top:2px}
 
 
 /* ── CONFIG / POOLS / CHARTS STEPS ─────────────────── */
 .cfg-section{background:var(--w);border:1px solid var(--b);border-radius:var(--rl);padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh)}
-.cfg-sec-title{font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--ink);margin-bottom:4px}
+.cfg-sec-title{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.01em}
 .cfg-sec-sub{font-size:11px;color:var(--ink4);margin-bottom:16px}
 .cfg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cfg-field{display:flex;flex-direction:column;gap:5px}
@@ -512,13 +577,91 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
 .cfg-total.ok{background:#EAFAF1;border:1px solid rgba(10,82,40,.15)}
 .cfg-total.err{background:var(--d1t);border:1px solid rgba(204,31,38,.15)}
 .cfg-total-lbl{font-size:10px;font-weight:600}
-.cfg-total-val{font-family:'DM Serif Display',serif;font-size:22px}
+.cfg-total-val{font-family:'Inter',sans-serif;font-size:22px}
 
 /* pool config visual */
 .pool-cfg-visual{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .pool-cfg-card{border-radius:var(--rl);padding:14px 16px;border:1px solid}
 .pool-viz-bar{height:6px;border-radius:3px;margin:8px 0 4px;transition:width .3s}
 .pool-range-lbl{font-size:9px;color:var(--ink4);margin-top:4px}
+
+/* ── AZURE DEVOPS MODAL ───────────────────────────────── */
+.ado-overlay{
+  display:none;position:fixed;inset:0;z-index:500;
+  background:rgba(8,8,8,.72);
+  align-items:center;justify-content:center;
+}
+.ado-overlay.open{display:flex;}
+.ado-modal{
+  background:var(--w);border-radius:var(--rl);
+  width:480px;max-width:calc(100vw - 32px);
+  box-shadow:0 8px 40px rgba(0,0,0,.22);
+  overflow:hidden;
+}
+.ado-modal-hd{
+  background:var(--k);padding:20px 24px 16px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.ado-modal-logo{
+  display:flex;align-items:center;gap:10px;
+}
+.ado-modal-ado-icon{
+  width:28px;height:28px;
+  background:linear-gradient(135deg,#0078D4 60%,#50e6ff);
+  border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.ado-modal-title{font-family:'Inter',sans-serif;font-size:16px;font-weight:700;color:var(--w)}
+.ado-modal-sub{font-size:9px;color:#484848;margin-top:2px}
+.ado-close{background:none;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1}
+.ado-modal-body{padding:20px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.ado-field{display:flex;flex-direction:column;gap:5px}
+.ado-field label{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase}
+.ado-field input{
+  padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:12px;
+  color:var(--ink);background:var(--surf);border:1.5px solid var(--b);
+  border-radius:var(--r);transition:border-color .15s;
+}
+.ado-field input:focus{outline:none;border-color:#0078D4;box-shadow:0 0 0 3px rgba(0,120,212,.1)}
+.ado-field .ado-hint{font-size:9px;color:var(--ink4);margin-top:2px;line-height:1.5}
+.ado-field .ado-hint a{color:#0078D4;text-decoration:none}
+.ado-field .ado-hint a:hover{text-decoration:underline}
+.ado-actions{display:flex;gap:8px;margin-top:4px}
+.ado-btn{
+  padding:9px 18px;font-family:'DM Sans',inherit;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;border-radius:var(--r);
+  cursor:pointer;transition:all .15s;border:none;display:flex;align-items:center;gap:6px;
+}
+.ado-btn.primary{background:#0078D4;color:#fff}
+.ado-btn.primary:hover{background:#006CBE}
+.ado-btn.primary:disabled{background:#8BB8DC;cursor:not-allowed}
+.ado-btn.ghost{background:transparent;color:var(--ink3);border:1px solid var(--b)}
+.ado-btn.ghost:hover{border-color:var(--ink);color:var(--ink)}
+.ado-status{
+  padding:9px 12px;border-radius:var(--r);font-size:11px;
+  display:none;align-items:center;gap:8px;
+}
+.ado-status.loading{background:#EEF3FC;color:#1848A0;display:flex}
+.ado-status.error{background:var(--d1t);color:var(--d1);display:flex}
+.ado-status.ok{background:var(--d3t);color:var(--d3);display:flex}
+.ado-spinner{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid currentColor;border-top-color:transparent;
+  animation:spin .6s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ADO status badge in import bar */
+.ado-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;font-size:9px;font-weight:600;
+  border:1px solid;cursor:pointer;transition:all .15s;
+}
+.ado-badge.connected{background:#EEF3FC;color:#1848A0;border-color:rgba(24,72,160,.2)}
+.ado-badge.connected:hover{background:#DBEAFE}
+.ado-badge.disconnected{background:var(--surf);color:var(--ink3);border-color:var(--b)}
+.ado-badge.disconnected:hover{border-color:#0078D4;color:#0078D4}
+.ado-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
 </style>
 </head>
@@ -620,6 +763,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
         <div class="land-upload-badge">Excel · Carga Herramienta · Ranking Proyectos</div>
       </div>
       <input type="file" id="land-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleLandingExcel(this)">
+
+      <!-- Azure DevOps CTA -->
+      <div class="land-upload-area" onclick="landingAdoConnect()"
+           style="margin-top:10px;border-color:rgba(0,120,212,.25);background:#F0F7FF">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,#0078D4 60%,#50e6ff);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">Az</div>
+          <div class="land-upload-title" style="margin-bottom:0;color:#0078D4">Importar desde Azure DevOps</div>
+        </div>
+        <div class="land-upload-sub">Conecta con tu organización y carga los Requirements del Epic 2106 directamente</div>
+        <div class="land-upload-badge" style="background:#E3F2FD;border-color:rgba(0,120,212,.2);color:#0078D4;margin-top:8px">
+          mesoesteticAzureDevOps · DYNAMICS 365
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -794,19 +950,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
         <div class="pool-cfg-visual" id="pool-cfg-visual">
           <div class="pool-cfg-card" style="background:var(--d3t);border-color:rgba(8,123,80,.15)">
             <div style="font-size:9px;font-weight:700;color:var(--d3);letter-spacing:.08em;text-transform:uppercase">🟢 Corto</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-s-count">—</div>
+            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-s-count">—</div>
             <div class="pool-range-lbl">Hasta <span id="pcv-s-range">30</span>h</div>
             <div class="pool-viz-bar" id="pcv-s-bar" style="background:var(--d3);width:30%"></div>
           </div>
           <div class="pool-cfg-card" style="background:var(--d4t);border-color:rgba(192,120,0,.15)">
             <div style="font-size:9px;font-weight:700;color:var(--d4);letter-spacing:.08em;text-transform:uppercase">🟡 Medio</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-m-count">—</div>
+            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-m-count">—</div>
             <div class="pool-range-lbl"><span id="pcv-m-range">30–100</span>h</div>
             <div class="pool-viz-bar" id="pcv-m-bar" style="background:var(--d4);width:40%"></div>
           </div>
           <div class="pool-cfg-card" style="background:var(--d1t);border-color:rgba(204,31,38,.15)">
             <div style="font-size:9px;font-weight:700;color:var(--d1);letter-spacing:.08em;text-transform:uppercase">🔴 Largo</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)" id="pcv-l-count">—</div>
+            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-l-count">—</div>
             <div class="pool-range-lbl">Más de <span id="pcv-l-range">100</span>h</div>
             <div class="pool-viz-bar" id="pcv-l-bar" style="background:var(--d1);width:30%"></div>
           </div>
@@ -895,6 +1051,121 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
           <button class="cfg-apply cfg-reset" onclick="resetCfgPools()">↺ Restaurar defecto</button>
         </div>
       </div>
+
+      <!-- Azure DevOps connection section -->
+      <div class="cfg-section" id="cfg-ado-section">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <div style="width:28px;height:28px;background:linear-gradient(135deg,#0078D4 60%,#50e6ff);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">Az</div>
+          <div class="cfg-sec-title" style="margin-bottom:0">azure devops — integración</div>
+          <div id="cfg-ado-conn-badge" style="display:none;padding:3px 10px;border-radius:20px;font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase"></div>
+        </div>
+        <div class="cfg-sec-sub">Conecta con tu organización, prueba la conexión, elige la query guardada y carga los work items directamente en la cartera.</div>
+
+        <!-- Step 1: Credenciales -->
+        <div style="background:var(--surf);border-radius:var(--r);padding:14px 16px;margin-top:12px;border:1px solid var(--b2)">
+          <div style="font-size:9px;font-weight:700;color:#0078D4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">① credenciales</div>
+          <div class="cfg-row">
+            <div class="cfg-field">
+              <label>Organización</label>
+              <input type="text" class="cfg-inp" id="cfg-ado-org" value="mesoesteticAzureDevOps"
+                placeholder="mesoesteticAzureDevOps">
+            </div>
+            <div class="cfg-field">
+              <label>Proyecto</label>
+              <input type="text" class="cfg-inp" id="cfg-ado-project" value="DYNAMICS 365"
+                placeholder="DYNAMICS 365">
+            </div>
+          </div>
+          <div class="cfg-field" style="margin-top:10px">
+            <label>Personal Access Token (PAT)
+              <a href="https://dev.azure.com/mesoesteticAzureDevOps/_usersSettings/tokens"
+                 target="_blank" rel="noopener"
+                 style="font-size:8px;color:#0078D4;font-weight:400;letter-spacing:0;text-transform:none;text-decoration:none;margin-left:8px">
+                → Generar PAT ↗
+              </a>
+            </label>
+            <input type="password" class="cfg-inp" id="cfg-ado-pat"
+              placeholder="Personal Access Token con permisos Work Items (Read)"
+              autocomplete="off">
+            <div class="cfg-note">El token no se guarda ni sale del navegador — solo en memoria de esta sesión.</div>
+          </div>
+          <button class="cfg-apply" onclick="cfgAdoTest()"
+            style="background:#0078D4;margin-top:12px"
+            title="Verifica credenciales y carga la lista de queries del proyecto">
+            ⚡ Probar conexión y cargar queries
+          </button>
+        </div>
+
+        <!-- Status bar -->
+        <div id="cfg-ado-status" style="display:none;margin-top:10px;padding:10px 14px;border-radius:var(--r);font-size:11px;align-items:center;gap:9px">
+          <div id="cfg-ado-spinner" style="width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
+          <span id="cfg-ado-status-msg">Comprobando...</span>
+        </div>
+
+        <!-- Step 2: Selección de query -->
+        <div id="cfg-ado-query-section" style="display:none;background:var(--surf);border-radius:var(--r);padding:14px 16px;margin-top:10px;border:1px solid var(--b2)">
+          <div style="font-size:9px;font-weight:700;color:#0078D4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">② seleccionar query</div>
+
+          <!-- Query list (populated after connection) -->
+          <div class="cfg-field">
+            <label>Query guardada</label>
+            <select class="cfg-inp" id="cfg-ado-query-select" onchange="cfgAdoQuerySelected(this.value)"
+              style="cursor:pointer">
+              <option value="">— Selecciona una query —</option>
+            </select>
+            <div class="cfg-note" id="cfg-ado-query-note">Selecciona una query para ver su descripción</div>
+          </div>
+
+          <!-- Manual query ID fallback -->
+          <details style="margin-top:10px">
+            <summary style="font-size:9px;color:var(--ink4);cursor:pointer;user-select:none">
+              Introducir ID de query manualmente
+            </summary>
+            <div class="cfg-field" style="margin-top:8px">
+              <label>Query ID (GUID)</label>
+              <input type="text" class="cfg-inp" id="cfg-ado-query-id"
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <div class="cfg-note">Copia el ID desde la URL de la query en Azure DevOps</div>
+            </div>
+          </details>
+
+          <!-- Work item types filter -->
+          <div style="margin-top:12px">
+            <label style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:6px">Filtrar tipos de work item</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-req" checked> Requirement
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-task"> Task
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-us"> User Story
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-bug"> Bug
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-feat"> Feature
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer">
+                <input type="checkbox" id="cfg-ado-type-all"> Todos los tipos
+              </label>
+            </div>
+          </div>
+
+          <!-- Load button -->
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+            <button class="cfg-apply" id="cfg-ado-load-btn" onclick="cfgAdoLoad()"
+              style="background:#065438" disabled>
+              ↓ Cargar work items
+            </button>
+            <span id="cfg-ado-preview" style="font-size:10px;color:var(--ink4)"></span>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- STEP SUMMARY -->
@@ -929,7 +1200,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
           <!-- Radar -->
           <div class="sum-radar" style="margin-bottom:0">
             <div style="font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px">perfil multidimensional</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b2)">scoring por dimensión</div>
+            <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--b2)">scoring por dimensión</div>
             <div class="radar-wrap"><canvas id="radar"></canvas></div>
           </div>
 
@@ -988,11 +1259,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
           <div class="ib-lbl">carga masiva de proyectos</div>
           <div class="ib-info" id="ib-info">Importa el Excel para comparar y clasificar múltiples proyectos</div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)">
-          <button class="btn-imp" onclick="document.getElementById('excel-input').click()" title="Carga puntual del Excel">↑ cargar</button>
-          <button class="btn-imp" id="btn-live" onclick="connectLiveExcel()" title="Conecta el fichero y se actualiza solo cada vez que guardas en Excel" style="background:#065438">⚡ conectar live</button>
-          <button class="btn-imp ghost" onclick="manualRefresh()" id="btn-refresh" style="display:none" title="Forzar recarga ahora">↻ refrescar</button>
+          <button class="btn-imp" onclick="document.getElementById('excel-input').click()" title="Carga puntual del Excel">↑ cargar excel</button>
+          <button class="btn-imp" id="btn-live" onclick="connectLiveExcel()" title="Conecta el fichero y se actualiza solo cada vez que guardas en Excel" style="background:#065438">⚡ live</button>
+          <button class="btn-imp ghost" onclick="manualRefresh()" id="btn-refresh" style="display:none" title="Forzar recarga ahora">↻</button>
+          <div style="width:1px;height:20px;background:var(--b);flex-shrink:0"></div>
+          <button class="ado-badge disconnected" id="ado-badge" onclick="openAdoModal()" title="Conectar con Azure DevOps">
+            <span class="ado-dot"></span>
+            <span id="ado-badge-lbl">Azure DevOps</span>
+          </button>
           <button class="btn-imp ghost" id="btn-clear" onclick="clearPortfolio()" style="display:none">✕ limpiar</button>
         </div>
       </div>
@@ -1052,7 +1328,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
       <div class="chart-panel" id="charts-panel" style="display:none">
         <div class="chart-hd">
           <div style="font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px">análisis de cartera</div>
-          <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:var(--ink)">visualización y posicionamiento</div>
+          <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:var(--ink)">visualización y posicionamiento</div>
         </div>
         <div class="chart-tabs">
           <button class="ctab on" onclick="switchChart('bubble',this)">Valor vs Riesgo</button>
@@ -1094,6 +1370,64 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--surf);color:var
   </div><!-- /main -->
 </div><!-- /shell -->
 
+
+<!-- Azure DevOps Modal -->
+<div class="ado-overlay" id="ado-overlay">
+  <div class="ado-modal">
+    <div class="ado-modal-hd">
+      <div class="ado-modal-logo">
+        <div class="ado-modal-ado-icon">Az</div>
+        <div>
+          <div class="ado-modal-title">Azure DevOps</div>
+          <div class="ado-modal-sub">mesoestetic · DYNAMICS 365 · selecciona la query en ⚙ Config</div>
+        </div>
+      </div>
+      <button class="ado-close" onclick="closeAdoModal()">✕</button>
+    </div>
+    <div class="ado-modal-body">
+      <div class="ado-field">
+        <label>Organización</label>
+        <input type="text" id="ado-org" value="mesoesteticAzureDevOps"
+          placeholder="mesoesteticAzureDevOps">
+        <div class="ado-hint">Nombre de la organización en dev.azure.com</div>
+      </div>
+      <div class="ado-field">
+        <label>Proyecto</label>
+        <input type="text" id="ado-project" placeholder="DYNAMICS 365"
+          value="DYNAMICS 365">
+        <div class="ado-hint">Nombre del proyecto dentro de la organización</div>
+      </div>
+      <div class="ado-field">
+        <label>Personal Access Token (PAT)</label>
+        <input type="password" id="ado-pat" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          autocomplete="off">
+        <div class="ado-hint">
+          Genera un PAT en
+          <a href="https://dev.azure.com/mesoesteticAzureDevOps/_usersSettings/tokens" target="_blank">
+            dev.azure.com → User Settings → Personal Access Tokens
+          </a>
+          con permiso <strong>Work Items (Read)</strong>.
+          El token no se guarda en ningún servidor — solo en memoria de esta sesión.
+        </div>
+      </div>
+
+      <div class="ado-status" id="ado-status">
+        <div class="ado-spinner"></div>
+        <span id="ado-status-msg">Conectando...</span>
+      </div>
+      <div class="ado-actions">
+        <button class="ado-btn primary" id="ado-connect-btn" onclick="adoConnect()">
+          <span>⚡ Guardar credenciales y elegir query</span>
+        </button>
+        <button class="ado-btn ghost" onclick="closeAdoModal()">Cancelar</button>
+      </div>
+      <div style="font-size:9px;color:var(--ink4);padding-top:8px;border-top:1px solid var(--b2);line-height:1.6">
+        🔒 Las credenciales se usan únicamente para llamadas directas a la API de Azure DevOps desde tu navegador. No pasan por ningún servidor intermedio.<br>
+        💡 Para seleccionar una query específica usa <strong>⚙ Config → Azure DevOps</strong>.
+      </div>
+    </div>
+  </div>
+</div>
 <div class="wdrawer" id="wd">
   <div class="wd-hd">
     <div class="wd-title">ajuste de pesos</div>
@@ -1898,7 +2232,7 @@ function renderPools() {
           </div>
           <div style="font-size:9px;color:${pd.color};margin-top:4px;opacity:.7;">${pd.sub}</div>
         </div>
-        <div style="font-family:'DM Serif Display',serif;font-size:22px;color:${pd.color};opacity:.6;">
+        <div style="font-family:'Inter',sans-serif;font-size:22px;color:${pd.color};opacity:.6;">
           ${items.length > 0 ? (items.reduce((a,p)=>a+p.sf,0)/items.length).toFixed(1)+' avg' : '—'}
         </div>
       </div>
@@ -3378,6 +3712,468 @@ function updateWizHeader(step) {
   }
   _orig_updateWizHeader(step);
 }
+
+
+/* ═══════════════════════════════════════════════════════
+   AZURE DEVOPS INTEGRATION
+   - PAT auth (Basic base64) — never sent to any proxy
+   - WIQL query: Requirements under Epic 2106
+   - Two-step: WIQL → IDs → workitemsbatch details
+   - Maps fields to the scoring app's project model
+   ═══════════════════════════════════════════════════════ */
+
+let _adoConnected  = false;
+let _adoCreds      = null;   // {org, project, pat, epic}
+
+function openAdoModal() {
+  document.getElementById('ado-overlay').classList.add('open');
+  adoStatusHide();
+}
+function closeAdoModal() {
+  document.getElementById('ado-overlay').classList.remove('open');
+}
+
+function adoStatusShow(type, msg) {
+  const el = document.getElementById('ado-status');
+  const ml = document.getElementById('ado-status-msg');
+  el.className = 'ado-status ' + type;
+  if (ml) ml.textContent = msg;
+}
+function adoStatusHide() {
+  document.getElementById('ado-status').className = 'ado-status';
+}
+
+function adoBasicAuth(pat) {
+  // Azure DevOps Basic auth: base64(':' + pat)
+  return 'Basic ' + btoa(':' + pat);
+}
+
+async function adoConnect() {
+  const org     = document.getElementById('ado-org').value.trim();
+  const project = document.getElementById('ado-project').value.trim();
+  const pat     = document.getElementById('ado-pat').value.trim();
+
+  if (!org || !project || !pat) {
+    adoStatusShow('error', 'Rellena organización, proyecto y PAT.');
+    return;
+  }
+
+  const btn = document.getElementById('ado-connect-btn');
+  btn.disabled = true;
+  adoStatusShow('loading', 'Verificando credenciales y cargando queries...');
+
+  try {
+    // Sync creds to config section and trigger the full test+query-list flow
+    const setId = (id, val) => { const e=document.getElementById(id); if(e&&val) e.value=val; };
+    setId('cfg-ado-org', org);
+    setId('cfg-ado-project', project);
+    setId('cfg-ado-pat', pat);
+
+    adoStatusShow('ok', '✓ Credenciales guardadas. Ve a ⚙ Config → Azure DevOps para seleccionar la query y cargar.');
+    toast('Credenciales guardadas — abre ⚙ Config para elegir la query');
+    setTimeout(() => { closeAdoModal(); goStep('config'); }, 1000);
+
+  } catch(err) {
+    adoStatusShow('error', err.message || 'Error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function adoFetchRequirements(org, project, pat, queryId) {
+  // Execute a saved query by ID and return the work items
+  const auth = adoBasicAuth(pat);
+  const base = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+
+  // Run the saved query
+  const runRes = await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`, {
+    headers: { 'Authorization': auth }
+  });
+  if (runRes.status === 401) throw new Error('PAT inválido o sin permisos (401).');
+  if (runRes.status === 404) throw new Error(`Query "${queryId}" no encontrada (404).`);
+  if (!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
+
+  const runData = await runRes.json();
+
+  // Extract IDs — flat query or tree/link query
+  let ids = [];
+  if (runData.workItems)
+    ids = runData.workItems.map(w => w.id);
+  else if (runData.workItemRelations)
+    ids = runData.workItemRelations.filter(r => r.target).map(r => r.target.id);
+  ids = [...new Set(ids)];
+
+  if (!ids.length) throw new Error('La query no devolvió work items.');
+
+  // Batch fetch details (max 200 per call)
+  const fields = [
+    'System.Id','System.Title','System.WorkItemType','System.State',
+    'System.AssignedTo','System.CreatedDate','System.Description',
+    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'
+  ];
+  const allItems = [];
+  for (let i=0; i<ids.length; i+=200) {
+    const bRes = await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`, {
+      method: 'POST',
+      headers: { 'Authorization': auth, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids.slice(i, i+200), fields })
+    });
+    if (!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
+    const bData = await bRes.json();
+    allItems.push(...(bData.value || []));
+  }
+  return allItems;
+}
+
+function adoMapToProject(wi) {
+  // Map Azure DevOps work item fields to scoring app project model
+  const f = wi.fields || {};
+
+  const title    = f['System.Title'] || `Work Item ${wi.id}`;
+  const state    = f['System.State'] || '';
+  const assignee = f['System.AssignedTo'];
+  const sponsor  = typeof assignee === 'object'
+    ? (assignee.displayName || '')
+    : String(assignee || '').replace(/<[^>]+>/g,'').trim();
+  const desc     = (f['System.Description'] || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().substring(0,300);
+  const area     = (f['System.AreaPath'] || '').split('\\').pop() || 'Sin área';
+  const tags     = (f['System.Tags'] || '');
+  const priority = parseInt(f['Microsoft.VSTS.Common.Priority']) || 2;
+  const createdDate = f['System.CreatedDate']
+    ? f['System.CreatedDate'].substring(0,10) : null;
+
+  // Default scores — all 5 (will be scored by the user)
+  // The app will show them ready to evaluate
+  const scores = {};
+  CRIT_IDS.forEach(cid => { scores[cid] = 5; });
+
+  return {
+    nom: `${wi.id} — ${title}`,
+    area,
+    sponsor,
+    scores,
+    reqDate: createdDate,
+    regDate: null,
+    adoId: wi.id,
+    adoState: state,
+    adoDesc: desc,
+    adoPriority: priority,
+  };
+}
+
+// Re-sync from ADO (manual refresh)
+async function adoRefresh() {
+  if (!_adoCreds) { toast('Sin conexión ADO activa'); return; }
+  const {org, project, pat, queryId} = _adoCreds;
+  if (!queryId) { toast('Sin query activa'); return; }
+  adoStatusShow('loading', 'Actualizando desde Azure DevOps...');
+  try {
+    const items = await adoFetchRequirements(org, project, pat, queryId);
+    const projects = items.map(wi => adoMapToProject(wi));
+    applyProjects(projects, `Azure DevOps · Epic ${epic}`);
+    adoStatusHide();
+    toast(`↻ ADO actualizado · ${items.length} Requirements`);
+  } catch(e) {
+    adoStatusShow('error', e.message);
+  }
+}
+
+/* ── LANDING ADO shortcut ─────────────────────────────── */
+function landingAdoConnect() {
+  startApp();
+  setTimeout(() => {
+    // Pre-sync config fields to modal
+    cfgAdoSaveCreds();
+    openAdoModal();
+  }, 80);
+}
+
+/* ── CONFIG STEP ADO helpers ──────────────────────────── */
+function cfgAdoStatusShow(type, msg) {
+  const el  = document.getElementById('cfg-ado-status');
+  const msg_el = document.getElementById('cfg-ado-status-msg');
+  const spinner = document.getElementById('cfg-ado-spinner');
+  if (!el) return;
+  // type: 'loading' | 'ok' | 'error'
+  const colors = {
+    loading: {bg:'#EEF3FC', color:'#1848A0'},
+    ok:      {bg:'var(--d3t)', color:'var(--d3)'},
+    error:   {bg:'var(--d1t)', color:'var(--d1)'},
+  };
+  const c = colors[type] || colors.loading;
+  el.style.display    = 'flex';
+  el.style.background = c.bg;
+  el.style.color      = c.color;
+  if (spinner) spinner.style.display = type === 'loading' ? 'block' : 'none';
+  if (msg_el) msg_el.textContent = msg;
+}
+function cfgAdoStatusHide() {
+  const el = document.getElementById('cfg-ado-status');
+  if (el) el.style.display = 'none';
+}
+
+function _cfgAdoCreds() {
+  return {
+    org:     (document.getElementById('cfg-ado-org')?.value||'').trim(),
+    project: (document.getElementById('cfg-ado-project')?.value||'').trim(),
+    pat:     (document.getElementById('cfg-ado-pat')?.value||'').trim(),
+
+  };
+}
+
+/* Sync config fields → modal fields */
+function cfgAdoSaveCreds() {
+  const c = _cfgAdoCreds();
+  const set = (id, val) => { const el=document.getElementById(id); if(el && val) el.value=val; };
+  set('ado-org',     c.org);
+  set('ado-project', c.project);
+  if (c.pat) set('ado-pat', c.pat);
+  toast('Credenciales sincronizadas al modal principal');
+}
+
+/* ── CONFIG ADO — query-aware flow ───────────────── */
+
+/* Returns selected work item types filter array */
+function cfgAdoGetTypes() {
+  if (document.getElementById('cfg-ado-type-all')?.checked) return [];
+  const map = [
+    ['cfg-ado-type-req',  'Requirement'],
+    ['cfg-ado-type-task', 'Task'],
+    ['cfg-ado-type-us',   'User Story'],
+    ['cfg-ado-type-bug',  'Bug'],
+    ['cfg-ado-type-feat', 'Feature'],
+  ];
+  const types = map.filter(([id]) => document.getElementById(id)?.checked).map(([,t])=>t);
+  return types.length ? types : [];
+}
+
+/* Step 1: test connection + fetch query list */
+async function cfgAdoTest() {
+  const {org, project, pat} = _cfgAdoCreds();
+  if (!org || !project || !pat) {
+    cfgAdoStatusShow('error', 'Rellena organización, proyecto y PAT antes de probar.');
+    return;
+  }
+  cfgAdoStatusShow('loading', 'Verificando credenciales...');
+
+  try {
+    // 1. Verify project exists
+    const projUrl = `https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`;
+    const projRes = await fetch(projUrl, { headers: { 'Authorization': adoBasicAuth(pat) } });
+
+    if (projRes.status === 401) throw new Error('PAT inválido o expirado (401). Genera un nuevo token con permisos Work Items (Read).');
+    if (projRes.status === 404) throw new Error(`Proyecto "${project}" no encontrado (404). Verifica el nombre exacto.`);
+    if (!projRes.ok) throw new Error(`Error ${projRes.status} al verificar el proyecto.`);
+
+    const projData = await projRes.json();
+    cfgAdoStatusShow('loading', `Proyecto "${projData.name}" OK. Cargando queries...`);
+
+    // 2. Fetch shared queries tree (depth 2)
+    const qUrl = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`;
+    const qRes = await fetch(qUrl, { headers: { 'Authorization': adoBasicAuth(pat) } });
+    if (!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
+    const qData = await qRes.json();
+
+    // 3. Flatten query tree (include folders + queries)
+    const allQueries = [];
+    function walkQueries(node, path='') {
+      if (!node) return;
+      const fullPath = path ? `${path} / ${node.name}` : node.name;
+      if (node.queryType) {
+        // It's a real query (not a folder)
+        allQueries.push({ id: node.id, name: node.name, path: fullPath, queryType: node.queryType });
+      }
+      if (node.children) node.children.forEach(c => walkQueries(c, path ? fullPath : node.name));
+    }
+    (qData.value || [qData]).forEach(root => walkQueries(root, ''));
+
+    // 4. Populate select
+    const sel = document.getElementById('cfg-ado-query-select');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Selecciona una query —</option>';
+      allQueries.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.id;
+        opt.textContent = q.path || q.name;
+        opt.dataset.queryType = q.queryType;
+        opt.dataset.name = q.name;
+        sel.appendChild(opt);
+      });
+      // Auto-select if name contains "EVOLUTIVO" or "Pendientes"
+      const autoMatch = allQueries.find(q =>
+        q.name.toLowerCase().includes('evolutivo') ||
+        q.name.toLowerCase().includes('pendientes') ||
+        q.name.toLowerCase().includes('gaps')
+      );
+      if (autoMatch) {
+        sel.value = autoMatch.id;
+        cfgAdoQuerySelected(autoMatch.id);
+      }
+    }
+
+    // Show query section
+    const qs = document.getElementById('cfg-ado-query-section');
+    if (qs) qs.style.display = 'block';
+
+    // Update connection badge
+    const badge = document.getElementById('cfg-ado-conn-badge');
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.style.background = '#EEF3FC';
+      badge.style.color = '#0078D4';
+      badge.style.border = '1px solid rgba(0,120,212,.2)';
+      badge.textContent = `✓ conectado · ${allQueries.length} queries`;
+    }
+
+    cfgAdoStatusShow('ok',
+      `✓ Conectado a "${projData.name}" · ${allQueries.length} queries disponibles${autoMatch ? ` · Query "${autoMatch.name}" pre-seleccionada` : ''}`);
+
+  } catch(e) {
+    cfgAdoStatusShow('error', `✗ ${e.message}`);
+    document.getElementById('cfg-ado-query-section').style.display = 'none';
+  }
+}
+
+/* Called when user selects a query from dropdown */
+function cfgAdoQuerySelected(queryId) {
+  const sel  = document.getElementById('cfg-ado-query-select');
+  const note = document.getElementById('cfg-ado-query-note');
+  const btn  = document.getElementById('cfg-ado-load-btn');
+  const prev = document.getElementById('cfg-ado-preview');
+
+  if (!queryId) {
+    if (note) note.textContent = 'Selecciona una query para ver su descripción';
+    if (btn)  btn.disabled = true;
+    if (prev) prev.textContent = '';
+    return;
+  }
+
+  // Also sync to manual ID field
+  const manualInput = document.getElementById('cfg-ado-query-id');
+  if (manualInput) manualInput.value = queryId;
+
+  // Show query name in note
+  const opt = sel?.querySelector(`option[value="${queryId}"]`);
+  if (note && opt) {
+    const qtype = opt.dataset.queryType || '';
+    note.textContent = `Query seleccionada: "${opt.dataset.name}" · Tipo: ${qtype}`;
+  }
+  if (btn)  btn.disabled = false;
+  if (prev) prev.textContent = 'Listo para cargar';
+}
+
+/* Step 2: execute selected query and load results */
+async function cfgAdoLoad() {
+  const {org, project, pat} = _cfgAdoCreds();
+
+  // Get query ID: from select or manual input
+  const selVal   = document.getElementById('cfg-ado-query-select')?.value;
+  const manualId = document.getElementById('cfg-ado-query-id')?.value?.trim();
+  const queryId  = selVal || manualId;
+
+  if (!queryId) {
+    cfgAdoStatusShow('error', 'Selecciona una query o introduce un Query ID manualmente.');
+    return;
+  }
+  if (!org || !project || !pat) {
+    cfgAdoStatusShow('error', 'Rellena organización, proyecto y PAT.');
+    return;
+  }
+
+  const types = cfgAdoGetTypes();
+  const selOpt = document.getElementById('cfg-ado-query-select')?.querySelector(`option[value="${queryId}"]`);
+  const qname  = selOpt?.dataset?.name || queryId;
+
+  cfgAdoStatusShow('loading', `Ejecutando query "${qname}"...`);
+
+  try {
+    const auth  = adoBasicAuth(pat);
+    const base  = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+
+    // Execute the saved query
+    const runUrl = `${base}/_apis/wit/wiql/${queryId}?api-version=7.1`;
+    const runRes = await fetch(runUrl, { headers: { 'Authorization': auth } });
+    if (runRes.status === 404) throw new Error(`Query "${queryId}" no encontrada. Verifica el ID.`);
+    if (!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
+
+    const runData = await runRes.json();
+
+    // Extract IDs (flat or tree)
+    let ids = [];
+    if (runData.workItems)         ids = runData.workItems.map(w => w.id);
+    if (runData.workItemRelations) ids = runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
+    ids = [...new Set(ids)]; // deduplicate
+
+    if (!ids.length) throw new Error(`La query "${qname}" no devolvió work items.`);
+
+    cfgAdoStatusShow('loading', `Query ejecutada · ${ids.length} work items · Cargando detalles...`);
+
+    // Batch fetch details
+    const fields = [
+      'System.Id','System.Title','System.WorkItemType','System.State',
+      'System.AssignedTo','System.CreatedDate','System.Description',
+      'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'
+    ];
+
+    const allItems = [];
+    for (let i=0; i<ids.length; i+=200) {
+      const batch = ids.slice(i, i+200);
+      const bRes = await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`, {
+        method: 'POST',
+        headers: { 'Authorization': auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: batch, fields })
+      });
+      if (!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
+      const bData = await bRes.json();
+      allItems.push(...(bData.value || []));
+    }
+
+    // Filter by work item types if specified
+    const filtered = types.length
+      ? allItems.filter(wi => types.includes(wi.fields?.['System.WorkItemType']))
+      : allItems;
+
+    if (!filtered.length) throw new Error(
+      `No se encontraron work items del tipo seleccionado (${types.join(', ')}) en esta query.`
+    );
+
+    // Apply to app
+    _adoCreds = {org, project, pat, queryId};
+    _adoConnected = true;
+    const projects = filtered.map(wi => adoMapToProject(wi));
+    applyProjects(projects, `ADO · ${qname}`);
+
+    // Update badges
+    const badge = document.getElementById('ado-badge');
+    if (badge) {
+      badge.className = 'ado-badge connected';
+      document.getElementById('ado-badge-lbl').textContent = `ADO · ${filtered.length} items`;
+    }
+
+    const prev = document.getElementById('cfg-ado-preview');
+    if (prev) prev.textContent = '';
+
+    cfgAdoStatusShow('ok',
+      `✓ ${filtered.length} work items cargados desde "${qname}"${types.length ? ` (${types.join(', ')})` : ''}`);
+    toast(`✓ ${filtered.length} work items de Azure DevOps importados`);
+
+  } catch(e) {
+    cfgAdoStatusShow('error', `✗ ${e.message}`);
+  }
+}
+
+/* ADO type checkboxes — "all" toggles others */
+document.addEventListener('DOMContentLoaded', () => {
+  const allCb = document.getElementById('cfg-ado-type-all');
+  if (allCb) {
+    allCb.addEventListener('change', () => {
+      ['req','task','us','bug','feat'].forEach(t => {
+        const el = document.getElementById('cfg-ado-type-'+t);
+        if (el) el.disabled = allCb.checked;
+      });
+    });
+  }
+});
 
 /* INIT */
 document.getElementById('f-req').value = new Date().toISOString().split('T')[0];
