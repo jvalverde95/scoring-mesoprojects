@@ -3580,6 +3580,10 @@ function startApp() {
   document.getElementById('shell').style.display = 'flex';
   document.getElementById('bar').style.display = 'flex';
 }
+function landingAdoConnect() {
+  startApp();
+  setTimeout(() => goStep('config'), 80);
+}
 function goLanding() {
   document.getElementById('landing').style.display = 'flex';
   document.getElementById('shell').style.display = 'none';
@@ -3815,218 +3819,10 @@ function syncThresholds(which, val) {
 }
 
 function refreshPoolsStep() {
-  const thr = getThr();
-  // Update range labels
-  const setSafe = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
-  setSafe('pcv-s-range', thr.s);
-  setSafe('pcv-m-range', thr.s+'–'+thr.m);
-  setSafe('pcv-l-range', thr.m);
-  // Sync inputs
-  const ts=document.getElementById('thr-s2'); if(ts) ts.value=thr.s;
-  const tm=document.getElementById('thr-m2'); if(tm) tm.value=thr.m;
-  const tll=document.getElementById('thr-l-lbl2'); if(tll) tll.textContent=thr.m+'h';
-
-  const empty = document.getElementById('pool-step-empty');
-  const grid  = document.getElementById('pool-step-grid');
-  if (!portfolioData.length) {
-    if(empty) empty.style.display='block';
-    if(grid)  grid.style.display='none';
-    return;
-  }
-  if(empty) empty.style.display='none';
-  if(grid)  grid.style.display='grid';
-
-  // Count per pool
-  const counts = {S:0,M:0,L:0,null:0};
-  portfolioData.forEach(p => { const pool=getPool(p); counts[pool||'null']++; });
-  setSafe('pcv-s-count', counts.S);
-  setSafe('pcv-m-count', counts.M);
-  setSafe('pcv-l-count', counts.L);
-
-  // Render pools grid (reuse renderPools logic but target pool-step-grid)
-  const pools = {L:[],M:[],S:[]};
-  portfolioData.forEach(p => { const pool=getPool(p); if(pool) pools[pool].push(p); });
-  ['L','M','S'].forEach(k => pools[k].sort((a,b)=>b.sf-a.sf));
-  const defs=[
-    {key:'L',label:'Largo (≥'+thr.m+'h)',sub:'Alta complejidad técnica',cls:'pool-L',color:'var(--d1)',bg:'var(--d1t)'},
-    {key:'M',label:'Medio ('+thr.s+'–'+thr.m+'h)',sub:'Complejidad media',cls:'pool-M',color:'var(--d4)',bg:'var(--d4t)'},
-    {key:'S',label:'Corto (<'+thr.s+'h)',sub:'Quick wins',cls:'pool-S',color:'var(--d3)',bg:'var(--d3t)'},
-  ];
-  grid.innerHTML = defs.map(pd => {
-    const items = pools[pd.key];
-    return `<div class="pool-col">
-      <div class="pool-col-hd" style="background:${pd.bg}">
-        <div>
-          <div class="pool-tag ${pd.cls}" style="font-size:9px">${pd.label}</div>
-          <div style="font-size:9px;color:${pd.color};opacity:.7;margin-top:3px">${pd.sub}</div>
-        </div>
-        <span class="pool-cnt-badge">${items.length}</span>
-      </div>
-      <div style="max-height:480px;overflow-y:auto">
-        ${items.length===0
-          ? '<div class="pool-empty">Sin proyectos</div>'
-          : items.map(p=>{
-              const cl=clsf(p.sf);
-              return `<div class="pool-item">
-                <div><div class="pi-name" title="${p.nom}">${p.nom.substring(0,50)}</div>
-                  <div class="pi-meta">${p.area||'—'} · ${p.horas!=null?p.horas+'h':'sin estimar'}</div></div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px">${cl.et.split(' ')[0]}</span>
-                  <div class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</div>
-                </div>
-              </div>`;
-            }).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  renderPoolsStep();
 }
 
-/* ═══ CONFIG STEP ═══════════════════════════════════════ */
-const DIM_COLORS_HEX = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
-const DIM_TONES_HEX  = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
-let cfgWeights = DIMS.map(d => Math.round(d.peso*100));
-
-function renderConfigStep() {
-  cfgWeights = DIMS.map(d => Math.round(d.peso*100));
-  const cont = document.getElementById('cfg-dim-rows'); if(!cont) return;
-  cont.innerHTML = DIMS.map((d,i) => `
-    <div class="dim-cfg-row">
-      <div class="dim-cfg-badge" style="background:${DIM_TONES_HEX[i]};color:${DIM_COLORS_HEX[i]}">${d.id}</div>
-      <div>
-        <div class="dim-cfg-name">${d.nom.split(',')[0]}</div>
-        <div class="dim-cfg-sub">${d.criterios.length} criterios</div>
-      </div>
-      <div class="dim-cfg-pct">
-        <input type="range" class="dim-cfg-slider" min="1" max="60" step="1"
-          value="${cfgWeights[i]}" id="cfg-sl-${d.id}"
-          oninput="setCfgWeight(${i},this.value)">
-        <input type="number" class="dim-cfg-val" min="1" max="99" value="${cfgWeights[i]}"
-          id="cfg-inp-${d.id}" oninput="setCfgWeight(${i},this.value)">
-        <span style="font-size:10px;color:var(--ink3)">%</span>
-      </div>
-    </div>`).join('');
-  updateCfgTotal();
-  // Sync threshold inputs
-  const t1=document.getElementById('cfg-thr-short'); if(t1) t1.value=getThr().s;
-  const t2=document.getElementById('cfg-thr-medium'); if(t2) t2.value=getThr().m;
-}
-
-function setCfgWeight(i, val) {
-  const v = parseInt(val)||1;
-  cfgWeights[i] = v;
-  const sl=document.getElementById('cfg-sl-'+DIMS[i].id); if(sl) sl.value=v;
-  const inp=document.getElementById('cfg-inp-'+DIMS[i].id); if(inp) inp.value=v;
-  updateCfgTotal();
-}
-
-function updateCfgTotal() {
-  const total = cfgWeights.reduce((a,b)=>a+b,0);
-  const ok = total===100;
-  const totalEl = document.getElementById('cfg-total');
-  const lbl = document.getElementById('cfg-total-lbl');
-  const val = document.getElementById('cfg-total-val');
-  if(totalEl) { totalEl.className='cfg-total '+(ok?'ok':'err'); }
-  if(lbl) { lbl.textContent=ok?'✓ Total correcto':'✗ Suma incorrecta'; lbl.style.color=ok?'var(--s1c)':'var(--d1)'; }
-  if(val) val.textContent=total+'%';
-  // Mark err on inputs
-  DIMS.forEach((d,i) => {
-    const inp=document.getElementById('cfg-inp-'+d.id);
-    if(inp) inp.className='dim-cfg-val'+(total!==100?' err':'');
-  });
-}
-
-function applyCfgWeights() {
-  const total = cfgWeights.reduce((a,b)=>a+b,0);
-  if (total !== 100) { toast('La suma debe ser 100%. Actualmente: '+total+'%'); return; }
-  DIMS.forEach((d,i) => { d.peso = cfgWeights[i]/100; });
-  // Update summary weight editor too
-  renderWeightEditor();
-  upd();
-  if (portfolioData.length) { renderPortfolio(); renderCharts2(); }
-  toast('✓ Pesos aplicados al modelo');
-}
-
-function resetCfgWeights() {
-  const def=[30,20,20,12,10,8];
-  DIMS.forEach((d,i) => { d.peso=def[i]/100; cfgWeights[i]=def[i]; });
-  renderConfigStep(); renderWeightEditor(); upd();
-  toast('↺ Pesos restaurados');
-}
-
-
-
-function updateWizHeader(step) {
-  const badge  = document.getElementById('wh-badge');
-  const nameEl = document.getElementById('wh-name');
-  const metaEl = document.getElementById('wh-meta');
-  const scoreEl= document.getElementById('wh-score');
-  const btnPrev= document.getElementById('btn-prev');
-  const btnNext= document.getElementById('btn-next');
-
-  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
-  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
-
-  const set = (el,txt) => { if(el) el.textContent=txt; };
-  const vis = (el,v)   => { if(el) el.style.visibility=v; };
-  const next = (txt,cls,fn) => { if(btnNext){btnNext.textContent=txt;btnNext.className='wb '+cls;btnNext.onclick=fn;} };
-  const prev = (txt,fn) => { if(btnPrev){btnPrev.style.visibility='visible';btnPrev.textContent=txt;btnPrev.onclick=fn;} };
-
-  if (step === 0) {
-    if(badge){badge.style.cssText='background:var(--surf);color:var(--ink4);font-size:16px;';badge.textContent='📋';}
-    set(nameEl,'datos del proyecto'); set(metaEl,'información básica · paso 0 de 7');
-    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
-    vis(btnPrev,'hidden');
-    next('empezar D1 →','next',()=>stepNav(1));
-  } else if (step === 'summary') {
-    if(badge){badge.style.cssText='background:var(--gl);font-size:14px;';badge.textContent='✓';}
-    set(nameEl,'resumen y resultados'); set(metaEl,'scoring final · sigmoid boost + aging factor');
-    const sf = scoreFinal(getReqDate());
-    if(scoreEl){scoreEl.textContent=sf.toFixed(1);scoreEl.style.color=scColorHex(sf);}
-    vis(btnPrev,'visible'); prev('← D6',()=>goStep(6));
-    next('↺ nueva evaluación','fin',()=>resetAll());
-  } else if (step === 'charts') {
-    if(badge){badge.style.cssText='background:#EEF3FC;font-size:16px;';badge.textContent='📊';}
-    set(nameEl,'gráficas de cartera'); set(metaEl,(portfolioData.length||0)+' proyectos · visualización y posicionamiento');
-    if(scoreEl){scoreEl.textContent=portfolioData.length||'—';scoreEl.style.color='var(--ink)';}
-    vis(btnPrev,'hidden'); next('ir al resumen →','next',()=>goStep('summary'));
-  } else if (step === 'pools') {
-    if(badge){badge.style.cssText='background:#FAF5E6;font-size:16px;';badge.textContent='🗂';}
-    set(nameEl,'clasificación por nivel'); set(metaEl,'pools de ejecución · estimación técnica de horas');
-    const counts={L:0,M:0,S:0}; portfolioData.forEach(p=>{const pool=getPool(p);if(pool)counts[pool]++;});
-    if(scoreEl){scoreEl.textContent=counts.L+'/'+counts.M+'/'+counts.S;scoreEl.style.color='var(--ink)';}
-    vis(btnPrev,'hidden'); next('ir al resumen →','next',()=>goStep('summary'));
-  } else if (step === 'config') {
-    if(badge){badge.style.cssText='background:var(--surf);font-size:16px;';badge.textContent='⚙';}
-    set(nameEl,'configuración del modelo'); set(metaEl,'pesos de dimensiones · umbrales de scoring y pools');
-    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
-    vis(btnPrev,'hidden'); next('aplicar y volver →','fin',()=>goStep('summary'));
-  } else {
-    // Dimension steps 1-6
-    const d = DIMS[step - 1];
-    if (!d) return;
-    if(badge){badge.style.cssText=`background:${DT[step-1]};color:${DC[step-1]};font-size:10px;font-weight:800;`;badge.textContent=d.id;}
-    set(nameEl, d.nom);
-    set(metaEl, `Peso: ${Math.round(d.peso*100)}% · ${d.criterios.length} criterios · paso ${step} de 7`);
-    const ds = scoreDim(d.criterios);
-    if(scoreEl){scoreEl.textContent=ds.toFixed(1);scoreEl.style.color=scColorHex(ds);}
-    vis(btnPrev,'visible');
-    prev(step===1?'← datos':`← D${step-1}`,()=>stepNav(-1));
-    next(step===6?'ver resumen →':`D${step+1} →`, step===6?'fin':'next', ()=>stepNav(1));
-  }
-}
-
-
-/* ═══════════════════════════════════════════════════════
-   AZURE DEVOPS INTEGRATION
-   - PAT auth (Basic base64) — never sent to any proxy
-   - WIQL query: Requirements under Epic 2106
-   - Two-step: WIQL → IDs → workitemsbatch details
-   - Maps fields to the scoring app's project model
-   ═══════════════════════════════════════════════════════ */
-
-let _adoConnected  = false;
-let _adoCreds      = null;   // {org, project, pat, epic}
-
+/* ═══ ADO MODAL ══════════════════════════════════════════ */
 function openAdoModal() {
   document.getElementById('ado-overlay').classList.add('open');
   adoStatusHide();
@@ -4034,1141 +3830,561 @@ function openAdoModal() {
 function closeAdoModal() {
   document.getElementById('ado-overlay').classList.remove('open');
 }
-
 function adoStatusShow(type, msg) {
-  const el = document.getElementById('ado-status');
-  const ml = document.getElementById('ado-status-msg');
-  el.className = 'ado-status ' + type;
-  if (ml) ml.textContent = msg;
+  const el=document.getElementById('ado-status'), ml=document.getElementById('ado-status-msg');
+  const colors={loading:{bg:'#EEF3FC',c:'#1848A0'},ok:{bg:'var(--d3t)',c:'var(--d3)'},error:{bg:'var(--d1t)',c:'var(--d1)'}};
+  const clr=colors[type]||colors.loading;
+  el.className='ado-status '+type; el.style.display='flex'; el.style.background=clr.bg; el.style.color=clr.c;
+  if(ml) ml.textContent=msg;
 }
-function adoStatusHide() {
-  document.getElementById('ado-status').className = 'ado-status';
-}
-
-function adoBasicAuth(pat) {
-  // Azure DevOps Basic auth: base64(':' + pat)
-  return 'Basic ' + btoa(':' + pat);
-}
-
+function adoStatusHide(){ const el=document.getElementById('ado-status'); if(el) el.className='ado-status'; }
+function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }
 async function adoConnect() {
-  const org     = document.getElementById('ado-org').value.trim();
-  const project = document.getElementById('ado-project').value.trim();
-  const pat     = document.getElementById('ado-pat').value.trim();
-
-  if (!org || !project || !pat) {
-    adoStatusShow('error', 'Rellena organización, proyecto y PAT.');
-    return;
-  }
-
-  const btn = document.getElementById('ado-connect-btn');
-  btn.disabled = true;
-  adoStatusShow('loading', 'Verificando credenciales y cargando queries...');
-
+  const org=document.getElementById('ado-org')?.value?.trim();
+  const project=document.getElementById('ado-project')?.value?.trim();
+  const pat=document.getElementById('ado-pat')?.value?.trim();
+  if(!org||!project||!pat){adoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
+  const btn=document.getElementById('ado-connect-btn'); if(btn) btn.disabled=true;
+  adoStatusShow('loading','Guardando credenciales...');
   try {
-    // Sync creds to config section and trigger the full test+query-list flow
-    const setId = (id, val) => { const e=document.getElementById(id); if(e&&val) e.value=val; };
-    setId('cfg-ado-org', org);
-    setId('cfg-ado-project', project);
-    setId('cfg-ado-pat', pat);
-
-    adoStatusShow('ok', '✓ Credenciales guardadas. Ve a ⚙ Config → Azure DevOps para seleccionar la query y cargar.');
+    const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+    set('cfg-ado-org',org); set('cfg-ado-project',project); set('cfg-ado-pat',pat);
+    adoStatusShow('ok','✓ Credenciales guardadas. Ve a ⚙ Config para elegir la query.');
     toast('Credenciales guardadas — abre ⚙ Config para elegir la query');
-    setTimeout(() => { closeAdoModal(); goStep('config'); }, 1000);
-
-  } catch(err) {
-    adoStatusShow('error', err.message || 'Error');
-  } finally {
-    btn.disabled = false;
-  }
+    setTimeout(()=>{closeAdoModal();goStep('config');},1000);
+  } catch(e){ adoStatusShow('error',e.message); }
+  finally{ if(btn) btn.disabled=false; }
 }
-
 async function adoFetchRequirements(org, project, pat, queryId) {
-  // Execute a saved query by ID and return the work items
-  const auth = adoBasicAuth(pat);
-  const base = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
-
-  // Run the saved query
-  const runRes = await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`, {
-    headers: { 'Authorization': auth }
-  });
-  if (runRes.status === 401) throw new Error('PAT inválido o sin permisos (401).');
-  if (runRes.status === 404) throw new Error(`Query "${queryId}" no encontrada (404).`);
-  if (!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
-
-  const runData = await runRes.json();
-
-  // Extract IDs — flat query or tree/link query
-  let ids = [];
-  if (runData.workItems)
-    ids = runData.workItems.map(w => w.id);
-  else if (runData.workItemRelations)
-    ids = runData.workItemRelations.filter(r => r.target).map(r => r.target.id);
-  ids = [...new Set(ids)];
-
-  if (!ids.length) throw new Error('La query no devolvió work items.');
-
-  // Batch fetch details (max 200 per call)
-  const fields = [
-    'System.Id','System.Title','System.WorkItemType','System.State',
+  const auth=adoBasicAuth(pat);
+  const base=`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+  const runRes=await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`,{headers:{'Authorization':auth}});
+  if(runRes.status===401) throw new Error('PAT inválido o sin permisos (401).');
+  if(runRes.status===404) throw new Error(`Query "${queryId}" no encontrada (404).`);
+  if(!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
+  const runData=await runRes.json();
+  let ids=[];
+  if(runData.workItems) ids=runData.workItems.map(w=>w.id);
+  else if(runData.workItemRelations) ids=runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
+  ids=[...new Set(ids)];
+  if(!ids.length) throw new Error('La query no devolvió work items.');
+  const fields=['System.Id','System.Title','System.WorkItemType','System.State',
     'System.AssignedTo','System.CreatedDate','System.Description',
-    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'
-  ];
-  const allItems = [];
-  for (let i=0; i<ids.length; i+=200) {
-    const bRes = await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`, {
-      method: 'POST',
-      headers: { 'Authorization': auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: ids.slice(i, i+200), fields })
-    });
-    if (!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
-    const bData = await bRes.json();
-    allItems.push(...(bData.value || []));
+    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'];
+  const allItems=[];
+  for(let i=0;i<ids.length;i+=200){
+    const bRes=await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`,{
+      method:'POST',headers:{'Authorization':auth,'Content-Type':'application/json'},
+      body:JSON.stringify({ids:ids.slice(i,i+200),fields})});
+    if(!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
+    const bData=await bRes.json(); allItems.push(...(bData.value||[]));
   }
   return allItems;
 }
-
 function adoMapToProject(wi) {
-  const f = wi.fields || {};
+  const f=wi.fields||{};
+  const title=(f['System.Title']||`Work Item ${wi.id}`).trim();
+  const assignee=f['System.AssignedTo'];
+  const sponsor=typeof assignee==='object'?(assignee.displayName||assignee.uniqueName||'').replace(/<[^>]+>/g,'').trim():String(assignee||'').replace(/<[^>]+>/g,'').trim();
+  const descRaw=f['System.Description']||'';
+  const desc=descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
+  const areaPath=f['System.AreaPath']||'';
+  const area=(areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim()||'Sin área';
+  const tags=(f['System.Tags']||'').split(';').map(t=>t.trim()).filter(Boolean);
+  let reqDate=null;
+  const cd=f['System.CreatedDate'];
+  if(cd) reqDate=cd.substring(0,10);
+  const scores={}; CRIT_IDS.forEach(cid=>{scores[cid]=5;});
+  return {nom:`${wi.id} — ${title}`,area,sponsor,scores,reqDate,regDate:null,
+    adoId:wi.id,adoTitle:title,adoType:f['System.WorkItemType']||'',
+    adoState:f['System.State']||'',adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
+    adoDesc:desc,adoTags:tags,adoRaw:f};
+}
 
-  // ── Campos mapeados desde Azure DevOps ─────────────────────────
-  const id       = wi.id;
-  const title    = (f['System.Title'] || `Work Item ${id}`).trim();
-  const wiType   = f['System.WorkItemType'] || '';
-  const state    = f['System.State'] || '';
-  const priority = parseInt(f['Microsoft.VSTS.Common.Priority']) || 3;
-
-  // Sponsor: AssignedTo puede ser objeto {displayName, uniqueName} o string
-  const assignee = f['System.AssignedTo'];
-  const sponsor  = typeof assignee === 'object'
-    ? (assignee.displayName || assignee.uniqueName || '').replace(/<[^>]+>/g,'').trim()
-    : String(assignee || '').replace(/<[^>]+>/g,'').trim();
-
-  // Description: limpiar HTML, limitar a 400 chars para el agente IA
-  const descRaw  = f['System.Description'] || f['System.History'] || '';
-  const desc     = descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ')
-                          .replace(/\s+/g,' ').trim().substring(0, 400);
-
-  // Área: último segmento del AreaPath (p.ej. "DYNAMICS 365\Finanzas" → "Finanzas")
-  const areaPath = f['System.AreaPath'] || '';
-  const area     = (areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim() || 'Sin área';
-
-  // Tags: para enriquecer el scoring IA
-  const tags = (f['System.Tags'] || '').split(';').map(t=>t.trim()).filter(Boolean);
-
-  // Fecha: CreatedDate en formato ISO → YYYY-MM-DD
-  let reqDate = null;
-  const cd = f['System.CreatedDate'];
-  if (cd) reqDate = cd.substring(0, 10);   // "2024-05-20T13:01:10Z" → "2024-05-20"
-
-  // Nombre: WorkItemId — Título del work item
-  const nom = `${id} — ${title}`;
-
-  // Scores iniciales todos a 5 — serán evaluados por el agente IA o manualmente
-  const scores = {};
-  CRIT_IDS.forEach(cid => { scores[cid] = 5; });
-
+/* ═══ CFG ADO ══════════════════════════════════════════════ */
+let _adoCreds=null, _adoConnected=false;
+function _cfgAdoCreds(){
   return {
-    nom,
-    area,
-    sponsor,
-    scores,
-    reqDate,
-    regDate: null,
-    // Campos ADO guardados para el agente IA y para mostrar en la UI
-    adoId:      id,
-    adoTitle:   title,
-    adoType:    wiType,
-    adoState:   state,
-    adoPriority: priority,
-    adoDesc:    desc,
-    adoTags:    tags,
-    adoRaw:     f,   // raw fields — el agente puede acceder a todo
+    org:(document.getElementById('cfg-ado-org')?.value||'').trim(),
+    project:(document.getElementById('cfg-ado-project')?.value||'').trim(),
+    pat:(document.getElementById('cfg-ado-pat')?.value||'').trim(),
   };
 }
-
-// Re-sync from ADO (manual refresh)
-async function adoRefresh() {
-  if (!_adoCreds) { toast('Sin conexión ADO activa'); return; }
-  const {org, project, pat, queryId} = _adoCreds;
-  if (!queryId) { toast('Sin query activa'); return; }
-  adoStatusShow('loading', 'Actualizando desde Azure DevOps...');
-  try {
-    const items = await adoFetchRequirements(org, project, pat, queryId);
-    const projects = items.map(wi => adoMapToProject(wi));
-    applyProjects(projects, `Azure DevOps · ${project} · ${queryId}`);
-    adoStatusHide();
-    toast(`↻ ADO actualizado · ${items.length} Requirements`);
-  } catch(e) {
-    adoStatusShow('error', e.message);
-  }
+function cfgAdoStatusShow(type,msg){
+  const el=document.getElementById('cfg-ado-status'), sp=document.getElementById('cfg-ado-spinner'), ml=document.getElementById('cfg-ado-status-msg');
+  const c={loading:{bg:'#EEF3FC',c:'#1848A0'},ok:{bg:'var(--d3t)',c:'var(--d3)'},error:{bg:'var(--d1t)',c:'var(--d1)'}};
+  const clr=c[type]||c.loading;
+  if(el){el.style.display='flex';el.style.background=clr.bg;el.style.color=clr.c;}
+  if(sp) sp.style.display=type==='loading'?'block':'none';
+  if(ml) ml.textContent=msg;
 }
-
-/* ── LANDING ADO shortcut ─────────────────────────────── */
-function landingAdoConnect() {
-  startApp();
-  setTimeout(() => goStep('config'), 80);
+function cfgAdoSaveCreds(){
+  const c=_cfgAdoCreds();
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+  set('ado-org',c.org); set('ado-project',c.project); if(c.pat) set('ado-pat',c.pat);
+  toast('Credenciales sincronizadas');
 }
-
-/* ── CONFIG STEP ADO helpers ──────────────────────────── */
-function cfgAdoStatusShow(type, msg) {
-  const el  = document.getElementById('cfg-ado-status');
-  const msg_el = document.getElementById('cfg-ado-status-msg');
-  const spinner = document.getElementById('cfg-ado-spinner');
-  if (!el) return;
-  // type: 'loading' | 'ok' | 'error'
-  const colors = {
-    loading: {bg:'#EEF3FC', color:'#1848A0'},
-    ok:      {bg:'var(--d3t)', color:'var(--d3)'},
-    error:   {bg:'var(--d1t)', color:'var(--d1)'},
-  };
-  const c = colors[type] || colors.loading;
-  el.style.display    = 'flex';
-  el.style.background = c.bg;
-  el.style.color      = c.color;
-  if (spinner) spinner.style.display = type === 'loading' ? 'block' : 'none';
-  if (msg_el) msg_el.textContent = msg;
+function cfgAdoQuerySelected(queryId){
+  const sel=document.getElementById('cfg-ado-query-select');
+  const note=document.getElementById('cfg-ado-query-note');
+  const btn=document.getElementById('cfg-ado-load-btn');
+  const prev=document.getElementById('cfg-ado-preview');
+  if(!queryId){if(note)note.textContent='Selecciona una query';if(btn)btn.disabled=true;return;}
+  const mi=document.getElementById('cfg-ado-query-id'); if(mi) mi.value=queryId;
+  const opt=sel?.querySelector(`option[value="${queryId}"]`);
+  if(note&&opt) note.textContent=`Query: "${opt.dataset.name}" · Tipo: ${opt.dataset.queryType||''}`;
+  if(btn) btn.disabled=false;
+  if(prev) prev.textContent='Listo para cargar';
 }
-function cfgAdoStatusHide() {
-  const el = document.getElementById('cfg-ado-status');
-  if (el) el.style.display = 'none';
-}
-
-function _cfgAdoCreds() {
-  return {
-    org:     (document.getElementById('cfg-ado-org')?.value||'').trim(),
-    project: (document.getElementById('cfg-ado-project')?.value||'').trim(),
-    pat:     (document.getElementById('cfg-ado-pat')?.value||'').trim(),
-
-  };
-}
-
-/* Sync config fields → modal fields */
-function cfgAdoSaveCreds() {
-  const c = _cfgAdoCreds();
-  const set = (id, val) => { const el=document.getElementById(id); if(el && val) el.value=val; };
-  set('ado-org',     c.org);
-  set('ado-project', c.project);
-  if (c.pat) set('ado-pat', c.pat);
-  toast('Credenciales sincronizadas al modal principal');
-}
-
-/* ── CONFIG ADO — query-aware flow ───────────────── */
-
-/* Returns selected work item types filter array */
-function cfgAdoGetTypes() {
-  if (document.getElementById('cfg-ado-type-all')?.checked) return [];
-  const map = [
-    ['cfg-ado-type-req',  'Requirement'],
-    ['cfg-ado-type-task', 'Task'],
-    ['cfg-ado-type-us',   'User Story'],
-    ['cfg-ado-type-bug',  'Bug'],
-    ['cfg-ado-type-feat', 'Feature'],
-  ];
-  const types = map.filter(([id]) => document.getElementById(id)?.checked).map(([,t])=>t);
-  return types.length ? types : [];
-}
-
-/* Step 1: test connection + fetch query list */
-async function cfgAdoTest() {
-  const {org, project, pat} = _cfgAdoCreds();
-  if (!org || !project || !pat) {
-    cfgAdoStatusShow('error', 'Rellena organización, proyecto y PAT antes de probar.');
-    return;
-  }
-  cfgAdoStatusShow('loading', 'Verificando credenciales...');
-
-  try {
-    // 1. Verify project exists
-    const projUrl = `https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`;
-    const projRes = await fetch(projUrl, { headers: { 'Authorization': adoBasicAuth(pat) } });
-
-    if (projRes.status === 401) throw new Error('PAT inválido o expirado (401). Genera un nuevo token con permisos Work Items (Read).');
-    if (projRes.status === 404) throw new Error(`Proyecto "${project}" no encontrado (404). Verifica el nombre exacto.`);
-    if (!projRes.ok) throw new Error(`Error ${projRes.status} al verificar el proyecto.`);
-
-    const projData = await projRes.json();
-    cfgAdoStatusShow('loading', `Proyecto "${projData.name}" OK. Cargando queries...`);
-
-    // 2. Fetch shared queries tree (depth 2)
-    const qUrl = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`;
-    const qRes = await fetch(qUrl, { headers: { 'Authorization': adoBasicAuth(pat) } });
-    if (!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
-    const qData = await qRes.json();
-
-    // 3. Flatten query tree (include folders + queries)
-    const allQueries = [];
-    function walkQueries(node, path='') {
-      if (!node) return;
-      const fullPath = path ? `${path} / ${node.name}` : node.name;
-      if (node.queryType) {
-        // It's a real query (not a folder)
-        allQueries.push({ id: node.id, name: node.name, path: fullPath, queryType: node.queryType });
-      }
-      if (node.children) node.children.forEach(c => walkQueries(c, path ? fullPath : node.name));
+async function cfgAdoTest(){
+  const {org,project,pat}=_cfgAdoCreds();
+  if(!org||!project||!pat){cfgAdoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
+  cfgAdoStatusShow('loading','Verificando credenciales...');
+  try{
+    const projRes=await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`,
+      {headers:{'Authorization':adoBasicAuth(pat)}});
+    if(projRes.status===401) throw new Error('PAT inválido (401).');
+    if(projRes.status===404) throw new Error(`Proyecto "${project}" no encontrado (404).`);
+    if(!projRes.ok) throw new Error(`Error ${projRes.status}.`);
+    const projData=await projRes.json();
+    cfgAdoStatusShow('loading',`Proyecto "${projData.name}" OK. Cargando queries...`);
+    const qRes=await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`,
+      {headers:{'Authorization':adoBasicAuth(pat)}});
+    if(!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
+    const qData=await qRes.json();
+    const allQueries=[];
+    function walkQueries(node,path=''){
+      if(!node) return;
+      const fullPath=path?`${path} / ${node.name}`:node.name;
+      if(node.queryType) allQueries.push({id:node.id,name:node.name,path:fullPath,queryType:node.queryType});
+      if(node.children) node.children.forEach(c=>walkQueries(c,path?fullPath:node.name));
     }
-    (qData.value || [qData]).forEach(root => walkQueries(root, ''));
-
-    // 4. Populate select
-    const autoMatch = allQueries.find(q =>
-      q.name.toLowerCase().includes('evolutivo') ||
-      q.name.toLowerCase().includes('pendientes') ||
-      q.name.toLowerCase().includes('gaps')
-    );
-    const sel = document.getElementById('cfg-ado-query-select');
-    if (sel) {
-      sel.innerHTML = '<option value="">— Selecciona una query —</option>';
-      allQueries.forEach(q => {
-        const opt = document.createElement('option');
-        opt.value = q.id;
-        opt.textContent = q.path || q.name;
-        opt.dataset.queryType = q.queryType;
-        opt.dataset.name = q.name;
+    (qData.value||[qData]).forEach(root=>walkQueries(root,''));
+    const sel=document.getElementById('cfg-ado-query-select');
+    if(sel){
+      sel.innerHTML='<option value="">— Selecciona una query —</option>';
+      allQueries.forEach(q=>{
+        const opt=document.createElement('option');
+        opt.value=q.id; opt.textContent=q.path||q.name;
+        opt.dataset.queryType=q.queryType; opt.dataset.name=q.name;
         sel.appendChild(opt);
       });
-      if (autoMatch) {
-        sel.value = autoMatch.id;
-        cfgAdoQuerySelected(autoMatch.id);
-      }
     }
-
-    // Show query section
-    const qs = document.getElementById('cfg-ado-query-section');
-    if (qs) qs.style.display = 'block';
-
-    // Update connection badge
-    const badge = document.getElementById('cfg-ado-conn-badge');
-    if (badge) {
-      badge.style.display = 'inline-block';
-      badge.style.background = '#EEF3FC';
-      badge.style.color = '#0078D4';
-      badge.style.border = '1px solid rgba(0,120,212,.2)';
-      badge.textContent = `✓ conectado · ${allQueries.length} queries`;
-    }
-
-    cfgAdoStatusShow('ok',
-      `✓ Conectado a "${projData.name}" · ${allQueries.length} queries disponibles${autoMatch ? ` · Query "${autoMatch.name}" pre-seleccionada` : ''}`);
-
-  } catch(e) {
-    cfgAdoStatusShow('error', `✗ ${e.message}`);
-    document.getElementById('cfg-ado-query-section').style.display = 'none';
-  }
+    const autoMatch=allQueries.find(q=>q.name.toLowerCase().includes('evolutivo')||q.name.toLowerCase().includes('pendientes')||q.name.toLowerCase().includes('gaps'));
+    if(autoMatch){sel.value=autoMatch.id;cfgAdoQuerySelected(autoMatch.id);}
+    const qs=document.getElementById('cfg-ado-query-section'); if(qs) qs.style.display='block';
+    const badge=document.getElementById('cfg-ado-conn-badge');
+    if(badge){badge.style.display='inline-block';badge.style.background='#EEF3FC';badge.style.color='#0078D4';badge.style.border='1px solid rgba(0,120,212,.2)';badge.textContent=`✓ conectado · ${allQueries.length} queries`;}
+    cfgAdoStatusShow('ok',`✓ Conectado · "${projData.name}" · ${allQueries.length} queries${autoMatch?` · "${autoMatch.name}" pre-seleccionada`:''}`);
+  } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); document.getElementById('cfg-ado-query-section').style.display='none';}
+}
+function cfgAdoGetTypes(){
+  if(document.getElementById('cfg-ado-type-all')?.checked) return [];
+  const map=[['cfg-ado-type-req','Requirement'],['cfg-ado-type-task','Task'],['cfg-ado-type-us','User Story'],['cfg-ado-type-bug','Bug'],['cfg-ado-type-feat','Feature']];
+  const types=map.filter(([id])=>document.getElementById(id)?.checked).map(([,t])=>t);
+  return types.length?types:[];
+}
+async function cfgAdoLoad(){
+  const {org,project,pat}=_cfgAdoCreds();
+  const selVal=document.getElementById('cfg-ado-query-select')?.value;
+  const manualId=document.getElementById('cfg-ado-query-id')?.value?.trim();
+  const queryId=selVal||manualId;
+  if(!queryId){cfgAdoStatusShow('error','Selecciona una query.');return;}
+  if(!org||!project||!pat){cfgAdoStatusShow('error','Rellena credenciales.');return;}
+  const types=cfgAdoGetTypes();
+  const opt=document.getElementById('cfg-ado-query-select')?.querySelector(`option[value="${queryId}"]`);
+  const qname=opt?.dataset?.name||queryId;
+  cfgAdoStatusShow('loading',`Ejecutando query "${qname}"...`);
+  try{
+    const allItems=await adoFetchRequirements(org,project,pat,queryId);
+    const filtered=types.length?allItems.filter(wi=>types.includes(wi.fields?.['System.WorkItemType'])):allItems;
+    if(!filtered.length) throw new Error(`Sin work items del tipo (${types.join(', ')}) en esta query.`);
+    _adoCreds={org,project,pat,queryId}; _adoConnected=true;
+    const badge=document.getElementById('ado-badge');
+    if(badge){badge.className='ado-badge connected';document.getElementById('ado-badge-lbl').textContent=`ADO · ${filtered.length} items`;}
+    const prev=document.getElementById('cfg-ado-preview'); if(prev) prev.textContent='';
+    cfgAdoStatusShow('ok',`✓ ${filtered.length} work items listos · Abriendo evaluador...`);
+    toast(`✓ ${filtered.length} work items del ADO`);
+    setTimeout(()=>openAiModal(filtered),300);
+  } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); }
 }
 
-/* Called when user selects a query from dropdown */
-function cfgAdoQuerySelected(queryId) {
-  const sel  = document.getElementById('cfg-ado-query-select');
-  const note = document.getElementById('cfg-ado-query-note');
-  const btn  = document.getElementById('cfg-ado-load-btn');
-  const prev = document.getElementById('cfg-ado-preview');
-
-  if (!queryId) {
-    if (note) note.textContent = 'Selecciona una query para ver su descripción';
-    if (btn)  btn.disabled = true;
-    if (prev) prev.textContent = '';
-    return;
-  }
-
-  // Also sync to manual ID field
-  const manualInput = document.getElementById('cfg-ado-query-id');
-  if (manualInput) manualInput.value = queryId;
-
-  // Show query name in note
-  const opt = sel?.querySelector(`option[value="${queryId}"]`);
-  if (note && opt) {
-    const qtype = opt.dataset.queryType || '';
-    note.textContent = `Query seleccionada: "${opt.dataset.name}" · Tipo: ${qtype}`;
-  }
-  if (btn)  btn.disabled = false;
-  if (prev) prev.textContent = 'Listo para cargar';
-}
-
-/* Step 2: execute selected query and load results */
-async function cfgAdoLoad() {
-  const {org, project, pat} = _cfgAdoCreds();
-
-  // Get query ID: from select or manual input
-  const selVal   = document.getElementById('cfg-ado-query-select')?.value;
-  const manualId = document.getElementById('cfg-ado-query-id')?.value?.trim();
-  const queryId  = selVal || manualId;
-
-  if (!queryId) {
-    cfgAdoStatusShow('error', 'Selecciona una query o introduce un Query ID manualmente.');
-    return;
-  }
-  if (!org || !project || !pat) {
-    cfgAdoStatusShow('error', 'Rellena organización, proyecto y PAT.');
-    return;
-  }
-
-  const types = cfgAdoGetTypes();
-  const selOpt = document.getElementById('cfg-ado-query-select')?.querySelector(`option[value="${queryId}"]`);
-  const qname  = selOpt?.dataset?.name || queryId;
-
-  cfgAdoStatusShow('loading', `Ejecutando query "${qname}"...`);
-
-  try {
-    const auth  = adoBasicAuth(pat);
-    const base  = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
-
-    // Execute the saved query
-    const runUrl = `${base}/_apis/wit/wiql/${queryId}?api-version=7.1`;
-    const runRes = await fetch(runUrl, { headers: { 'Authorization': auth } });
-    if (runRes.status === 404) throw new Error(`Query "${queryId}" no encontrada. Verifica el ID.`);
-    if (!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
-
-    const runData = await runRes.json();
-
-    // Extract IDs (flat or tree)
-    let ids = [];
-    if (runData.workItems)         ids = runData.workItems.map(w => w.id);
-    if (runData.workItemRelations) ids = runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
-    ids = [...new Set(ids)]; // deduplicate
-
-    if (!ids.length) throw new Error(`La query "${qname}" no devolvió work items.`);
-
-    cfgAdoStatusShow('loading', `Query ejecutada · ${ids.length} work items · Cargando detalles...`);
-
-    // Batch fetch details
-    const fields = [
-      'System.Id','System.Title','System.WorkItemType','System.State',
-      'System.AssignedTo','System.CreatedDate','System.Description',
-      'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'
-    ];
-
-    const allItems = [];
-    for (let i=0; i<ids.length; i+=200) {
-      const batch = ids.slice(i, i+200);
-      const bRes = await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`, {
-        method: 'POST',
-        headers: { 'Authorization': auth, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: batch, fields })
-      });
-      if (!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
-      const bData = await bRes.json();
-      allItems.push(...(bData.value || []));
-    }
-
-    // Filter by work item types if specified
-    const filtered = types.length
-      ? allItems.filter(wi => types.includes(wi.fields?.['System.WorkItemType']))
-      : allItems;
-
-    if (!filtered.length) throw new Error(
-      `No se encontraron work items del tipo seleccionado (${types.join(', ')}) en esta query.`
-    );
-
-    // Save creds and open AI scoring modal
-    _adoCreds = {org, project, pat, queryId};
-    _adoConnected = true;
-
-    const badge = document.getElementById('ado-badge');
-    if (badge) {
-      badge.className = 'ado-badge connected';
-      document.getElementById('ado-badge-lbl').textContent = `ADO · ${filtered.length} items`;
-    }
-    const prev = document.getElementById('cfg-ado-preview');
-    if (prev) prev.textContent = '';
-
-    cfgAdoStatusShow('ok',
-      `✓ ${filtered.length} work items listos · Abriendo evaluador IA...`);
-    toast(`✓ ${filtered.length} work items del ADO · elige cómo evaluar`);
-
-    // Open AI scoring modal with raw work items
-    setTimeout(() => openAiModal(filtered), 300);
-
-  } catch(e) {
-    cfgAdoStatusShow('error', `✗ ${e.message}`);
-  }
-}
-
-/* ADO type checkboxes — "all" toggles others */
-document.addEventListener('DOMContentLoaded', () => {
-  const allCb = document.getElementById('cfg-ado-type-all');
-  if (allCb) {
-    allCb.addEventListener('change', () => {
-      ['req','task','us','bug','feat'].forEach(t => {
-        const el = document.getElementById('cfg-ado-type-'+t);
-        if (el) el.disabled = allCb.checked;
-      });
-    });
-  }
-});
-
-/* ═══════════════════════════════════════════════════════
-   EVALUADOR DE PROYECTOS — scoring basado en reglas
-   Sin API externa — usa el motor de reglas interno
-   ═══════════════════════════════════════════════════════ */
-
-let _aiItems   = [];  // raw ADO work items
-let _aiScored  = [];  // [{wi, proj, status:'pending'|'scored'|'complete', selected:false}]
-let _aiRunning = false;
-let _aiStopped = false;
-
-/* ── Estado de un item ───────────────────────────────── */
-function aiItemStatus(item) {
-  const scored   = item.status === 'scored' || item.status === 'complete';
-  const hasHoras = item.proj.horas != null && item.proj.horas > 0;
-  if (scored && hasHoras) return 'complete';
-  if (scored)             return 'scored';
-  return 'pending';
-}
-
-/* ── Abrir modal ─────────────────────────────────────── */
-function openAiModal(adoItems) {
-  _aiItems   = adoItems;
-  _aiScored  = adoItems.map(wi => ({
-    wi,
-    proj: adoMapToProject(wi),
-    status: 'pending',
-    selected: false,
-  }));
-  _aiStopped = false;
+/* ═══ AI EVALUATOR ═════════════════════════════════════════ */
+function openAiModal(adoItems){
+  _aiItems=adoItems;
+  _aiScored=adoItems.map(wi=>({wi,proj:adoMapToProject(wi),status:'pending',selected:false}));
+  _aiStopped=false;
   renderAiColumns();
   document.getElementById('ai-overlay').classList.add('open');
 }
-function closeAiModal() {
-  _aiStopped = true;
-  _aiRunning = false;
+function closeAiModal(){
+  _aiStopped=true; _aiRunning=false;
   document.getElementById('ai-overlay').classList.remove('open');
 }
 
-/* ── Render 3 columnas ───────────────────────────────── */
-function renderAiColumns() {
-  const pending  = []; const scored = []; const complete = [];
-  _aiScored.forEach((item, i) => {
-    const st = aiItemStatus(item);
-    item._col = st;
-    if      (st === 'complete') complete.push({item, i});
-    else if (st === 'scored')   scored.push({item, i});
-    else                        pending.push({item, i});
-  });
-
-  const setCol = (colId, items, cls) => {
-    const el = document.getElementById(colId);
-    if (!el) return;
-    el.innerHTML = items.length === 0
-      ? `<div style="padding:20px;text-align:center;color:#CCC;font-size:11px">Sin proyectos</div>`
-      : items.map(({item, i}) => buildCard(item, i, cls)).join('');
-  };
-  setCol('ai-col-pending',  pending,  'pending');
-  setCol('ai-col-scored',   scored,   'scored');
-  setCol('ai-col-complete', complete, 'complete');
-
-  // Update counts
-  const s = (id, n) => { const e=document.getElementById(id); if(e) e.textContent=n; };
-  s('ai-cnt-pending',  pending.length);
-  s('ai-cnt-scored',   scored.length);
-  s('ai-cnt-complete', complete.length);
-
-  // Update progress
-  const done = scored.length + complete.length;
-  const total = _aiScored.length;
-  const lbl  = document.getElementById('ai-prog-lbl');
-  const fill = document.getElementById('ai-prog-fill');
-  if (lbl)  lbl.textContent  = `${done} de ${total} evaluados · ${complete.length} completos`;
-  if (fill) fill.style.width = total ? Math.round(done/total*100)+'%' : '0%';
-}
-
-function buildCard(item, i, colType) {
-  const p     = item.proj;
-  const sf    = item.status !== 'pending' ? ruleScore(p) : null;
-  const col   = sf !== null ? scColorHex(sf) : '#BBBBBB';
-  const cls   = sf !== null ? clsf(sf) : null;
-  const horas = p.horas || '';
-  const desc  = p.adoDesc ? `<div class="ev-card-desc">${p.adoDesc}</div>` : '';
-  const tag   = cls
-    ? `<span class="ev-tag" style="background:${cls.bg};color:${cls.c};border-color:${cls.b}">${cls.et}</span>`
-    : `<span class="ev-tag" style="background:#F5F5F5;color:#AAA;border-color:#E5E5E5">Sin evaluar</span>`;
-
-  const actionBtn = item.status === 'pending'
-    ? `<button class="ev-btn score" onclick="aiScoreOne(${i})">✦ Evaluar</button>`
-    : `<button class="ev-btn rescore" onclick="aiScoreOne(${i})">↻ Reevaluar</button>`;
-
-  const scoreNum = sf !== null
-    ? `<div class="ev-score-big" style="color:${col}">${sf.toFixed(1)}</div>`
-    : `<div class="ev-score-big" style="color:#DDD">—</div>`;
-
-  return `<div class="ev-card${item.selected?' selected':''}" id="ev-card-${i}">
-    <div style="display:flex;align-items:flex-start;gap:8px">
-      <input type="checkbox" class="ev-check" id="ev-chk-${i}"
-        onchange="_aiScored[${i}].selected=this.checked"
-        ${item.selected?'checked':''}>
-      <div style="flex:1;min-width:0">
-        <div class="ev-card-name">${p.nom}</div>
-        <div class="ev-card-meta">${p.area||'—'} · ${p.sponsor||'—'} · ${p.reqDate||'—'}${p.adoType?' · '+p.adoType:''}</div>
-        ${desc}
-        <div class="ev-card-actions">
-          ${scoreNum}
-          ${tag}
-          <input type="number" class="ev-hours-inp" id="ev-hrs-${i}"
-            value="${horas}" placeholder="h" min="1" max="9999"
-            title="Horas estimadas de desarrollo"
-            oninput="aiSetHoras(${i}, this.value)">
-          <span style="font-size:9px;color:#BBB">h</span>
-          ${actionBtn}
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-/* ── Score with internal rules engine ───────────────── */
-function ruleScore(p) {
-  // Apply scores to criterias then compute
-  const s = ruleScoresCriterios(p);
-  CRIT_IDS.forEach(cid => { p.scores[cid] = s[cid] || 5; });
-  const tempProj = computeProj(p);
-  return tempProj.sf;
-}
-
-function ruleScoresCriterios(p) {
-  const nom  = (p.nom || '').toLowerCase();
-  const desc = (p.adoDesc || '').toLowerCase();
-  const tags = (p.adoTags || []).join(' ').toLowerCase();
-  const area = (p.area || '').toLowerCase();
-  const c    = nom + ' ' + desc + ' ' + tags;
-
-  // ── D1: Compliance / Legal / Riesgo ──
-  const isConsejo = ['portal b2b','b2b','magento','dsv','conciliaci'].some(x=>c.includes(x));
-  const isLegal   = ['reglamento','normativa','legal','gdpr','reach','gmp','fda','obligatori',
-                     'aduanas','serializ','firma electr'].some(x=>c.includes(x));
-  const isAudit   = ['auditoría','auditoria','coa','muestreo','military','certificado','calidad',
-                     'trazabilidad','caducidad','bloqueo'].some(x=>c.includes(x));
-  const isRisk    = ['siniestro','impago','fraude','crédito concedido'].some(x=>c.includes(x));
-
-  let d1 = [1,1,1,1];
-  d1[0] = isLegal ? 9 : isAudit ? 8 : isRisk ? 5 : 2;
-  d1[1] = ['peligro','advertencia','prl','safety','pesada','materia prima'].some(x=>c.includes(x)) ? 9
-        : isAudit ? 5 : 2;
-  d1[2] = isRisk ? 9 : isAudit ? 7 : ['cliente','factura','error'].some(x=>c.includes(x)) ? 5 : 2;
-  d1[3] = isLegal ? 9 : isAudit ? 8 : isConsejo ? 5 : 2;
-
-  // ── D2: Estratégico / Consejo ──
-  let d2 = [1,1,1,3];
-  if (isConsejo)       { d2[0]=10; d2[3]=9; }
-  else if (['salesforce','coptis','docuware','integra','datalake'].some(x=>c.includes(x)))
-                       { d2[0]=7; d2[2]=7; }
-  if (['poland','lituania','international','externo'].some(x=>c.includes(x))) d2[1]=8;
-  if (['datalake','bi ','analytics','ia ','machine learning'].some(x=>c.includes(x)))  d2[2]=max3(d2[2],8);
-
-  // ── D3: ROI / Valor / Eficiencia ──
-  const isEfic = ['eficiencia','optimiz','ahorro','autom','masiv','simplific',
-                  'agiliz','proceso por lotes','batch'].some(x=>c.includes(x));
-  const isIncome = ['factura','cobro','pago','impago','conciliaci','rappel','tarifa',
-                    'b2b','magento','venta'].some(x=>c.includes(x));
-  let d3 = [1,1,1,1];
-  d3[0] = isConsejo ? 9 : isIncome ? 7 : 2;
-  d3[1] = isEfic ? 8 : isConsejo ? 6 : 2;   // ← REGLA: eficiencia/optimización = D3 alto
-  d3[2] = ['conciliaci','impago','crédito'].some(x=>c.includes(x)) ? 9
-        : isIncome ? 7 : isEfic ? 6 : 2;
-  d3[3] = ['calidad','coa','caducidad','trazabilidad','muestreo'].some(x=>c.includes(x)) ? 8
-        : ['cliente','servicio'].some(x=>c.includes(x)) ? 6 : 3;
-
-  // ── D4: Técnica ──
-  const isSimple = ['campo','filtro','informe','vista','formulario','alerta','notificación','correo'].some(x=>c.includes(x));
-  const isComplex = ['integra','middleware','api','salesforce','dsv','pim','datalake','coptis'].some(x=>c.includes(x));
-  let d4 = [5,5,5,5];
-  if (isSimple)  { d4[0]=9; d4[1]=9; }
-  if (isComplex) { d4[0]=5; d4[1]=5; }
-  if (['gdpr','firma electr','auditoría'].some(x=>c.includes(x))) d4[3]=8;
-
-  // ── D5: Implantación ──
-  let d5 = [5,6,6];
-  if (isSimple)  { d5[0]=8; d5[2]=9; }
-  if (isComplex) { d5[2]=3; }
-  if (['rfid','hardware','kardex'].some(x=>c.includes(x))) { d5[1]=4; d5[2]=5; }
-
-  // ── D6: Personas / ESG ──
-  let d6 = [4,2,5];
-  if (['rrhh','empleado','nómina','nomina'].some(x=>c.includes(x))) d6[0]=9;
-  if (['ecoembes','sostenib','residuo','medioambient'].some(x=>c.includes(x))) d6[1]=8;
-  if (['formación','training'].some(x=>c.includes(x))) d6[2]=8;
-
-  const all = [...d1,...d2,...d3,...d4,...d5,...d6].map(v => Math.max(1,Math.min(10,Math.round(v))));
-  const map = {};
-  CRIT_IDS.forEach((cid,i) => { map[cid] = all[i] || 5; });
-  return map;
-}
-function max3(a,b){ return Math.max(a,b); }
-
-/* ── Evaluar uno ────────────────────────────────────── */
-function aiScoreOne(idx) {
-  const item = _aiScored[idx];
-  if (!item) return;
-  const scores = ruleScoresCriterios(item.proj);
-  CRIT_IDS.forEach(cid => { item.proj.scores[cid] = scores[cid]; });
-  item.status = 'scored';
-  // Check if complete
-  if (item.proj.horas > 0) item.status = 'complete';
-  renderAiColumns();
-}
-
-/* ── Evaluar todos ─────────────────────────────────── */
-async function aiScoreAll() {
-  _aiStopped = false; _aiRunning = true;
-  const btn = document.getElementById('ai-score-all-btn');
-  const stop = document.getElementById('ai-stop-btn');
-  if (btn)  btn.disabled = true;
-  if (stop) stop.style.display = 'flex';
-
-  for (let i = 0; i < _aiScored.length; i++) {
-    if (_aiStopped) break;
-    if (_aiScored[i].status !== 'pending') continue;
-    aiScoreOne(i);
-    // Yield to keep UI responsive
-    if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-  _aiRunning = false;
-  if (btn)  btn.disabled = false;
-  if (stop) stop.style.display = 'none';
-  toast(`✓ ${_aiScored.filter(s=>s.status!=='pending').length} proyectos evaluados`);
-}
-
-function aiStopScoring() {
-  _aiStopped = true; _aiRunning = false;
-  const stop = document.getElementById('ai-stop-btn');
-  if (stop) stop.style.display = 'none';
-}
-
-/* ── Horas ─────────────────────────────────────────── */
-function aiSetHoras(idx, val) {
-  const item = _aiScored[idx];
-  if (!item) return;
-  const n = parseFloat(val);
-  item.proj.horas = (Number.isFinite(n) && n > 0) ? n : null;
-  // Update status
-  if (item.status !== 'pending') {
-    item.status = item.proj.horas > 0 ? 'complete' : 'scored';
-  }
-  // Debounce re-render
-  clearTimeout(aiSetHoras._t);
-  aiSetHoras._t = setTimeout(() => renderAiColumns(), 400);
-}
-
-function aiBulkHoras() {
-  const val = parseFloat(document.getElementById('ai-bulk-horas')?.value);
-  if (!Number.isFinite(val) || val <= 0) { toast('Selecciona un valor de horas'); return; }
-  let count = 0;
-  _aiScored.forEach(item => {
-    if (item.selected) {
-      item.proj.horas = val;
-      if (item.status !== 'pending') item.status = 'complete';
-      count++;
-    }
-  });
-  renderAiColumns();
-  toast(`✓ ${count} proyectos: ${val}h asignadas`);
-}
-
-/* ── Cargar en cartera ─────────────────────────────── */
-function aiImportAll() {
-  if (!_aiScored.length) { toast('Sin proyectos para cargar'); return; }
-  portfolioData = _aiScored.map(item => {
-    const p = item.proj;
-    const proj = computeProj({
-      nom:p.nom, area:p.area, sponsor:p.sponsor,
-      scores:p.scores, reqDate:p.reqDate, regDate:p.regDate,
-    });
-    proj.horas   = p.horas || null;
-    proj.adoId   = p.adoId;
-    proj.adoState= p.adoState;
-    proj.adoType = p.adoType;
-    return proj;
-  });
-  portfolioData.forEach(p => { if(p.horas===undefined) p.horas=null; });
-
-  renderPortfolio(); renderPools();
-  const el=document.getElementById('portfolio'); if(el) el.style.display='block';
-  const cp=document.getElementById('charts-panel'); if(cp) cp.style.display='block';
-  const bc=document.getElementById('btn-clear'); if(bc) bc.style.display='flex';
-  renderCharts();
-  closeAiModal();
-  goStep('summary');
-
-  const scored   = _aiScored.filter(s => s.status !== 'pending').length;
-  const complete = _aiScored.filter(s => s.status === 'complete').length;
-  toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados · ${complete} con horas`);
-}
-
-/* ═══════════════════════════════════════════════════════
-   PROJECT EDIT MODAL — visual editor for portfolio items
-   ═══════════════════════════════════════════════════════ */
-let _pemIdx = 0;  // current project index
-
-function openProjectEdit(idx) {
-  _pemIdx = idx;
-  renderPemBody();
+/* ═══ PROJECT EDIT MODAL ════════════════════════════════════ */
+let _pemIdx=0;
+function openProjectEdit(idx){
+  _pemIdx=idx; renderPemBody();
   document.getElementById('proj-edit-overlay').classList.add('open');
-  // Show DV save button only if configured
-  const dvBtn = document.getElementById('pem-dv-btn');
-  if (dvBtn) dvBtn.style.display = _dvCfg.url ? 'flex' : 'none';
+  const dvBtn=document.getElementById('pem-dv-btn');
+  if(dvBtn) dvBtn.style.display=_dvCfg.url?'flex':'none';
 }
-
-function closeProjEdit() {
+function closeProjEdit(){
   document.getElementById('proj-edit-overlay').classList.remove('open');
-  // Refresh pools/portfolio after edits
-  renderPortfolio();
-  renderPools();
-  if (currentStep === 'pools') renderPoolsStep();
+  renderPortfolio(); renderPools();
+  if(currentStep==='pools') renderPoolsStep();
 }
-
-function renderPemBody() {
-  const p = portfolioData[_pemIdx];
-  if (!p) return;
-
-  // Update header
-  const sf = p.sf || 0;
-  const cls = clsf(sf);
-  const title = document.getElementById('pem-title');
-  const meta  = document.getElementById('pem-meta');
-  const score = document.getElementById('pem-score');
-  const ctr   = document.getElementById('pem-counter');
-  if (title) title.textContent = p.nom.length>60 ? p.nom.substring(0,58)+'…' : p.nom;
-  if (meta)  meta.textContent  = (p.area||'—') + ' · ' + (p.sponsor||'—') + (p.adoState?' · ADO: '+p.adoState:'');
-  if (score) { score.textContent=sf.toFixed(1); score.style.color=scColorHex(sf); }
-  if (ctr)   ctr.textContent = (_pemIdx+1)+' de '+portfolioData.length;
-
-  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
-  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
-
-  const body = document.getElementById('pem-body');
-  if (!body) return;
-
-  // Build dim sliders
-  const dimSliders = DIMS.map((d, di) => {
-    const ds = scoreDim(d.criterios.map(c => ({...c, val: p.scores[c.id]||5})));
-    const crits = d.criterios.map(c => {
-      const val = p.scores[c.id]||5;
-      return `<div class="pem-crit">
-        <div class="pem-crit-name">${c.nom.substring(0,28)}</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input type="range" class="pem-slider" min="1" max="10" step="1" value="${val}"
-            style="flex:1;accent-color:${DC[di]}"
-            oninput="pemSetScore(${_pemIdx},'${c.id}',this.value,this.nextElementSibling,${di})">
-          <span class="pem-crit-val" style="color:${DC[di]}">${val}</span>
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="pem-dim">
-      <div class="pem-dim-hd">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="width:28px;height:28px;border-radius:50%;background:${DT[di]};color:${DC[di]};font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center">${d.id}</span>
-          <div>
-            <div style="font-size:11px;font-weight:600;color:var(--ink)">${d.nom}</div>
-            <div style="font-size:8px;color:var(--ink4)">Peso: ${Math.round(d.peso*100)}%</div>
-          </div>
-        </div>
-        <div class="pem-dim-score" id="pem-ds-${d.id}" style="color:${scColorHex(ds)}">${ds.toFixed(1)}</div>
-      </div>
-      <div class="pem-criteria">${crits}</div>
-    </div>`;
-  }).join('');
-
-  body.innerHTML = `
-    <!-- Info fields -->
-    <div class="pem-row">
-      <div class="pem-field">
-        <div class="pem-label">Nombre del proyecto</div>
-        <input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}"
-          oninput="portfolioData[${_pemIdx}].nom=this.value">
-      </div>
-      <div class="pem-field">
-        <div class="pem-label">Área</div>
-        <input class="pem-inp" type="text" value="${p.area||''}"
-          oninput="portfolioData[${_pemIdx}].area=this.value">
-      </div>
-    </div>
-    <div class="pem-row">
-      <div class="pem-field">
-        <div class="pem-label">Sponsor</div>
-        <input class="pem-inp" type="text" value="${p.sponsor||''}"
-          oninput="portfolioData[${_pemIdx}].sponsor=this.value">
-      </div>
-      <div class="pem-field">
-        <div class="pem-label">Horas estimadas</div>
-        <input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas"
-          oninput="pemSetHoras(${_pemIdx},this.value)">
-      </div>
-    </div>
-    <div class="pem-row">
-      <div class="pem-field">
-        <div class="pem-label">Fecha de solicitud</div>
-        <input class="pem-inp" type="date" value="${p.reqDate||''}"
-          oninput="portfolioData[${_pemIdx}].reqDate=this.value">
-      </div>
-      <div class="pem-field">
-        <div class="pem-label">Clasificación actual</div>
-        <div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cls.bg};color:${cls.c};border:1px solid ${cls.b}">${cls.et}</div>
-      </div>
-    </div>
-    <!-- Dimensions -->
-    <div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>
-    ${dimSliders}
-  `;
-}
-
-function pemSetScore(projIdx, critId, val, valSpan, dimIdx) {
-  const v = parseInt(val);
-  if (valSpan) { valSpan.textContent = v; valSpan.style.color = scColorHex(v); }
-  portfolioData[projIdx].scores[critId] = v;
-  // Recompute project
-  const p = portfolioData[projIdx];
-  const updated = computeProj(p);
-  portfolioData[projIdx].sf = updated.sf;
-  // Update header score
-  const scoreEl = document.getElementById('pem-score');
-  if (scoreEl) { scoreEl.textContent=updated.sf.toFixed(1); scoreEl.style.color=scColorHex(updated.sf); }
-  // Update dim score
-  const d = DIMS[dimIdx];
-  const ds = scoreDim(d.criterios.map(c=>({...c,val:portfolioData[projIdx].scores[c.id]||5})));
-  const dsEl = document.getElementById('pem-ds-'+d.id);
-  if (dsEl) { dsEl.textContent=ds.toFixed(1); dsEl.style.color=scColorHex(ds); }
-}
-
-function pemSetHoras(projIdx, val) {
-  const n = parseFloat(val);
-  portfolioData[projIdx].horas = (Number.isFinite(n) && n > 0) ? n : null;
-}
-
-function pemSave() {
-  const p = portfolioData[_pemIdx];
-  // Recompute final
-  const updated = computeProj(p);
-  Object.assign(portfolioData[_pemIdx], updated);
-  portfolioData[_pemIdx].horas = p.horas;
+function pemSave(){
+  const p=portfolioData[_pemIdx];
+  const updated=computeProj(p);
+  Object.assign(portfolioData[_pemIdx],updated);
+  portfolioData[_pemIdx].horas=p.horas;
   toast('✓ Proyecto actualizado');
-  renderPemBody(); // refresh header score
+  renderPemBody();
+}
+function pemPrev(){ if(_pemIdx>0){_pemIdx--;renderPemBody();} }
+function pemNext(){ if(_pemIdx<portfolioData.length-1){_pemIdx++;renderPemBody();} }
+async function pemSaveDataverse(){
+  const p=portfolioData[_pemIdx]; if(!p) return;
+  pemSave();
+  try{ const token=await dvGetToken(); await dvUpsertProject(p,token); toast('✓ Guardado en Dataverse'); }
+  catch(e){ toast('✗ Dataverse: '+e.message); }
 }
 
-function pemPrev() {
-  if (_pemIdx > 0) { _pemIdx--; renderPemBody(); }
+/* ═══ DATAVERSE ════════════════════════════════════════════ */
+let _dvCfg={url:'',tenant:'',clientId:'',secret:'',table:'meso_proyectoscoring',
+  fieldName:'meso_nombre',fieldScore:'meso_scorefinal',fieldArea:'meso_area',
+  fieldHoras:'meso_horasestimadas',fieldCls:'meso_clasificacion'};
+let _dvToken=null, _dvTokenExp=0;
+function dvSaveCfg(){
+  const g=id=>document.getElementById(id)?.value?.trim()||'';
+  _dvCfg.url=g('cfg-dv-url'); _dvCfg.tenant=g('cfg-dv-tenant');
+  _dvCfg.clientId=g('cfg-dv-clientid'); _dvCfg.secret=g('cfg-dv-secret');
+  _dvCfg.table=g('cfg-dv-table')||'meso_proyectoscoring';
+  _dvCfg.fieldName=g('cfg-dv-field-name')||'meso_nombre';
+  _dvCfg.fieldScore=g('cfg-dv-field-score')||'meso_scorefinal';
+  _dvCfg.fieldArea=g('cfg-dv-field-area')||'meso_area';
+  _dvCfg.fieldHoras=g('cfg-dv-field-horas')||'meso_horasestimadas';
+  _dvCfg.fieldCls=g('cfg-dv-field-cls')||'meso_clasificacion';
+  toast('✓ Configuración Dataverse guardada');
 }
-function pemNext() {
-  if (_pemIdx < portfolioData.length-1) { _pemIdx++; renderPemBody(); }
+function dvStatusShow(type,msg){
+  const el=document.getElementById('cfg-dv-status'), ml=document.getElementById('cfg-dv-status-msg'), sp=document.getElementById('cfg-dv-spinner');
+  const c={loading:{bg:'#F3E8FF',c:'#742774'},ok:{bg:'var(--d3t)',c:'var(--d3)'},error:{bg:'var(--d1t)',c:'var(--d1)'}};
+  const clr=c[type]||c.loading;
+  if(el){el.style.display='flex';el.style.background=clr.bg;el.style.color=clr.c;}
+  if(sp) sp.style.display=type==='loading'?'block':'none';
+  if(ml) ml.textContent=msg;
 }
-
-/* ═══════════════════════════════════════════════════════
-   DATAVERSE / POWER PLATFORM INTEGRATION
-   OAuth 2.0 Client Credentials flow
-   ═══════════════════════════════════════════════════════ */
-let _dvCfg = {url:'', tenant:'', clientId:'', secret:'', table:'meso_proyectoscoring',
-              fieldName:'meso_nombre', fieldScore:'meso_scorefinal', fieldArea:'meso_area',
-              fieldHoras:'meso_horasestimadas', fieldCls:'meso_clasificacion'};
-let _dvToken = null;
-let _dvTokenExp = 0;
-
-function dvSaveCfg() {
-  _dvCfg.url      = document.getElementById('cfg-dv-url')?.value?.trim()  || '';
-  _dvCfg.tenant   = document.getElementById('cfg-dv-tenant')?.value?.trim() || '';
-  _dvCfg.clientId = document.getElementById('cfg-dv-clientid')?.value?.trim() || '';
-  _dvCfg.secret   = document.getElementById('cfg-dv-secret')?.value?.trim()  || '';
-  _dvCfg.table    = document.getElementById('cfg-dv-table')?.value?.trim()   || 'meso_proyectoscoring';
-  _dvCfg.fieldName  = document.getElementById('cfg-dv-field-name')?.value?.trim()  || 'meso_nombre';
-  _dvCfg.fieldScore = document.getElementById('cfg-dv-field-score')?.value?.trim() || 'meso_scorefinal';
-  _dvCfg.fieldArea  = document.getElementById('cfg-dv-field-area')?.value?.trim()  || 'meso_area';
-  _dvCfg.fieldHoras = document.getElementById('cfg-dv-field-horas')?.value?.trim() || 'meso_horasestimadas';
-  _dvCfg.fieldCls   = document.getElementById('cfg-dv-field-cls')?.value?.trim()   || 'meso_clasificacion';
-  toast('✓ Configuración Dataverse guardada en sesión');
-}
-
-function dvStatusShow(type, msg) {
-  const el  = document.getElementById('cfg-dv-status');
-  const msg_el = document.getElementById('cfg-dv-status-msg');
-  const spin = document.getElementById('cfg-dv-spinner');
-  if (!el) return;
-  const colors = {loading:{bg:'#F3E8FF',color:'#742774'}, ok:{bg:'var(--d3t)',color:'var(--d3)'}, error:{bg:'var(--d1t)',color:'var(--d1)'}};
-  const c = colors[type]||colors.loading;
-  el.style.display='flex'; el.style.background=c.bg; el.style.color=c.color;
-  if (spin) spin.style.display = type==='loading'?'block':'none';
-  if (msg_el) msg_el.textContent = msg;
-}
-
-async function dvGetToken() {
-  if (_dvToken && Date.now() < _dvTokenExp) return _dvToken;
+async function dvGetToken(){
+  if(_dvToken&&Date.now()<_dvTokenExp) return _dvToken;
   dvSaveCfg();
-  const {tenant, clientId, secret, url} = _dvCfg;
-  if (!tenant||!clientId||!secret||!url) throw new Error('Completa todos los campos de configuración Dataverse');
-  const resource = url.endsWith('/') ? url : url+'/';
-  const body = new URLSearchParams({
-    grant_type:'client_credentials', client_id:clientId,
-    client_secret:secret, scope: resource+'.default'
-  });
-  const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,{
-    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({}));
-    throw new Error(`Auth error ${res.status}: ${err.error_description||err.error||'unknown'}`);
-  }
-  const data = await res.json();
-  _dvToken = data.access_token;
-  _dvTokenExp = Date.now() + (data.expires_in - 60)*1000;
+  const{url,tenant,clientId,secret}=_dvCfg;
+  if(!tenant||!clientId||!secret||!url) throw new Error('Completa todos los campos de Dataverse');
+  const resource=(url.endsWith('/')?url:url+'/');
+  const body=new URLSearchParams({grant_type:'client_credentials',client_id:clientId,client_secret:secret,scope:resource+'.default'});
+  const res=await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(`Auth ${res.status}: ${e.error_description||e.error||'unknown'}`);}
+  const data=await res.json(); _dvToken=data.access_token; _dvTokenExp=Date.now()+(data.expires_in-60)*1000;
   return _dvToken;
 }
-
-async function dvTest() {
-  dvSaveCfg();
-  dvStatusShow('loading','Autenticando con Azure AD...');
-  try {
-    const token = await dvGetToken();
-    dvStatusShow('loading','Verificando acceso a Dataverse...');
-    const url = `${_dvCfg.url}/api/data/v9.2/${_dvCfg.table}s?$top=1&$select=${_dvCfg.fieldName}`;
-    const res = await fetch(url, { headers:{'Authorization':'Bearer '+token,'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0'} });
-    if (res.status===401) throw new Error('Sin acceso a Dataverse (401). Verifica permisos de la app.');
-    if (res.status===404) throw new Error(`Tabla "${_dvCfg.table}" no encontrada. Créala en Power Platform.`);
-    if (!res.ok) throw new Error(`Error ${res.status} accediendo a Dataverse.`);
-    const data = await res.json();
-    dvStatusShow('ok', `✓ Conexión correcta · Tabla "${_dvCfg.table}" · ${data.value?.length??0} registros de prueba`);
-    const badge = document.getElementById('cfg-dv-badge');
-    if (badge) { badge.style.display='inline-block';badge.style.background='#F3E8FF';badge.style.color='#742774';badge.style.border='1px solid rgba(116,39,116,.2)';badge.textContent='✓ conectado'; }
-    const syncBtn = document.getElementById('cfg-dv-sync-btn');
-    if (syncBtn) syncBtn.disabled = false;
-    const dvBtn = document.getElementById('pem-dv-btn');
-    if (dvBtn) dvBtn.style.display='flex';
-  } catch(e) {
-    dvStatusShow('error','✗ '+e.message);
-  }
+async function dvTest(){
+  dvSaveCfg(); dvStatusShow('loading','Autenticando...');
+  try{
+    const token=await dvGetToken();
+    dvStatusShow('loading','Verificando tabla...');
+    const res=await fetch(`${_dvCfg.url}/api/data/v9.2/${_dvCfg.table}s?$top=1&$select=${_dvCfg.fieldName}`,
+      {headers:{'Authorization':'Bearer '+token,'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0'}});
+    if(res.status===401) throw new Error('Sin acceso a Dataverse (401).');
+    if(res.status===404) throw new Error(`Tabla "${_dvCfg.table}" no encontrada.`);
+    if(!res.ok) throw new Error(`Error ${res.status}.`);
+    const data=await res.json();
+    dvStatusShow('ok',`✓ Conexión correcta · Tabla "${_dvCfg.table}" · ${data.value?.length??0} registros`);
+    const badge=document.getElementById('cfg-dv-badge');
+    if(badge){badge.style.display='inline-block';badge.textContent='✓ conectado';}
+    const btn=document.getElementById('cfg-dv-sync-btn'); if(btn) btn.disabled=false;
+    const dvBtn=document.getElementById('pem-dv-btn'); if(dvBtn) dvBtn.style.display='flex';
+  } catch(e){ dvStatusShow('error','✗ '+e.message); }
 }
-
-async function dvSyncAll() {
-  if (!portfolioData.length) { toast('Sin proyectos en la cartera para sincronizar'); return; }
+async function dvSyncAll(){
+  if(!portfolioData.length){toast('Sin proyectos para sincronizar');return;}
   dvStatusShow('loading',`Sincronizando ${portfolioData.length} proyectos...`);
-  try {
-    const token = await dvGetToken();
-    let ok=0, err=0;
-    for (const p of portfolioData) {
-      try { await dvUpsertProject(p, token); ok++; }
-      catch(e) { err++; console.warn('DV upsert error:', e.message); }
-    }
-    dvStatusShow(err?'error':'ok', `✓ ${ok} proyectos sincronizados${err?' · '+err+' errores':''}`);
-    toast(`↑ Dataverse: ${ok} proyectos sincronizados`);
-  } catch(e) {
-    dvStatusShow('error','✗ '+e.message);
+  try{
+    const token=await dvGetToken(); let ok=0,err=0;
+    for(const p of portfolioData){try{await dvUpsertProject(p,token);ok++;}catch(e){err++;console.warn(e.message);}}
+    dvStatusShow(err?'error':'ok',`✓ ${ok} proyectos sincronizados${err?' · '+err+' errores':''}`);
+    toast(`↑ Dataverse: ${ok} proyectos`);
+  } catch(e){ dvStatusShow('error','✗ '+e.message); }
+}
+
+/* ═══ CONFIG STEP ══════════════════════════════════════════ */
+function applyCfgWeights(){
+  const total=DIMS.reduce((s,d)=>{const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);return s+(isNaN(v)?0:v);},0);
+  if(total!==100){toast('Los pesos deben sumar 100% (ahora: '+total+'%)');return;}
+  DIMS.forEach(d=>{const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);d.peso=v/100;});
+  renderWeightEditor();
+  if(portfolioData.length){portfolioData=portfolioData.map(p=>computeProj(p));renderPortfolio();}
+  upd(); toast('✓ Pesos aplicados');
+}
+function resetCfgWeights(){
+  const defs=[0.30,0.20,0.20,0.12,0.10,0.08];
+  DIMS.forEach((d,i)=>{d.peso=defs[i];const sl=document.getElementById('cfg-slider-'+d.id),vl=document.getElementById('cfg-val-'+d.id);if(sl)sl.value=Math.round(defs[i]*100);if(vl)vl.value=Math.round(defs[i]*100);});
+  updateCfgTotal(); applyCfgWeights();
+}
+
+/* ═══ WIZARD HEADER ════════════════════════════════════════ */
+function updateWizHeader(step){
+  const badge=document.getElementById('wh-badge'), nameEl=document.getElementById('wh-name'),
+        metaEl=document.getElementById('wh-meta'), scoreEl=document.getElementById('wh-score'),
+        btnPrev=document.getElementById('btn-prev'), btnNext=document.getElementById('btn-next');
+  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
+  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
+  const set=(el,txt)=>{if(el) el.textContent=txt;};
+  const vis=(el,v)=>{if(el) el.style.visibility=v;};
+  const nxt=(txt,cls,fn)=>{if(btnNext){btnNext.textContent=txt;btnNext.className='wb '+cls;btnNext.onclick=fn;}};
+  const prv=(txt,fn)=>{if(btnPrev){btnPrev.style.visibility='visible';btnPrev.textContent=txt;btnPrev.onclick=fn;}};
+  if(step===0){
+    if(badge){badge.style.cssText='background:var(--surf);color:var(--ink4);font-size:16px;';badge.textContent='📋';}
+    set(nameEl,'datos del proyecto');set(metaEl,'información básica · paso 0 de 7');
+    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
+    vis(btnPrev,'hidden'); nxt('empezar D1 →','next',()=>stepNav(1));
+  } else if(step==='summary'){
+    if(badge){badge.style.cssText='background:var(--gl);font-size:14px;';badge.textContent='✓';}
+    set(nameEl,'resumen y resultados');set(metaEl,'scoring final · sigmoid boost + aging factor');
+    const sf=scoreFinal(getReqDate());
+    if(scoreEl){scoreEl.textContent=sf.toFixed(1);scoreEl.style.color=scColorHex(sf);}
+    vis(btnPrev,'visible');prv('← D6',()=>goStep(6));nxt('↺ nueva evaluación','fin',()=>resetAll());
+  } else if(step==='charts'){
+    if(badge){badge.style.cssText='background:#EEF3FC;font-size:16px;';badge.textContent='📊';}
+    set(nameEl,'gráficas de cartera');set(metaEl,(portfolioData.length||0)+' proyectos');
+    if(scoreEl){scoreEl.textContent=portfolioData.length||'—';scoreEl.style.color='var(--ink)';}
+    vis(btnPrev,'hidden');nxt('ir al resumen →','next',()=>goStep('summary'));
+  } else if(step==='pools'){
+    if(badge){badge.style.cssText='background:#FAF5E6;font-size:16px;';badge.textContent='🗂';}
+    set(nameEl,'clasificación por nivel');set(metaEl,'pools de ejecución por horas');
+    const counts={L:0,M:0,S:0};portfolioData.forEach(p=>{const pool=getPool(p);if(pool)counts[pool]++;});
+    if(scoreEl){scoreEl.textContent=counts.L+'/'+counts.M+'/'+counts.S;scoreEl.style.color='var(--ink)';}
+    vis(btnPrev,'hidden');nxt('ir al resumen →','next',()=>goStep('summary'));
+  } else if(step==='config'){
+    if(badge){badge.style.cssText='background:var(--surf);font-size:16px;';badge.textContent='⚙';}
+    set(nameEl,'configuración del modelo');set(metaEl,'pesos · umbrales · Dataverse');
+    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
+    vis(btnPrev,'hidden');nxt('aplicar y volver →','fin',()=>goStep('summary'));
+  } else {
+    const d=DIMS[step-1]; if(!d) return;
+    if(badge){badge.style.cssText=`background:${DT[step-1]};color:${DC[step-1]};font-size:10px;font-weight:800;`;badge.textContent=d.id;}
+    set(nameEl,d.nom);set(metaEl,`Peso: ${Math.round(d.peso*100)}% · ${d.criterios.length} criterios · paso ${step} de 7`);
+    const ds=scoreDim(d.criterios);
+    if(scoreEl){scoreEl.textContent=ds.toFixed(1);scoreEl.style.color=scColorHex(ds);}
+    vis(btnPrev,'visible');prv(step===1?'← datos':`← D${step-1}`,()=>stepNav(-1));
+    nxt(step===6?'ver resumen →':`D${step+1} →`,step===6?'fin':'next',()=>stepNav(1));
   }
 }
 
-async function dvUpsertProject(p, token) {
-  const c    = _dvCfg;
-  const cl   = clsf(p.sf||0);
-  const thrS = parseInt(document.getElementById('thr-s')?.value)||30;
-  const thrM = parseInt(document.getElementById('thr-m')?.value)||100;
-  const pool = p.horas==null?'Sin estimar':p.horas<thrS?'Corto':p.horas<thrM?'Medio':'Largo';
-
-  const body = {
-    [c.fieldName]:  p.nom,
-    [c.fieldArea]:  p.area||'',
-    meso_sponsor:    p.sponsor||'',
-    [c.fieldScore]: +(p.sf||0).toFixed(3),
-    meso_scorebase:  +(p.sb||0).toFixed(3),
-    meso_aging:      +(p.af||1).toFixed(4),
-    [c.fieldCls]:   cl.et,
-    meso_autoprioritario: p.autoP||false,
-    [c.fieldHoras]: p.horas||null,
-    meso_pool:       pool,
-    meso_adoid:      p.adoId||null,
-    meso_adoestado:  p.adoState||'',
-    meso_adotipo:    p.adoType||'',
-    meso_fechasolicitud: p.reqDate||null,
-    meso_diascartera: p.reqDate ? Math.round((new Date()-new Date(p.reqDate))/86400000) : null,
-
-    // Scores por dimensión (D1-D6)
-    meso_d1score: +((p.dimScores?.[0]||0).toFixed(3)),
-    meso_d2score: +((p.dimScores?.[1]||0).toFixed(3)),
-    meso_d3score: +((p.dimScores?.[2]||0).toFixed(3)),
-    meso_d4score: +((p.dimScores?.[3]||0).toFixed(3)),
-    meso_d5score: +((p.dimScores?.[4]||0).toFixed(3)),
-    meso_d6score: +((p.dimScores?.[5]||0).toFixed(3)),
-
-    // Scores individuales por criterio (22 sub-dimensiones)
-    meso_d1_riesgo_legal: p.scores?.['c1_1']||5,  // D1 — Riesgo legal/regulatorio
-    meso_d1_seguridad_prl: p.scores?.['c1_2']||5,  // D1 — Seguridad y PRL
-    meso_d1_riesgo_reputacional: p.scores?.['c1_3']||5,  // D1 — Riesgo reputacional
-    meso_d1_obligacion_normativa: p.scores?.['c1_4']||5,  // D1 — Obligación normativa
-    meso_d2_mandato_consejo: p.scores?.['c2_1']||5,  // D2 — Mandato Consejo
-    meso_d2_expansion_int: p.scores?.['c2_2']||5,  // D2 — Expansión internacional
-    meso_d2_innovacion_idi: p.scores?.['c2_3']||5,  // D2 — Innovación / I+D
-    meso_d2_urgencia_estrategica: p.scores?.['c2_4']||5,  // D2 — Urgencia estratégica
-    meso_d3_impacto_ingresos: p.scores?.['c3_1']||5,  // D3 — Impacto en ingresos
-    meso_d3_ahorro_eficiencia: p.scores?.['c3_2']||5,  // D3 — Ahorro / Eficiencia
-    meso_d3_roi_payback: p.scores?.['c3_3']||5,  // D3 — ROI / Payback
-    meso_d3_calidad_servicio: p.scores?.['c3_4']||5,  // D3 — Calidad / Servicio
-    meso_d4_madurez_trl: p.scores?.['c4_1']||5,  // D4 — Madurez tecnológica (TRL)
-    meso_d4_integracion_erp: p.scores?.['c4_2']||5,  // D4 — Integración ERP/sistemas
-    meso_d4_escalabilidad: p.scores?.['c4_3']||5,  // D4 — Escalabilidad
-    meso_d4_ciberseg_gdpr: p.scores?.['c4_4']||5,  // D4 — Ciberseguridad / GDPR
-    meso_d5_capacidad_interna: p.scores?.['c5_1']||5,  // D5 — Capacidad interna IT
-    meso_d5_gestion_cambio: p.scores?.['c5_2']||5,  // D5 — Gestión del cambio
-    meso_d5_time_to_value: p.scores?.['c5_3']||5,  // D5 — Time to value
-    meso_d6_experiencia_empleado: p.scores?.['c6_1']||5,  // D6 — Experiencia del empleado
-    meso_d6_sostenibilidad_esg: p.scores?.['c6_2']||5,  // D6 — Sostenibilidad / ESG
-    meso_d6_formacion_cultura: p.scores?.['c6_3']||5,  // D6 — Formación y cultura
-  };
-
-  // POST to create (Dataverse will generate GUID)
-  // For upsert by ADO ID: use alternate key if meso_adoid is unique
-  let url = `${c.url}/api/data/v9.2/${c.table}s`;
-  let method = 'POST';
-
-  // If project has adoId, try upsert via alternate key
-  if (p.adoId) {
-    url = `${c.url}/api/data/v9.2/${c.table}s(meso_adoid=${p.adoId})`;
-    method = 'PATCH';
-  } else if (p._dvId) {
-    // Already created — update by Dataverse GUID
-    url = `${c.url}/api/data/v9.2/${c.table}s(${p._dvId})`;
-    method = 'PATCH';
-  }
-
-  const res = await fetch(url, {
-    method,
-    headers:{
-      'Authorization': 'Bearer '+token,
-      'Content-Type':  'application/json',
-      'Accept':        'application/json',
-      'OData-MaxVersion': '4.0',
-      'OData-Version':    '4.0',
-      'Prefer':           'return=representation',  // get back the created record ID
-    },
-    body: JSON.stringify(body)
-  });
-
-  if (!res.ok && res.status!==204) {
-    const t = await res.text().catch(()=>'');
-    throw new Error(`${res.status}: ${t.substring(0,150)}`);
-  }
-  // Store Dataverse GUID for future updates
-  if (res.status===201) {
-    try {
-      const data = await res.json();
-      if (data[`${c.table}id`]) p._dvId = data[`${c.table}id`];
-    } catch(e) { /* ignore */ }
-  }
-}
-
-async function pemSaveDataverse() {
-  const p = portfolioData[_pemIdx];
-  if (!p) return;
-  pemSave(); // save locally first
-  try {
-    const token = await dvGetToken();
-    await dvUpsertProject(p, token);
-    toast('✓ Proyecto guardado en Dataverse');
-  } catch(e) {
-    toast('✗ Error Dataverse: '+e.message);
-  }
-}
-
-/* INIT */
+/* ═══ INIT ══════════════════════════════════════════════════ */
 document.getElementById('f-req').value = new Date().toISOString().split('T')[0];
-['f-name','f-area','f-type'].forEach(id => {
-  const e = document.getElementById(id);
-  if (e) { e.addEventListener('change', upd); e.addEventListener('input', upd); }
+['f-name','f-area','f-type'].forEach(id=>{
+  const e=document.getElementById(id);
+  if(e){e.addEventListener('change',upd);e.addEventListener('input',upd);}
 });
 renderDimSteps();
 renderNav();
 renderWeightEditor();
 upd();
 goStep(0);
+
+
+/* ═══ AI EVALUATOR ENGINE ══════════════════════════════════ */
+let _aiItems=[], _aiScored=[], _aiRunning=false, _aiStopped=false;
+
+function aiItemStatus(item){
+  const scored=item.status==='scored'||item.status==='complete';
+  const hasH=item.proj.horas!=null&&item.proj.horas>0;
+  if(scored&&hasH) return 'complete'; if(scored) return 'scored'; return 'pending';
+}
+function renderAiColumns(){
+  const pending=[],scored=[],complete=[];
+  _aiScored.forEach((item,i)=>{const st=aiItemStatus(item);item._col=st;if(st==='complete')complete.push({item,i});else if(st==='scored')scored.push({item,i});else pending.push({item,i});});
+  const setCol=(colId,items)=>{const el=document.getElementById(colId);if(!el)return;el.innerHTML=items.length===0?'<div style="padding:20px;text-align:center;color:#CCC;font-size:11px">Sin proyectos</div>':items.map(({item,i})=>buildAiCard(item,i)).join('');};
+  setCol('ai-col-pending',pending);setCol('ai-col-scored',scored);setCol('ai-col-complete',complete);
+  const s=(id,n)=>{const e=document.getElementById(id);if(e)e.textContent=n;};
+  s('ai-cnt-pending',pending.length);s('ai-cnt-scored',scored.length);s('ai-cnt-complete',complete.length);
+  const done=scored.length+complete.length, total=_aiScored.length;
+  const lbl=document.getElementById('ai-prog-lbl'),fill=document.getElementById('ai-prog-fill');
+  if(lbl) lbl.textContent=`${done} de ${total} evaluados · ${complete.length} completos`;
+  if(fill) fill.style.width=(total?Math.round(done/total*100):0)+'%';
+}
+function buildAiCard(item,i){
+  const p=item.proj,sf=item.status!=='pending'?ruleScore(p):null;
+  const col=sf!==null?scColorHex(sf):'#BBBBBB', cl=sf!==null?clsf(sf):null;
+  const tag=cl?`<span class="ev-tag" style="background:${cl.bg};color:${cl.c};border-color:${cl.b}">${cl.et}</span>`:'<span class="ev-tag" style="background:#F5F5F5;color:#AAA;border-color:#E5E5E5">Sin evaluar</span>';
+  const btn=item.status==='pending'?`<button class="ev-btn score" onclick="aiScoreOne(${i})">✦ Evaluar</button>`:`<button class="ev-btn rescore" onclick="aiScoreOne(${i})">↻ Reevaluar</button>`;
+  const scoreNum=sf!==null?`<div class="ev-score-big" style="color:${col}">${sf.toFixed(1)}</div>`:'<div class="ev-score-big" style="color:#DDD">—</div>';
+  return `<div class="ev-card${item.selected?' selected':''}" id="ev-card-${i}">
+    <div style="display:flex;align-items:flex-start;gap:8px">
+      <input type="checkbox" class="ev-check" id="ev-chk-${i}" onchange="_aiScored[${i}].selected=this.checked" ${item.selected?'checked':''}/>
+      <div style="flex:1;min-width:0">
+        <div class="ev-card-name">${p.nom}</div>
+        <div class="ev-card-meta">${p.area||'—'} · ${p.sponsor||'—'} · ${p.reqDate||'—'}${p.adoType?' · '+p.adoType:''}</div>
+        ${p.adoDesc?`<div class="ev-card-desc">${p.adoDesc}</div>`:''}
+        <div class="ev-card-actions">${scoreNum}${tag}<input type="number" class="ev-hours-inp" id="ev-hrs-${i}" value="${p.horas||''}" placeholder="h" min="1" oninput="aiSetHoras(${i},this.value)"/><span style="font-size:9px;color:#BBB">h</span>${btn}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function ruleScore(p){
+  const s=ruleScoresCriterios(p);
+  CRIT_IDS.forEach(cid=>{p.scores[cid]=s[cid]||5;});
+  return computeProj(p).sf;
+}
+function ruleScoresCriterios(p){
+  const nom=(p.nom||'').toLowerCase(),desc=(p.adoDesc||'').toLowerCase(),tags=(p.adoTags||[]).join(' ').toLowerCase();
+  const c=nom+' '+desc+' '+tags;
+  const isConsejo=['portal b2b','b2b','magento','dsv','conciliaci'].some(x=>c.includes(x));
+  const isLegal=['reglamento','normativa','legal','gdpr','reach','gmp','fda','obligatori','aduanas','serializ','firma electr'].some(x=>c.includes(x));
+  const isAudit=['auditoría','auditoria','coa','muestreo','military','certificado','calidad','trazabilidad','caducidad','bloqueo'].some(x=>c.includes(x));
+  const isRisk=['siniestro','impago','fraude','crédito concedido'].some(x=>c.includes(x));
+  const isEfic=['eficiencia','optimiz','ahorro','autom','masiv','simplific','agiliz','proceso por lotes','batch'].some(x=>c.includes(x));
+  const isIncome=['factura','cobro','pago','impago','conciliaci','b2b','magento','venta'].some(x=>c.includes(x));
+  const isSimple=['campo','filtro','informe','vista','formulario','alerta','notificación','correo'].some(x=>c.includes(x));
+  const isComplex=['integra','middleware','api','salesforce','dsv','pim','datalake','coptis'].some(x=>c.includes(x));
+  let d1=[isLegal?9:isAudit?8:isRisk?5:2, ['peligro','advertencia','prl','safety','pesada','materia prima'].some(x=>c.includes(x))?9:isAudit?5:2, isRisk?9:isAudit?7:['cliente','factura','error'].some(x=>c.includes(x))?5:2, isLegal?9:isAudit?8:isConsejo?5:2];
+  let d2=[isConsejo?10:['salesforce','coptis','docuware','integra','datalake'].some(x=>c.includes(x))?7:1, ['poland','lituania','international','externo'].some(x=>c.includes(x))?8:1, ['datalake','bi ','analytics','ia ','machine learning'].some(x=>c.includes(x))?8:isConsejo?6:1, isConsejo?9:3];
+  let d3=[isConsejo?9:isIncome?7:2, isEfic?8:isConsejo?6:2, ['conciliaci','impago','crédito'].some(x=>c.includes(x))?9:isIncome?7:isEfic?6:2, ['calidad','coa','caducidad','trazabilidad','muestreo'].some(x=>c.includes(x))?8:['cliente','servicio'].some(x=>c.includes(x))?6:3];
+  let d4=[isSimple?9:isComplex?5:5, isSimple?9:isComplex?5:5, 5, ['gdpr','firma electr','auditoría'].some(x=>c.includes(x))?8:5];
+  let d5=[isSimple?8:isComplex?4:5, 6, isSimple?9:isComplex?3:6];
+  let d6=[['rrhh','empleado','nómina','nomina'].some(x=>c.includes(x))?9:4, ['ecoembes','sostenib','residuo','medioambient'].some(x=>c.includes(x))?8:2, ['formación','training'].some(x=>c.includes(x))?8:5];
+  const all=[...d1,...d2,...d3,...d4,...d5,...d6].map(v=>Math.max(1,Math.min(10,Math.round(v))));
+  const map={};CRIT_IDS.forEach((cid,i)=>{map[cid]=all[i]||5;});return map;
+}
+function aiScoreOne(idx){
+  const item=_aiScored[idx]; if(!item) return;
+  const scores=ruleScoresCriterios(item.proj);
+  CRIT_IDS.forEach(cid=>{item.proj.scores[cid]=scores[cid];});
+  item.status=item.proj.horas>0?'complete':'scored';
+  renderAiColumns();
+}
+async function aiScoreAll(){
+  _aiStopped=false;_aiRunning=true;
+  const btn=document.getElementById('ai-score-all-btn'),stop=document.getElementById('ai-stop-btn');
+  if(btn) btn.disabled=true; if(stop) stop.style.display='flex';
+  for(let i=0;i<_aiScored.length;i++){
+    if(_aiStopped) break;
+    if(_aiScored[i].status!=='pending') continue;
+    aiScoreOne(i);
+    if(i%10===0) await new Promise(r=>setTimeout(r,0));
+  }
+  _aiRunning=false; if(btn) btn.disabled=false; if(stop) stop.style.display='none';
+  toast(`✓ ${_aiScored.filter(s=>s.status!=='pending').length} proyectos evaluados`);
+}
+function aiStopScoring(){
+  _aiStopped=true;_aiRunning=false;
+  const stop=document.getElementById('ai-stop-btn'); if(stop) stop.style.display='none';
+}
+function aiSetHoras(idx,val){
+  const item=_aiScored[idx]; if(!item) return;
+  const n=parseFloat(val); item.proj.horas=(Number.isFinite(n)&&n>0)?n:null;
+  if(item.status!=='pending') item.status=item.proj.horas>0?'complete':'scored';
+  clearTimeout(aiSetHoras._t); aiSetHoras._t=setTimeout(()=>renderAiColumns(),400);
+}
+function aiBulkHoras(){
+  const val=parseFloat(document.getElementById('ai-bulk-horas')?.value);
+  if(!Number.isFinite(val)||val<=0){toast('Selecciona un valor de horas');return;}
+  let count=0;
+  _aiScored.forEach(item=>{if(item.selected){item.proj.horas=val;if(item.status!=='pending')item.status='complete';count++;}});
+  renderAiColumns(); toast(`✓ ${count} proyectos: ${val}h asignadas`);
+}
+function aiImportAll(){
+  if(!_aiScored.length){toast('Sin proyectos para cargar');return;}
+  portfolioData=_aiScored.map(item=>{
+    const p=item.proj, proj=computeProj({nom:p.nom,area:p.area,sponsor:p.sponsor,scores:p.scores,reqDate:p.reqDate,regDate:p.regDate});
+    proj.horas=p.horas||null;proj.adoId=p.adoId;proj.adoState=p.adoState;proj.adoType=p.adoType;return proj;
+  });
+  portfolioData.forEach(p=>{if(p.horas===undefined)p.horas=null;});
+  renderPortfolio();renderPools();
+  const el=document.getElementById('portfolio');if(el)el.style.display='block';
+  const cp=document.getElementById('charts-panel');if(cp)cp.style.display='block';
+  const bc=document.getElementById('btn-clear');if(bc)bc.style.display='flex';
+  renderCharts();closeAiModal();goStep('summary');
+  const scored=_aiScored.filter(s=>s.status!=='pending').length;
+  toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados`);
+}
+
+/* ═══ PROJECT EDIT — renderPemBody ══════════════════════════ */
+function renderPemBody(){
+  const p=portfolioData[_pemIdx]; if(!p) return;
+  const sf=p.sf||0, cl=clsf(sf);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const titleEl=document.getElementById('pem-title'), metaEl=document.getElementById('pem-meta');
+  const scoreEl=document.getElementById('pem-score'), ctrEl=document.getElementById('pem-counter');
+  if(titleEl) titleEl.textContent=p.nom.length>60?p.nom.substring(0,58)+'…':p.nom;
+  if(metaEl)  metaEl.textContent=(p.area||'—')+' · '+(p.sponsor||'—')+(p.adoState?' · ADO: '+p.adoState:'');
+  if(scoreEl){scoreEl.textContent=sf.toFixed(1);scoreEl.style.color=scColorHex(sf);}
+  if(ctrEl)   ctrEl.textContent=(_pemIdx+1)+' de '+portfolioData.length;
+  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
+  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
+  const dimSliders=DIMS.map((d,di)=>{
+    const ds=scoreDim(d.criterios.map(c=>({...c,val:p.scores[c.id]||5})));
+    const crits=d.criterios.map(c=>{const val=p.scores[c.id]||5;return `<div class="pem-crit"><div class="pem-crit-name">${c.nom.substring(0,28)}</div><div style="display:flex;align-items:center;gap:6px"><input type="range" class="pem-slider" min="1" max="10" step="1" value="${val}" style="flex:1;accent-color:${DC[di]}" oninput="pemSetScore(${_pemIdx},'${c.id}',this.value,this.nextElementSibling,${di})"/><span class="pem-crit-val" style="color:${DC[di]}">${val}</span></div></div>`;}).join('');
+    return `<div class="pem-dim"><div class="pem-dim-hd"><div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:${DT[di]};color:${DC[di]};font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center">${d.id}</span><div><div style="font-size:11px;font-weight:600;color:var(--ink)">${d.nom}</div><div style="font-size:8px;color:var(--ink4)">Peso: ${Math.round(d.peso*100)}%</div></div></div><div class="pem-dim-score" id="pem-ds-${d.id}" style="color:${scColorHex(ds)}">${ds.toFixed(1)}</div></div><div class="pem-criteria">${crits}</div></div>`;
+  }).join('');
+  const body=document.getElementById('pem-body'); if(!body) return;
+  body.innerHTML=`<div class="pem-row"><div class="pem-field"><div class="pem-label">Nombre</div><input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}" oninput="portfolioData[${_pemIdx}].nom=this.value"/></div><div class="pem-field"><div class="pem-label">Área</div><input class="pem-inp" type="text" value="${p.area||''}" oninput="portfolioData[${_pemIdx}].area=this.value"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Sponsor</div><input class="pem-inp" type="text" value="${p.sponsor||''}" oninput="portfolioData[${_pemIdx}].sponsor=this.value"/></div><div class="pem-field"><div class="pem-label">Horas estimadas</div><input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas" oninput="pemSetHoras(${_pemIdx},this.value)"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Fecha de solicitud</div><input class="pem-inp" type="date" value="${p.reqDate||''}" oninput="portfolioData[${_pemIdx}].reqDate=this.value"/></div><div class="pem-field"><div class="pem-label">Clasificación</div><div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et}</div></div></div><div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>${dimSliders}`;
+}
+function pemSetScore(projIdx,critId,val,valSpan,dimIdx){
+  const v=parseInt(val);
+  if(valSpan){valSpan.textContent=v;valSpan.style.color=scColorHex(v);}
+  portfolioData[projIdx].scores[critId]=v;
+  const p=portfolioData[projIdx], updated=computeProj(p);
+  portfolioData[projIdx].sf=updated.sf;
+  const scoreEl=document.getElementById('pem-score');
+  if(scoreEl){scoreEl.textContent=updated.sf.toFixed(1);scoreEl.style.color=scColorHex(updated.sf);}
+  const d=DIMS[dimIdx];
+  const ds=scoreDim(d.criterios.map(c=>({...c,val:portfolioData[projIdx].scores[c.id]||5})));
+  const dsEl=document.getElementById('pem-ds-'+d.id);
+  if(dsEl){dsEl.textContent=ds.toFixed(1);dsEl.style.color=scColorHex(ds);}
+}
+function pemSetHoras(projIdx,val){
+  const n=parseFloat(val); portfolioData[projIdx].horas=(Number.isFinite(n)&&n>0)?n:null;
+}
+
+/* ═══ DATAVERSE UPSERT ══════════════════════════════════════ */
+async function dvUpsertProject(p,token){
+  const c=_dvCfg, cl=clsf(p.sf||0);
+  const thrS=parseInt(document.getElementById('thr-s')?.value)||30;
+  const thrM=parseInt(document.getElementById('thr-m')?.value)||100;
+  const pool=p.horas==null?'Sin estimar':p.horas<thrS?'Corto':p.horas<thrM?'Medio':'Largo';
+  const body={
+    [c.fieldName]:p.nom,[c.fieldArea]:p.area||'',meso_sponsor:p.sponsor||'',
+    [c.fieldScore]:+(p.sf||0).toFixed(3),meso_scorebase:+(p.sb||0).toFixed(3),meso_aging:+(p.af||1).toFixed(4),
+    [c.fieldCls]:cl.et,meso_autoprioritario:p.autoP||false,[c.fieldHoras]:p.horas||null,
+    meso_pool:pool,meso_adoid:p.adoId||null,meso_adoestado:p.adoState||'',meso_adotipo:p.adoType||'',
+    meso_fechasolicitud:p.reqDate||null,meso_diascartera:p.reqDate?Math.round((new Date()-new Date(p.reqDate))/86400000):null,
+    meso_d1score:+(p.dimScores?.[0]||0).toFixed(3),meso_d2score:+(p.dimScores?.[1]||0).toFixed(3),
+    meso_d3score:+(p.dimScores?.[2]||0).toFixed(3),meso_d4score:+(p.dimScores?.[3]||0).toFixed(3),
+    meso_d5score:+(p.dimScores?.[4]||0).toFixed(3),meso_d6score:+(p.dimScores?.[5]||0).toFixed(3),
+    meso_d1_riesgo_legal:p.scores?.['c1_1']||5,meso_d1_seguridad_prl:p.scores?.['c1_2']||5,
+    meso_d1_riesgo_reputacional:p.scores?.['c1_3']||5,meso_d1_obligacion_normativa:p.scores?.['c1_4']||5,
+    meso_d2_mandato_consejo:p.scores?.['c2_1']||5,meso_d2_expansion_int:p.scores?.['c2_2']||5,
+    meso_d2_innovacion_idi:p.scores?.['c2_3']||5,meso_d2_urgencia_estrategica:p.scores?.['c2_4']||5,
+    meso_d3_impacto_ingresos:p.scores?.['c3_1']||5,meso_d3_ahorro_eficiencia:p.scores?.['c3_2']||5,
+    meso_d3_roi_payback:p.scores?.['c3_3']||5,meso_d3_calidad_servicio:p.scores?.['c3_4']||5,
+    meso_d4_madurez_trl:p.scores?.['c4_1']||5,meso_d4_integracion_erp:p.scores?.['c4_2']||5,
+    meso_d4_escalabilidad:p.scores?.['c4_3']||5,meso_d4_ciberseg_gdpr:p.scores?.['c4_4']||5,
+    meso_d5_capacidad_interna:p.scores?.['c5_1']||5,meso_d5_gestion_cambio:p.scores?.['c5_2']||5,
+    meso_d5_time_to_value:p.scores?.['c5_3']||5,
+    meso_d6_experiencia_empleado:p.scores?.['c6_1']||5,meso_d6_sostenibilidad_esg:p.scores?.['c6_2']||5,
+    meso_d6_formacion_cultura:p.scores?.['c6_3']||5,
+  };
+  let url=`${c.url}/api/data/v9.2/${c.table}s`, method='POST';
+  if(p.adoId){url=`${c.url}/api/data/v9.2/${c.table}s(meso_adoid=${p.adoId})`;method='PATCH';}
+  else if(p._dvId){url=`${c.url}/api/data/v9.2/${c.table}s(${p._dvId})`;method='PATCH';}
+  const res=await fetch(url,{method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0','Prefer':'return=representation'},body:JSON.stringify(body)});
+  if(!res.ok&&res.status!==204){const t=await res.text().catch(()=>'');throw new Error(`${res.status}: ${t.substring(0,150)}`);}
+  if(res.status===201){try{const data=await res.json();if(data[`${c.table}id`])p._dvId=data[`${c.table}id`];}catch(e){}}
+}
+
 </script>
 </body>
 </html>
