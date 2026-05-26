@@ -741,6 +741,41 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .ai-pat-field{display:flex;gap:8px;margin-bottom:12px}
 .ai-pat-field input{flex:1;padding:8px 11px;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink);background:#fff;border:1.5px solid var(--b);border-radius:var(--r)}
 .ai-pat-field input:focus{outline:none;border-color:#7C3AED;box-shadow:0 0 0 3px rgba(124,58,237,.08)}
+
+/* ── EVALUATOR CARDS ──────────────────────────────────── */
+.ev-card{
+  background:#fff;border:1px solid #EBEBEB;border-radius:8px;
+  padding:10px 12px;margin-bottom:6px;cursor:default;
+  transition:box-shadow .15s;
+}
+.ev-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ev-card.selected{border-color:#C4974A;background:#FFFDF5}
+.ev-card-name{font-size:11px;font-weight:600;color:#111;line-height:1.35;margin-bottom:3px}
+.ev-card-meta{font-size:9px;color:#999;margin-bottom:6px;line-height:1.4}
+.ev-card-desc{font-size:9px;color:#666;line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:8px}
+.ev-card-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ev-score-big{font-family:'Inter',sans-serif;font-size:22px;font-weight:800;line-height:1}
+.ev-hours-inp{
+  width:56px;padding:4px 6px;text-align:center;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:600;
+  border:1.5px solid #E5E5E5;border-radius:4px;color:#111;
+  background:#FAFAFA;
+}
+.ev-hours-inp:focus{outline:none;border-color:#C4974A;background:#fff}
+.ev-tag{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;
+  letter-spacing:.05em;text-transform:uppercase;border:1px solid;white-space:nowrap}
+.ev-btn{padding:4px 10px;font-family:'Inter',inherit;font-size:8px;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;border-radius:4px;cursor:pointer;
+  border:none;transition:all .15s;white-space:nowrap}
+.ev-btn.score{background:#111;color:#fff}
+.ev-btn.score:hover{background:#333}
+.ev-btn.rescore{background:transparent;color:#888;border:1px solid #E5E5E5}
+.ev-btn.rescore:hover{border-color:#111;color:#111}
+.ev-check{width:14px;height:14px;cursor:pointer;accent-color:#C4974A;flex-shrink:0}
+.ev-card.scoring{opacity:.7;pointer-events:none}
+.ev-card.scoring .ev-card-name::after{content:' …';color:#0EA5E9}
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
 </style>
 </head>
@@ -1524,48 +1559,85 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
 <!-- AI Scoring Modal -->
 <div class="ai-overlay" id="ai-overlay">
-  <div class="ai-modal">
+  <div class="ai-modal" style="width:960px;max-height:92vh">
+    <!-- Header -->
     <div class="ai-modal-hd">
       <div class="ai-modal-title">
-        <span>✦</span>
-        <span>Scoring con Agente IA</span>
-        <span class="ai-modal-badge">Claude Sonnet</span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#A78BFA" stroke-width="1.5"/><path d="M9 5v4l2.5 2.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Evaluador de Proyectos</span>
+        <span class="ai-modal-badge" style="background:linear-gradient(135deg,#065438,#087B50)">scoring automático</span>
       </div>
-      <button class="ai-close" onclick="closeAiModal()">✕</button>
-    </div>
-
-    <!-- Anthropic API key -->
-    <div style="padding:14px 22px;border-bottom:1px solid #F0F0F0;background:#FAFAFA">
-      <div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">clave api de anthropic</div>
-      <div class="ai-pat-field">
-        <input type="password" id="ai-api-key" placeholder="sk-ant-api03-..." autocomplete="off">
-        <button class="ai-btn purple" onclick="aiScoreAll()" id="ai-score-all-btn">
-          ✦ Evaluar todos con IA
-        </button>
-        <button class="ai-btn gold" onclick="aiImportAll()">
-          ↓ Importar sin evaluar
-        </button>
-      </div>
-      <div class="ai-pat-note">
-        La clave se usa directamente desde el navegador para llamar a la API de Anthropic. No se guarda.
-        Consíguela en <a href="https://console.anthropic.com" target="_blank" style="color:#7C3AED">console.anthropic.com</a>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="ai-prog-lbl" style="font-size:10px;color:#888">0 de 0 evaluados</div>
+        <button class="ai-close" onclick="closeAiModal()">✕</button>
       </div>
     </div>
 
-    <!-- Project list -->
-    <div id="ai-project-list" style="flex:1;overflow-y:auto"></div>
-
-    <!-- Footer: progress + actions -->
-    <div class="ai-modal-footer">
-      <div class="ai-prog-wrap">
-        <div class="ai-prog-lbl" id="ai-prog-lbl">0 de 0 evaluados</div>
+    <!-- Toolbar -->
+    <div style="padding:10px 20px;border-bottom:1px solid #F0F0F0;background:#FAFAFA;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="ai-btn purple" onclick="aiScoreAll()" id="ai-score-all-btn">
+        ✦ Evaluar todos automáticamente
+      </button>
+      <button class="ai-btn ghost" onclick="aiStopScoring()" id="ai-stop-btn" style="display:none">⏹ Parar</button>
+      <div style="flex:1;min-width:160px">
         <div class="ai-prog-bar"><div class="ai-prog-fill" id="ai-prog-fill" style="width:0%"></div></div>
       </div>
-      <div class="ai-actions">
-        <button class="ai-btn ghost" onclick="aiStopScoring()" id="ai-stop-btn" style="display:none">⏹ Parar</button>
-        <button class="ai-btn gold" onclick="aiImportAll()" id="ai-import-btn">↓ Cargar en cartera</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;color:#999">horas masivo:</span>
+        <select id="ai-bulk-horas" style="padding:5px 8px;font-size:11px;border:1px solid #E5E5E5;border-radius:4px;background:#fff">
+          <option value="">— selecciona —</option>
+          <option value="8">8h</option><option value="16">16h</option>
+          <option value="24">24h</option><option value="40">40h</option>
+          <option value="80">80h</option><option value="120">120h</option>
+          <option value="200">200h</option><option value="400">400h</option>
+        </select>
+        <button class="ai-btn ghost" onclick="aiBulkHoras()" style="padding:5px 10px;font-size:8px">
+          Aplicar a selección
+        </button>
       </div>
+      <button class="ai-btn gold" onclick="aiImportAll()">↓ Cargar en cartera</button>
     </div>
+
+    <!-- 3-column status view -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;height:calc(100% - 110px);overflow:hidden;border-top:1px solid #F0F0F0">
+
+      <!-- Col 1: Sin puntuar -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid #F0F0F0;overflow:hidden">
+        <div style="padding:10px 14px;background:#FEF9F0;border-bottom:1px solid #F0E8D0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B"></div>
+            <span style="font-size:11px;font-weight:600;color:#92400E">Sin puntuar</span>
+          </div>
+          <span id="ai-cnt-pending" style="font-size:10px;font-weight:700;color:#92400E;background:#FDE68A;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-pending" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+      <!-- Col 2: Puntuados sin horas -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid #F0F0F0;overflow:hidden">
+        <div style="padding:10px 14px;background:#F0F9FF;border-bottom:1px solid #BAE6FD;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#0EA5E9"></div>
+            <span style="font-size:11px;font-weight:600;color:#0C4A6E">Puntuados — sin horas</span>
+          </div>
+          <span id="ai-cnt-scored" style="font-size:10px;font-weight:700;color:#0C4A6E;background:#BAE6FD;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-scored" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+      <!-- Col 3: Completos (puntuados + horas) -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 14px;background:#F0FDF4;border-bottom:1px solid #BBF7D0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#16A34A"></div>
+            <span style="font-size:11px;font-weight:600;color:#14532D">Completos</span>
+          </div>
+          <span id="ai-cnt-complete" style="font-size:10px;font-weight:700;color:#14532D;background:#BBF7D0;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-complete" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+    </div><!-- /3-col -->
   </div>
 </div>
 <div class="wdrawer" id="wd">
@@ -4141,252 +4213,288 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ═══════════════════════════════════════════════════════
-   AGENTE IA — Scoring automático con Claude (Anthropic API)
+   EVALUADOR DE PROYECTOS — scoring basado en reglas
+   Sin API externa — usa el motor de reglas interno
    ═══════════════════════════════════════════════════════ */
-let _aiItems     = [];   // raw ADO work items pending scoring
-let _aiScored    = [];   // scored project objects
-let _aiStopped   = false;
-let _aiRunning   = false;
 
+let _aiItems   = [];  // raw ADO work items
+let _aiScored  = [];  // [{wi, proj, status:'pending'|'scored'|'complete', selected:false}]
+let _aiRunning = false;
+let _aiStopped = false;
+
+/* ── Estado de un item ───────────────────────────────── */
+function aiItemStatus(item) {
+  const scored   = item.status === 'scored' || item.status === 'complete';
+  const hasHoras = item.proj.horas != null && item.proj.horas > 0;
+  if (scored && hasHoras) return 'complete';
+  if (scored)             return 'scored';
+  return 'pending';
+}
+
+/* ── Abrir modal ─────────────────────────────────────── */
 function openAiModal(adoItems) {
   _aiItems   = adoItems;
-  _aiScored  = adoItems.map(wi => ({ wi, proj: adoMapToProject(wi), status:'pending' }));
+  _aiScored  = adoItems.map(wi => ({
+    wi,
+    proj: adoMapToProject(wi),
+    status: 'pending',
+    selected: false,
+  }));
   _aiStopped = false;
-  renderAiList();
-  updateAiProgress();
+  renderAiColumns();
   document.getElementById('ai-overlay').classList.add('open');
 }
 function closeAiModal() {
   _aiStopped = true;
+  _aiRunning = false;
   document.getElementById('ai-overlay').classList.remove('open');
 }
 
-function renderAiList() {
-  const cont = document.getElementById('ai-project-list');
-  if (!cont) return;
-  cont.innerHTML = _aiScored.map((item, i) => {
-    const p = item.proj;
-    const sf = item.status === 'done' ? finalScoreFromProj(p) : null;
-    const stMap = {
-      pending: ['pending','Pendiente'],
-      scoring: ['scoring','Evaluando...'],
-      done:    ['done','Evaluado IA'],
-      manual:  ['manual','Manual'],
-      error:   ['pending','Error — reintenta'],
-    };
-    const [stCls, stTxt] = stMap[item.status] || ['pending','—'];
-    return `<div class="ai-project-card" id="ai-card-${i}">
-      <div class="ai-proj-idx">${i+1}</div>
-      <div class="ai-proj-info">
-        <div class="ai-proj-name" title="${p.nom}">${p.nom}</div>
-        <div class="ai-proj-meta">${p.area||'—'} · ${p.sponsor||'—'} · ${p.reqDate||'—'} · ADO: ${p.adoType||'—'} · ${p.adoState||'—'}</div>
-        ${p.adoDesc ? `<div class="ai-proj-desc">${p.adoDesc}</div>` : ''}
-      </div>
-      <div class="ai-proj-right">
-        <div class="ai-proj-score ${item.status==='done'?'scored':''}">${sf!==null?sf.toFixed(1):'—'}</div>
-        <span class="ai-status-badge ${stCls}">${stTxt}</span>
-        <button style="font-size:8px;padding:3px 8px;border:1px solid #EBEBEB;border-radius:4px;background:#fff;cursor:pointer;color:var(--ink3)"
-          onclick="aiScoreOne(${i})" ${item.status==='scoring'?'disabled':''}>
-          ${item.status==='done'?'↻ reevaluar':'✦ evaluar'}
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
+/* ── Render 3 columnas ───────────────────────────────── */
+function renderAiColumns() {
+  const pending  = []; const scored = []; const complete = [];
+  _aiScored.forEach((item, i) => {
+    const st = aiItemStatus(item);
+    item._col = st;
+    if      (st === 'complete') complete.push({item, i});
+    else if (st === 'scored')   scored.push({item, i});
+    else                        pending.push({item, i});
+  });
 
-function updateAiProgress() {
-  const done  = _aiScored.filter(s => s.status==='done'||s.status==='manual').length;
+  const setCol = (colId, items, cls) => {
+    const el = document.getElementById(colId);
+    if (!el) return;
+    el.innerHTML = items.length === 0
+      ? `<div style="padding:20px;text-align:center;color:#CCC;font-size:11px">Sin proyectos</div>`
+      : items.map(({item, i}) => buildCard(item, i, cls)).join('');
+  };
+  setCol('ai-col-pending',  pending,  'pending');
+  setCol('ai-col-scored',   scored,   'scored');
+  setCol('ai-col-complete', complete, 'complete');
+
+  // Update counts
+  const s = (id, n) => { const e=document.getElementById(id); if(e) e.textContent=n; };
+  s('ai-cnt-pending',  pending.length);
+  s('ai-cnt-scored',   scored.length);
+  s('ai-cnt-complete', complete.length);
+
+  // Update progress
+  const done = scored.length + complete.length;
   const total = _aiScored.length;
-  const pct   = total ? Math.round(done/total*100) : 0;
-  const lbl   = document.getElementById('ai-prog-lbl');
-  const fill  = document.getElementById('ai-prog-fill');
-  if (lbl)  lbl.textContent  = `${done} de ${total} evaluados`;
-  if (fill) fill.style.width = pct + '%';
+  const lbl  = document.getElementById('ai-prog-lbl');
+  const fill = document.getElementById('ai-prog-fill');
+  if (lbl)  lbl.textContent  = `${done} de ${total} evaluados · ${complete.length} completos`;
+  if (fill) fill.style.width = total ? Math.round(done/total*100)+'%' : '0%';
 }
 
-function finalScoreFromProj(p) {
-  if (!p || !p.scores) return 0;
-  return scoreFinal ? scoreFinal(new Date(p.reqDate||'').getTime() ? p.reqDate : null)
-       : 5;
+function buildCard(item, i, colType) {
+  const p     = item.proj;
+  const sf    = item.status !== 'pending' ? ruleScore(p) : null;
+  const col   = sf !== null ? scColorHex(sf) : '#BBBBBB';
+  const cls   = sf !== null ? clsf(sf) : null;
+  const horas = p.horas || '';
+  const desc  = p.adoDesc ? `<div class="ev-card-desc">${p.adoDesc}</div>` : '';
+  const tag   = cls
+    ? `<span class="ev-tag" style="background:${cls.bg};color:${cls.c};border-color:${cls.b}">${cls.et}</span>`
+    : `<span class="ev-tag" style="background:#F5F5F5;color:#AAA;border-color:#E5E5E5">Sin evaluar</span>`;
+
+  const actionBtn = item.status === 'pending'
+    ? `<button class="ev-btn score" onclick="aiScoreOne(${i})">✦ Evaluar</button>`
+    : `<button class="ev-btn rescore" onclick="aiScoreOne(${i})">↻ Reevaluar</button>`;
+
+  const scoreNum = sf !== null
+    ? `<div class="ev-score-big" style="color:${col}">${sf.toFixed(1)}</div>`
+    : `<div class="ev-score-big" style="color:#DDD">—</div>`;
+
+  return `<div class="ev-card${item.selected?' selected':''}" id="ev-card-${i}">
+    <div style="display:flex;align-items:flex-start;gap:8px">
+      <input type="checkbox" class="ev-check" id="ev-chk-${i}"
+        onchange="_aiScored[${i}].selected=this.checked"
+        ${item.selected?'checked':''}>
+      <div style="flex:1;min-width:0">
+        <div class="ev-card-name">${p.nom}</div>
+        <div class="ev-card-meta">${p.area||'—'} · ${p.sponsor||'—'} · ${p.reqDate||'—'}${p.adoType?' · '+p.adoType:''}</div>
+        ${desc}
+        <div class="ev-card-actions">
+          ${scoreNum}
+          ${tag}
+          <input type="number" class="ev-hours-inp" id="ev-hrs-${i}"
+            value="${horas}" placeholder="h" min="1" max="9999"
+            title="Horas estimadas de desarrollo"
+            oninput="aiSetHoras(${i}, this.value)">
+          <span style="font-size:9px;color:#BBB">h</span>
+          ${actionBtn}
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 
-/* Score ALL projects sequentially */
+/* ── Score with internal rules engine ───────────────── */
+function ruleScore(p) {
+  // Apply scores to criterias then compute
+  const s = ruleScoresCriterios(p);
+  CRIT_IDS.forEach(cid => { p.scores[cid] = s[cid] || 5; });
+  const tempProj = computeProj(p);
+  return tempProj.sf;
+}
+
+function ruleScoresCriterios(p) {
+  const nom  = (p.nom || '').toLowerCase();
+  const desc = (p.adoDesc || '').toLowerCase();
+  const tags = (p.adoTags || []).join(' ').toLowerCase();
+  const area = (p.area || '').toLowerCase();
+  const c    = nom + ' ' + desc + ' ' + tags;
+
+  // ── D1: Compliance / Legal / Riesgo ──
+  const isConsejo = ['portal b2b','b2b','magento','dsv','conciliaci'].some(x=>c.includes(x));
+  const isLegal   = ['reglamento','normativa','legal','gdpr','reach','gmp','fda','obligatori',
+                     'aduanas','serializ','firma electr'].some(x=>c.includes(x));
+  const isAudit   = ['auditoría','auditoria','coa','muestreo','military','certificado','calidad',
+                     'trazabilidad','caducidad','bloqueo'].some(x=>c.includes(x));
+  const isRisk    = ['siniestro','impago','fraude','crédito concedido'].some(x=>c.includes(x));
+
+  let d1 = [1,1,1,1];
+  d1[0] = isLegal ? 9 : isAudit ? 8 : isRisk ? 5 : 2;
+  d1[1] = ['peligro','advertencia','prl','safety','pesada','materia prima'].some(x=>c.includes(x)) ? 9
+        : isAudit ? 5 : 2;
+  d1[2] = isRisk ? 9 : isAudit ? 7 : ['cliente','factura','error'].some(x=>c.includes(x)) ? 5 : 2;
+  d1[3] = isLegal ? 9 : isAudit ? 8 : isConsejo ? 5 : 2;
+
+  // ── D2: Estratégico / Consejo ──
+  let d2 = [1,1,1,3];
+  if (isConsejo)       { d2[0]=10; d2[3]=9; }
+  else if (['salesforce','coptis','docuware','integra','datalake'].some(x=>c.includes(x)))
+                       { d2[0]=7; d2[2]=7; }
+  if (['poland','lituania','international','externo'].some(x=>c.includes(x))) d2[1]=8;
+  if (['datalake','bi ','analytics','ia ','machine learning'].some(x=>c.includes(x)))  d2[2]=max3(d2[2],8);
+
+  // ── D3: ROI / Valor / Eficiencia ──
+  const isEfic = ['eficiencia','optimiz','ahorro','autom','masiv','simplific',
+                  'agiliz','proceso por lotes','batch'].some(x=>c.includes(x));
+  const isIncome = ['factura','cobro','pago','impago','conciliaci','rappel','tarifa',
+                    'b2b','magento','venta'].some(x=>c.includes(x));
+  let d3 = [1,1,1,1];
+  d3[0] = isConsejo ? 9 : isIncome ? 7 : 2;
+  d3[1] = isEfic ? 8 : isConsejo ? 6 : 2;   // ← REGLA: eficiencia/optimización = D3 alto
+  d3[2] = ['conciliaci','impago','crédito'].some(x=>c.includes(x)) ? 9
+        : isIncome ? 7 : isEfic ? 6 : 2;
+  d3[3] = ['calidad','coa','caducidad','trazabilidad','muestreo'].some(x=>c.includes(x)) ? 8
+        : ['cliente','servicio'].some(x=>c.includes(x)) ? 6 : 3;
+
+  // ── D4: Técnica ──
+  const isSimple = ['campo','filtro','informe','vista','formulario','alerta','notificación','correo'].some(x=>c.includes(x));
+  const isComplex = ['integra','middleware','api','salesforce','dsv','pim','datalake','coptis'].some(x=>c.includes(x));
+  let d4 = [5,5,5,5];
+  if (isSimple)  { d4[0]=9; d4[1]=9; }
+  if (isComplex) { d4[0]=5; d4[1]=5; }
+  if (['gdpr','firma electr','auditoría'].some(x=>c.includes(x))) d4[3]=8;
+
+  // ── D5: Implantación ──
+  let d5 = [5,6,6];
+  if (isSimple)  { d5[0]=8; d5[2]=9; }
+  if (isComplex) { d5[2]=3; }
+  if (['rfid','hardware','kardex'].some(x=>c.includes(x))) { d5[1]=4; d5[2]=5; }
+
+  // ── D6: Personas / ESG ──
+  let d6 = [4,2,5];
+  if (['rrhh','empleado','nómina','nomina'].some(x=>c.includes(x))) d6[0]=9;
+  if (['ecoembes','sostenib','residuo','medioambient'].some(x=>c.includes(x))) d6[1]=8;
+  if (['formación','training'].some(x=>c.includes(x))) d6[2]=8;
+
+  const all = [...d1,...d2,...d3,...d4,...d5,...d6].map(v => Math.max(1,Math.min(10,Math.round(v))));
+  const map = {};
+  CRIT_IDS.forEach((cid,i) => { map[cid] = all[i] || 5; });
+  return map;
+}
+function max3(a,b){ return Math.max(a,b); }
+
+/* ── Evaluar uno ────────────────────────────────────── */
+function aiScoreOne(idx) {
+  const item = _aiScored[idx];
+  if (!item) return;
+  const scores = ruleScoresCriterios(item.proj);
+  CRIT_IDS.forEach(cid => { item.proj.scores[cid] = scores[cid]; });
+  item.status = 'scored';
+  // Check if complete
+  if (item.proj.horas > 0) item.status = 'complete';
+  renderAiColumns();
+}
+
+/* ── Evaluar todos ─────────────────────────────────── */
 async function aiScoreAll() {
-  const apiKey = document.getElementById('ai-api-key')?.value?.trim();
-  if (!apiKey || !apiKey.startsWith('sk-')) {
-    alert('Introduce una clave API de Anthropic válida (sk-ant-api03-...)');
-    return;
-  }
-  if (_aiRunning) return;
-  _aiRunning = true;
-  _aiStopped = false;
-  document.getElementById('ai-score-all-btn').disabled = true;
-  document.getElementById('ai-stop-btn').style.display = 'flex';
+  _aiStopped = false; _aiRunning = true;
+  const btn = document.getElementById('ai-score-all-btn');
+  const stop = document.getElementById('ai-stop-btn');
+  if (btn)  btn.disabled = true;
+  if (stop) stop.style.display = 'flex';
 
-  for (let i=0; i<_aiScored.length; i++) {
+  for (let i = 0; i < _aiScored.length; i++) {
     if (_aiStopped) break;
-    if (_aiScored[i].status === 'done') continue; // skip already scored
-    await aiScoreOne(i, apiKey);
-    // small delay to avoid rate limits
-    await new Promise(r => setTimeout(r, 400));
+    if (_aiScored[i].status !== 'pending') continue;
+    aiScoreOne(i);
+    // Yield to keep UI responsive
+    if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
   }
-
   _aiRunning = false;
-  document.getElementById('ai-score-all-btn').disabled = false;
-  document.getElementById('ai-stop-btn').style.display = 'none';
-  toast(`✦ IA completó ${_aiScored.filter(s=>s.status==='done').length} evaluaciones`);
+  if (btn)  btn.disabled = false;
+  if (stop) stop.style.display = 'none';
+  toast(`✓ ${_aiScored.filter(s=>s.status!=='pending').length} proyectos evaluados`);
 }
 
 function aiStopScoring() {
-  _aiStopped = true;
-  _aiRunning = false;
-  document.getElementById('ai-stop-btn').style.display = 'none';
-  document.getElementById('ai-score-all-btn').disabled = false;
-  toast('Evaluación IA pausada');
+  _aiStopped = true; _aiRunning = false;
+  const stop = document.getElementById('ai-stop-btn');
+  if (stop) stop.style.display = 'none';
 }
 
-/* Score ONE project with Claude */
-async function aiScoreOne(idx, apiKeyParam) {
-  const apiKey = apiKeyParam || document.getElementById('ai-api-key')?.value?.trim();
-  if (!apiKey) { alert('Introduce la clave API de Anthropic'); return; }
-
+/* ── Horas ─────────────────────────────────────────── */
+function aiSetHoras(idx, val) {
   const item = _aiScored[idx];
   if (!item) return;
-  item.status = 'scoring';
-  updateAiCardStatus(idx);
-
-  const p   = item.proj;
-  const wi  = item.wi;
-  const f   = wi.fields || {};
-
-  // Build context for Claude
-  const context = [
-    `WORK ITEM ID: ${wi.id}`,
-    `TÍTULO: ${p.adoTitle || p.nom}`,
-    `TIPO: ${p.adoType || '—'}`,
-    `ESTADO: ${p.adoState || '—'}`,
-    `ÁREA: ${p.area || '—'}`,
-    `SPONSOR / ASIGNADO: ${p.sponsor || '—'}`,
-    `FECHA CREACIÓN: ${p.reqDate || '—'}`,
-    `PRIORIDAD ADO: ${p.adoPriority || '—'}`,
-    `TAGS: ${(p.adoTags||[]).join(', ') || 'ninguno'}`,
-    `DESCRIPCIÓN:
-${p.adoDesc || 'Sin descripción disponible'}`,
-  ].join('\n');
-
-  const PROMPT = `Eres un experto en scoring de proyectos tecnológicos para mesoestetic Pharma Group S.L. (empresa de cosmética médica y dermatológica, ~300 personas, +100 países, ~90M EUR).
-
-Evalúa el siguiente work item de Azure DevOps y asigna una puntuación de 1 a 10 a cada uno de los 22 criterios del modelo Sigmoid Boost v3.
-
-REGLAS DE SCORING:
-- Proyectos de PRIORIDAD DEL CONSEJO (Portal B2B, DSV, Conciliación de pagos): D2 c1=10, D2 c4=9
-- Palabras clave AUDITORÍA, CALIDAD, LEGAL, GMP, GDPR, REACH → D1 alto (8-10)
-- Palabras clave EFICIENCIA, OPTIMIZACIÓN, AUTOMATIZACIÓN, MASIVO → D3 c2 alto (7-9)
-- Integraciones complejas (DSV, Salesforce, middleware, API) → D4 c2 bajo (3-5), D5 c3 bajo (3-4)
-- Cambios simples (campo nuevo, filtro, alerta) → D4 c1 alto (8-9), D5 c3 alto (8-9)
-- Sin descripción o descripción muy corta → usa medias (5)
-
-CRITERIOS A EVALUAR (responde SOLO con JSON, sin explicación):
-D1-Compliance: c1_1=Riesgo legal, c1_2=Seguridad PRL, c1_3=Riesgo reputacional, c1_4=Obligación normativa
-D2-Estratégico: c2_1=Mandato Consejo, c2_2=Expansión internacional, c2_3=I+D/Innovación, c2_4=Urgencia temporal
-D3-ROI/Valor: c3_1=Impacto ingresos, c3_2=Ahorro costes/eficiencia, c3_3=ROI/payback, c3_4=Calidad/servicio
-D4-Técnica: c4_1=Madurez TRL, c4_2=Integración ERP, c4_3=Escalabilidad, c4_4=Ciberseguridad/GDPR
-D5-Implantación: c5_1=Capacidad interna, c5_2=Gestión cambio, c5_3=Time-to-value
-D6-Personas/ESG: c6_1=Exp.empleado, c6_2=Sostenibilidad ESG, c6_3=Formación
-
-WORK ITEM:
-${context}
-
-Responde ÚNICAMENTE con este JSON (valores enteros 1-10):
-{"c1_1":5,"c1_2":5,"c1_3":5,"c1_4":5,"c2_1":5,"c2_2":5,"c2_3":5,"c2_4":5,"c3_1":5,"c3_2":5,"c3_3":5,"c3_4":5,"c4_1":5,"c4_2":5,"c4_3":5,"c4_4":5,"c5_1":5,"c5_2":5,"c5_3":5,"c6_1":5,"c6_2":5,"c6_3":5}`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: PROMPT }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({}));
-      throw new Error(err.error?.message || `API error ${res.status}`);
-    }
-
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[^}]+\}/s);
-    if (!jsonMatch) throw new Error('Respuesta IA sin JSON válido');
-    const scores = JSON.parse(jsonMatch[0]);
-
-    // Apply AI scores to project criteria
-    CRIT_IDS.forEach(cid => {
-      const v = scores[cid];
-      if (Number.isInteger(v) && v>=1 && v<=10) {
-        item.proj.scores[cid] = v;
-      }
-    });
-
-    item.status = 'done';
-  } catch(e) {
-    console.error('AI scoring error:', e);
-    item.status = 'error';
-    item.error  = e.message;
+  const n = parseFloat(val);
+  item.proj.horas = (Number.isFinite(n) && n > 0) ? n : null;
+  // Update status
+  if (item.status !== 'pending') {
+    item.status = item.proj.horas > 0 ? 'complete' : 'scored';
   }
-
-  updateAiCardStatus(idx);
-  updateAiProgress();
+  // Debounce re-render
+  clearTimeout(aiSetHoras._t);
+  aiSetHoras._t = setTimeout(() => renderAiColumns(), 400);
 }
 
-function updateAiCardStatus(idx) {
-  const item = _aiScored[idx];
-  const card = document.getElementById(`ai-card-${idx}`);
-  if (!card) { renderAiList(); return; }
-  const sf = item.status==='done' ? (() => {
-    // Quick score calc using current DIMS
-    try {
-      const p = item.proj;
-      let total=0;
-      DIMS.forEach(d => {
-        const ds = scoreDim(d.criterios.map(c => ({ ...c, val: p.scores[c.id]||5 })));
-        total += d.peso * ds;
-      });
-      return Math.min(total,10);
-    } catch(e) { return null; }
-  })() : null;
-
-  const stMap = {pending:['pending','Pendiente'],scoring:['scoring','Evaluando...'],done:['done','Evaluado IA'],manual:['manual','Manual'],error:['pending','Error']};
-  const [stCls,stTxt] = stMap[item.status]||['pending','—'];
-  const scoreEl  = card.querySelector('.ai-proj-score');
-  const badgeEl  = card.querySelector('.ai-status-badge');
-  const btn      = card.querySelector('button');
-  if (scoreEl) { scoreEl.textContent = sf!==null?sf.toFixed(1):'—'; scoreEl.className = 'ai-proj-score'+(item.status==='done'?' scored':''); }
-  if (badgeEl) { badgeEl.textContent = stTxt; badgeEl.className = 'ai-status-badge '+stCls; }
-  if (btn)     { btn.disabled = item.status==='scoring'; btn.textContent = item.status==='done'?'↻ reevaluar':'✦ evaluar'; }
-}
-
-/* Import all (scored or not) into portfolio */
-function aiImportAll() {
-  const projects = _aiScored.map(item => {
-    const p = item.proj;
-    // Re-run computeProj with updated scores
-    return computeProj({ nom:p.nom, area:p.area, sponsor:p.sponsor,
-      scores:p.scores, reqDate:p.reqDate, regDate:p.regDate,
-      adoId:p.adoId, adoState:p.adoState, adoDesc:p.adoDesc,
-      adoType:p.adoType, adoTags:p.adoTags });
+function aiBulkHoras() {
+  const val = parseFloat(document.getElementById('ai-bulk-horas')?.value);
+  if (!Number.isFinite(val) || val <= 0) { toast('Selecciona un valor de horas'); return; }
+  let count = 0;
+  _aiScored.forEach(item => {
+    if (item.selected) {
+      item.proj.horas = val;
+      if (item.status !== 'pending') item.status = 'complete';
+      count++;
+    }
   });
-  portfolioData = projects;
+  renderAiColumns();
+  toast(`✓ ${count} proyectos: ${val}h asignadas`);
+}
+
+/* ── Cargar en cartera ─────────────────────────────── */
+function aiImportAll() {
+  if (!_aiScored.length) { toast('Sin proyectos para cargar'); return; }
+  portfolioData = _aiScored.map(item => {
+    const p = item.proj;
+    const proj = computeProj({
+      nom:p.nom, area:p.area, sponsor:p.sponsor,
+      scores:p.scores, reqDate:p.reqDate, regDate:p.regDate,
+    });
+    proj.horas   = p.horas || null;
+    proj.adoId   = p.adoId;
+    proj.adoState= p.adoState;
+    proj.adoType = p.adoType;
+    return proj;
+  });
   portfolioData.forEach(p => { if(p.horas===undefined) p.horas=null; });
+
   renderPortfolio(); renderPools();
   const el=document.getElementById('portfolio'); if(el) el.style.display='block';
   const cp=document.getElementById('charts-panel'); if(cp) cp.style.display='block';
@@ -4394,8 +4502,10 @@ function aiImportAll() {
   renderCharts();
   closeAiModal();
   goStep('summary');
-  const scoredCount = _aiScored.filter(s=>s.status==='done').length;
-  toast(`✓ ${projects.length} proyectos cargados · ${scoredCount} evaluados por IA`);
+
+  const scored   = _aiScored.filter(s => s.status !== 'pending').length;
+  const complete = _aiScored.filter(s => s.status === 'complete').length;
+  toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados · ${complete} con horas`);
 }
 
 /* INIT */
