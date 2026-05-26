@@ -776,6 +776,31 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .ev-check{width:14px;height:14px;cursor:pointer;accent-color:#C4974A;flex-shrink:0}
 .ev-card.scoring{opacity:.7;pointer-events:none}
 .ev-card.scoring .ev-card-name::after{content:' …';color:#0EA5E9}
+
+/* ── PROJECT EDIT MODAL ───────────────────────────────── */
+.proj-edit-overlay{display:none;position:fixed;inset:0;z-index:700;background:rgba(8,8,8,.75);align-items:center;justify-content:center}
+.proj-edit-overlay.open{display:flex}
+.proj-edit-modal{background:#fff;border-radius:12px;width:700px;max-width:calc(100vw-32px);max-height:90vh;overflow-y:auto;box-shadow:0 16px 60px rgba(0,0,0,.28);display:flex;flex-direction:column}
+.pem-hd{background:var(--k);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:12px 12px 0 0}
+.pem-title{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;color:#fff}
+.pem-score{font-family:'Inter',sans-serif;font-size:32px;font-weight:800;min-width:60px;text-align:right}
+.pem-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.pem-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pem-field{display:flex;flex-direction:column;gap:4px}
+.pem-label{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase}
+.pem-inp{padding:8px 11px;font-family:'Inter',sans-serif;font-size:12px;color:#111;background:#fff;border:1.5px solid #E5E5E5;border-radius:6px;transition:border-color .15s;width:100%}
+.pem-inp:focus{outline:none;border-color:#C4974A;box-shadow:0 0 0 3px rgba(196,151,74,.08)}
+.pem-dim{background:#F8F8F8;border-radius:8px;padding:12px 14px}
+.pem-dim-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pem-dim-id{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.pem-dim-score{font-family:'Inter',sans-serif;font-size:20px;font-weight:800}
+.pem-criteria{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pem-crit{display:flex;flex-direction:column;gap:3px}
+.pem-crit-name{font-size:9px;color:#888;font-weight:500}
+.pem-slider{width:100%;-webkit-appearance:none;height:3px;background:#E5E5E5;border-radius:2px;outline:none;cursor:pointer}
+.pem-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 1.5px #111;cursor:pointer}
+.pem-crit-val{font-size:10px;font-weight:700;color:#111;text-align:right}
+.pem-footer{padding:14px 24px;border-top:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FAFAFA;border-radius:0 0 12px 12px;flex-shrink:0}
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
 </style>
 </head>
@@ -1294,6 +1319,130 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
         </div>
 
       </div>
+
+      <!-- Dataverse / Power Platform connection -->
+      <div class="cfg-section" id="cfg-dv-section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#742774,#B146C2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">DV</div>
+          <div class="cfg-sec-title" style="margin-bottom:0">microsoft dataverse — power platform</div>
+          <div id="cfg-dv-badge" style="display:none;padding:3px 10px;border-radius:20px;font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase"></div>
+        </div>
+        <div class="cfg-sec-sub">Conecta con tu entorno de Dataverse para sincronizar proyectos automáticamente. Los proyectos evaluados se guardarán como registros en la tabla configurada.</div>
+
+        <!-- Step 1: Environment URL + credentials -->
+        <div style="background:var(--surf);border-radius:var(--r);padding:14px 16px;margin-top:12px;border:1px solid var(--b2)">
+          <div style="font-size:9px;font-weight:700;color:#742774;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">① entorno y autenticación</div>
+          <div class="cfg-row">
+            <div class="cfg-field">
+              <label>URL del entorno Dataverse</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-url"
+                placeholder="https://orgxxxxxxxx.crm.dynamics.com">
+              <div class="cfg-note">URL de tu organización en Power Platform Admin Center</div>
+            </div>
+            <div class="cfg-field">
+              <label>Tenant ID (Azure AD)</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-tenant"
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <div class="cfg-note">Disponible en portal.azure.com → Azure Active Directory</div>
+            </div>
+          </div>
+          <div class="cfg-row" style="margin-top:10px">
+            <div class="cfg-field">
+              <label>Client ID (App Registration)</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-clientid"
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <div class="cfg-note">ID de la app registrada en Azure AD con permisos Dataverse</div>
+            </div>
+            <div class="cfg-field">
+              <label>Client Secret</label>
+              <input type="password" class="cfg-inp" id="cfg-dv-secret"
+                placeholder="Clave secreta de la aplicación" autocomplete="off">
+              <div class="cfg-note">Secreto de la app — se usa solo en memoria de sesión</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Table configuration -->
+        <div style="background:var(--surf);border-radius:var(--r);padding:14px 16px;margin-top:10px;border:1px solid var(--b2)">
+          <div style="font-size:9px;font-weight:700;color:#742774;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">② tabla y campos</div>
+          <div class="cfg-row">
+            <div class="cfg-field">
+              <label>Nombre de la tabla (entity)</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-table"
+                value="meso_proyectoscoring" placeholder="meso_proyectoscoring">
+              <div class="cfg-note">Nombre lógico de la tabla en Dataverse (sin prefijo crm_)</div>
+            </div>
+            <div class="cfg-field">
+              <label>Campo nombre del proyecto</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-field-name"
+                value="meso_nombre" placeholder="meso_nombre">
+            </div>
+          </div>
+          <div class="cfg-row" style="margin-top:8px">
+            <div class="cfg-field">
+              <label>Campo score final</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-field-score"
+                value="meso_scorefinal" placeholder="meso_scorefinal">
+            </div>
+            <div class="cfg-field">
+              <label>Campo área / departamento</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-field-area"
+                value="meso_area" placeholder="meso_area">
+            </div>
+          </div>
+          <div class="cfg-row" style="margin-top:8px">
+            <div class="cfg-field">
+              <label>Campo horas estimadas</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-field-horas"
+                value="meso_horasestimadas" placeholder="meso_horasestimadas">
+            </div>
+            <div class="cfg-field">
+              <label>Campo clasificación</label>
+              <input type="text" class="cfg-inp" id="cfg-dv-field-cls"
+                value="meso_clasificacion" placeholder="meso_clasificacion">
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:10px 12px;background:#F3E8FF;border-radius:6px;border:1px solid rgba(116,39,116,.15)">
+            <div style="font-size:9px;font-weight:700;color:#742774;margin-bottom:4px">Campos recomendados para la tabla meso_proyectoscoring</div>
+            <div style="font-size:9px;color:#9333EA;line-height:1.7;font-family:monospace">
+              meso_nombre (Text) · meso_area (Text) · meso_sponsor (Text)<br>
+              meso_scorefinal (Decimal) · meso_scorebase (Decimal) · meso_clasificacion (Choice)<br>
+              meso_horasestimadas (Whole Number) · meso_pool (Choice: Corto/Medio/Largo)<br>
+              meso_adoid (Whole Number) · meso_adoestado (Text) · meso_fechasolicitud (Date)<br>
+              meso_d1score · meso_d2score · meso_d3score · meso_d4score · meso_d5score · meso_d6score (Decimal)
+            </div>
+          </div>
+        </div>
+
+        <!-- Status + actions -->
+        <div id="cfg-dv-status" style="display:none;margin-top:10px;padding:10px 14px;border-radius:var(--r);font-size:11px;align-items:center;gap:9px">
+          <div id="cfg-dv-spinner" style="width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
+          <span id="cfg-dv-status-msg">Conectando...</span>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="cfg-apply" onclick="dvTest()"
+            style="background:#742774">
+            ⚡ Probar conexión
+          </button>
+          <button class="cfg-apply" onclick="dvSyncAll()"
+            style="background:#065438" id="cfg-dv-sync-btn" disabled>
+            ↑ Sincronizar toda la cartera
+          </button>
+          <button class="cfg-apply cfg-reset" onclick="dvSaveCfg()">
+            ✓ Guardar configuración
+          </button>
+        </div>
+
+        <div style="margin-top:12px;padding:10px 14px;background:#FAFAFA;border-radius:6px;border:1px solid #F0F0F0;font-size:9px;color:#888;line-height:1.7">
+          <strong>Cómo configurar en Azure AD:</strong><br>
+          1. Ve a portal.azure.com → App registrations → New registration<br>
+          2. En "API permissions" añade: Dynamics CRM → user_impersonation<br>
+          3. Crea un "Client secret" en "Certificates &amp; secrets"<br>
+          4. En Power Platform Admin Center, crea la tabla meso_proyectoscoring<br>
+          5. Añade la app como usuario de Dataverse con rol "Basic User"
+        </div>
+      </div>
     </div>
 
     <!-- STEP SUMMARY -->
@@ -1638,6 +1787,45 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
       </div>
 
     </div><!-- /3-col -->
+  </div>
+</div>
+
+<!-- Project Edit Modal -->
+<div class="proj-edit-overlay" id="proj-edit-overlay">
+  <div class="proj-edit-modal">
+    <div class="pem-hd">
+      <div>
+        <div class="pem-title" id="pem-title">Editar proyecto</div>
+        <div style="font-size:9px;color:#555;margin-top:3px" id="pem-meta">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div>
+          <div style="font-size:8px;color:#555;text-align:right;margin-bottom:2px">SCORE FINAL</div>
+          <div class="pem-score" id="pem-score">—</div>
+        </div>
+        <button style="background:none;border:none;color:#555;font-size:18px;cursor:pointer" onclick="closeProjEdit()">✕</button>
+      </div>
+    </div>
+    <div class="pem-body" id="pem-body">
+      <!-- Filled by JS -->
+    </div>
+    <div class="pem-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="pemPrev()" style="padding:6px 12px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#666">← Anterior</button>
+        <span id="pem-counter" style="font-size:10px;color:#999">1 de 1</span>
+        <button onclick="pemNext()" style="padding:6px 12px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#666">Siguiente →</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="pemSaveDataverse()" id="pem-dv-btn"
+          style="padding:8px 16px;background:#0078D4;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:none">
+          ↑ Guardar en Dataverse
+        </button>
+        <button onclick="pemSave()"
+          style="padding:8px 20px;background:#111;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">
+          ✓ Guardar cambios
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="wdrawer" id="wd">
@@ -3070,29 +3258,42 @@ function renderPoolsStep() {
   if(!portfolioData.length){if(empty)empty.style.display='block';if(grid)grid.style.display='none';return;}
   if(empty)empty.style.display='none';if(grid)grid.style.display='grid';
 
+  // Order: Largo → Medio → Corto → Sin estimar (left to right)
   const poolDefs=[
-    {k:'L',lbl:'Largos (≥'+thrM+'h)',sub:'Alta complejidad',bg:'#FEF0F1',c:'var(--d1)'},
-    {k:'M',lbl:'Medianos ('+thrS+'–'+thrM+'h)',sub:'Complejidad media',bg:'var(--d4t)',c:'var(--d4)'},
-    {k:'S',lbl:'Cortos (<'+thrS+'h)',sub:'Quick wins',bg:'var(--d3t)',c:'var(--d3)'},
+    {k:'L',  lbl:'🔴 Largos',       sub:'≥'+thrM+'h · Alta complejidad',  bg:'#FEF0F1',c:'var(--d1)',  border:'rgba(204,31,38,.15)'},
+    {k:'M',  lbl:'🟡 Medianos',      sub:thrS+'–'+thrM+'h · Complejidad media',bg:'var(--d4t)',c:'var(--d4)',border:'rgba(192,120,0,.15)'},
+    {k:'S',  lbl:'🟢 Cortos',        sub:'<'+thrS+'h · Quick wins',        bg:'var(--d3t)',c:'var(--d3)',border:'rgba(8,123,80,.15)'},
+    {k:null, lbl:'⬜ Sin estimar',   sub:'horas no definidas',              bg:'var(--surf)',c:'var(--ink4)',border:'var(--b2)'},
   ];
+  // Override grid to 4 cols for this step
+  grid.style.gridTemplateColumns='repeat(4,1fr)';
   grid.innerHTML=poolDefs.map(pd=>{
-    const items=pools[pd.k];
-    const itemsHtml=items.length===0?'<div class="pool-empty">Sin proyectos en este pool</div>':
-      items.map(p=>{const cl=clsf(p.sf);return`<div class="pool-item">
-        <div><div class="pi-name" title="${p.nom}">${p.nom.substring(0,48)}</div>
-        <div class="pi-meta">${p.area||'—'}${p.horas?'·'+p.horas+'h':''}</div></div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px;padding:1px 6px">${cl.et.split(' ')[0]}</span>
-          <span class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</span>
+    const items=pools[pd.k]||[];
+    const itemsHtml=items.length===0
+      ?`<div style="padding:16px;text-align:center;color:#C8C8C8;font-size:10px">Sin proyectos</div>`
+      :items.map(p=>{
+        const cl=clsf(p.sf);
+        const idx=portfolioData.indexOf(p);
+        return`<div class="pool-item" style="cursor:pointer" onclick="openProjectEdit(${idx})">
+          <div style="flex:1;min-width:0">
+            <div class="pi-name" title="${p.nom}">${p.nom.length>52?p.nom.substring(0,50)+'…':p.nom}</div>
+            <div class="pi-meta">${p.area||'—'} · ${p.horas?p.horas+'h':'—h'}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+            <span class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</span>
+            <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px;padding:1px 5px">${cl.et.split('/')[0].trim().split(' ').slice(0,2).join(' ')}</span>
+          </div>
+        </div>`;
+      }).join('');
+    return`<div class="pool-col" style="border-right:1px solid var(--b2)">
+      <div class="pool-col-hd" style="background:${pd.bg};border-bottom:1px solid ${pd.border}">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:${pd.c}">${pd.lbl}</div>
+          <div style="font-size:8px;color:${pd.c};opacity:.65;margin-top:2px">${pd.sub}</div>
         </div>
-      </div>`;}).join('');
-    return`<div class="pool-col">
-      <div class="pool-col-hd" style="background:${pd.bg}">
-        <div><div class="pool-tag" style="font-size:9px;color:${pd.c}">${pd.lbl}</div>
-        <div style="font-size:9px;color:${pd.c};opacity:.6;margin-top:2px">${pd.sub}</div></div>
         <div class="pool-cnt-badge">${items.length}</div>
       </div>
-      <div style="max-height:420px;overflow-y:auto">${itemsHtml}</div>
+      <div style="max-height:460px;overflow-y:auto">${itemsHtml}</div>
     </div>`;
   }).join('');
 }
@@ -4506,6 +4707,314 @@ function aiImportAll() {
   const scored   = _aiScored.filter(s => s.status !== 'pending').length;
   const complete = _aiScored.filter(s => s.status === 'complete').length;
   toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados · ${complete} con horas`);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROJECT EDIT MODAL — visual editor for portfolio items
+   ═══════════════════════════════════════════════════════ */
+let _pemIdx = 0;  // current project index
+
+function openProjectEdit(idx) {
+  _pemIdx = idx;
+  renderPemBody();
+  document.getElementById('proj-edit-overlay').classList.add('open');
+  // Show DV save button only if configured
+  const dvBtn = document.getElementById('pem-dv-btn');
+  if (dvBtn) dvBtn.style.display = _dvCfg.url ? 'flex' : 'none';
+}
+
+function closeProjEdit() {
+  document.getElementById('proj-edit-overlay').classList.remove('open');
+  // Refresh pools/portfolio after edits
+  renderPortfolio();
+  renderPools();
+  if (currentStep === 'pools') renderPoolsStep();
+}
+
+function renderPemBody() {
+  const p = portfolioData[_pemIdx];
+  if (!p) return;
+
+  // Update header
+  const sf = p.sf || 0;
+  const cls = clsf(sf);
+  const title = document.getElementById('pem-title');
+  const meta  = document.getElementById('pem-meta');
+  const score = document.getElementById('pem-score');
+  const ctr   = document.getElementById('pem-counter');
+  if (title) title.textContent = p.nom.length>60 ? p.nom.substring(0,58)+'…' : p.nom;
+  if (meta)  meta.textContent  = (p.area||'—') + ' · ' + (p.sponsor||'—') + (p.adoState?' · ADO: '+p.adoState:'');
+  if (score) { score.textContent=sf.toFixed(1); score.style.color=scColorHex(sf); }
+  if (ctr)   ctr.textContent = (_pemIdx+1)+' de '+portfolioData.length;
+
+  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
+  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
+
+  const body = document.getElementById('pem-body');
+  if (!body) return;
+
+  // Build dim sliders
+  const dimSliders = DIMS.map((d, di) => {
+    const ds = scoreDim(d.criterios.map(c => ({...c, val: p.scores[c.id]||5})));
+    const crits = d.criterios.map(c => {
+      const val = p.scores[c.id]||5;
+      return `<div class="pem-crit">
+        <div class="pem-crit-name">${c.nom.substring(0,28)}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="range" class="pem-slider" min="1" max="10" step="1" value="${val}"
+            style="flex:1;accent-color:${DC[di]}"
+            oninput="pemSetScore(${_pemIdx},'${c.id}',this.value,this.nextElementSibling,${di})">
+          <span class="pem-crit-val" style="color:${DC[di]}">${val}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="pem-dim">
+      <div class="pem-dim-hd">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:28px;height:28px;border-radius:50%;background:${DT[di]};color:${DC[di]};font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center">${d.id}</span>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--ink)">${d.nom}</div>
+            <div style="font-size:8px;color:var(--ink4)">Peso: ${Math.round(d.peso*100)}%</div>
+          </div>
+        </div>
+        <div class="pem-dim-score" id="pem-ds-${d.id}" style="color:${scColorHex(ds)}">${ds.toFixed(1)}</div>
+      </div>
+      <div class="pem-criteria">${crits}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <!-- Info fields -->
+    <div class="pem-row">
+      <div class="pem-field">
+        <div class="pem-label">Nombre del proyecto</div>
+        <input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}"
+          oninput="portfolioData[${_pemIdx}].nom=this.value">
+      </div>
+      <div class="pem-field">
+        <div class="pem-label">Área</div>
+        <input class="pem-inp" type="text" value="${p.area||''}"
+          oninput="portfolioData[${_pemIdx}].area=this.value">
+      </div>
+    </div>
+    <div class="pem-row">
+      <div class="pem-field">
+        <div class="pem-label">Sponsor</div>
+        <input class="pem-inp" type="text" value="${p.sponsor||''}"
+          oninput="portfolioData[${_pemIdx}].sponsor=this.value">
+      </div>
+      <div class="pem-field">
+        <div class="pem-label">Horas estimadas</div>
+        <input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas"
+          oninput="pemSetHoras(${_pemIdx},this.value)">
+      </div>
+    </div>
+    <div class="pem-row">
+      <div class="pem-field">
+        <div class="pem-label">Fecha de solicitud</div>
+        <input class="pem-inp" type="date" value="${p.reqDate||''}"
+          oninput="portfolioData[${_pemIdx}].reqDate=this.value">
+      </div>
+      <div class="pem-field">
+        <div class="pem-label">Clasificación actual</div>
+        <div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cls.bg};color:${cls.c};border:1px solid ${cls.b}">${cls.et}</div>
+      </div>
+    </div>
+    <!-- Dimensions -->
+    <div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>
+    ${dimSliders}
+  `;
+}
+
+function pemSetScore(projIdx, critId, val, valSpan, dimIdx) {
+  const v = parseInt(val);
+  if (valSpan) { valSpan.textContent = v; valSpan.style.color = scColorHex(v); }
+  portfolioData[projIdx].scores[critId] = v;
+  // Recompute project
+  const p = portfolioData[projIdx];
+  const updated = computeProj(p);
+  portfolioData[projIdx].sf = updated.sf;
+  // Update header score
+  const scoreEl = document.getElementById('pem-score');
+  if (scoreEl) { scoreEl.textContent=updated.sf.toFixed(1); scoreEl.style.color=scColorHex(updated.sf); }
+  // Update dim score
+  const d = DIMS[dimIdx];
+  const ds = scoreDim(d.criterios.map(c=>({...c,val:portfolioData[projIdx].scores[c.id]||5})));
+  const dsEl = document.getElementById('pem-ds-'+d.id);
+  if (dsEl) { dsEl.textContent=ds.toFixed(1); dsEl.style.color=scColorHex(ds); }
+}
+
+function pemSetHoras(projIdx, val) {
+  const n = parseFloat(val);
+  portfolioData[projIdx].horas = (Number.isFinite(n) && n > 0) ? n : null;
+}
+
+function pemSave() {
+  const p = portfolioData[_pemIdx];
+  // Recompute final
+  const updated = computeProj(p);
+  Object.assign(portfolioData[_pemIdx], updated);
+  portfolioData[_pemIdx].horas = p.horas;
+  toast('✓ Proyecto actualizado');
+  renderPemBody(); // refresh header score
+}
+
+function pemPrev() {
+  if (_pemIdx > 0) { _pemIdx--; renderPemBody(); }
+}
+function pemNext() {
+  if (_pemIdx < portfolioData.length-1) { _pemIdx++; renderPemBody(); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   DATAVERSE / POWER PLATFORM INTEGRATION
+   OAuth 2.0 Client Credentials flow
+   ═══════════════════════════════════════════════════════ */
+let _dvCfg = {url:'', tenant:'', clientId:'', secret:'', table:'meso_proyectoscoring',
+              fieldName:'meso_nombre', fieldScore:'meso_scorefinal', fieldArea:'meso_area',
+              fieldHoras:'meso_horasestimadas', fieldCls:'meso_clasificacion'};
+let _dvToken = null;
+let _dvTokenExp = 0;
+
+function dvSaveCfg() {
+  _dvCfg.url      = document.getElementById('cfg-dv-url')?.value?.trim()  || '';
+  _dvCfg.tenant   = document.getElementById('cfg-dv-tenant')?.value?.trim() || '';
+  _dvCfg.clientId = document.getElementById('cfg-dv-clientid')?.value?.trim() || '';
+  _dvCfg.secret   = document.getElementById('cfg-dv-secret')?.value?.trim()  || '';
+  _dvCfg.table    = document.getElementById('cfg-dv-table')?.value?.trim()   || 'meso_proyectoscoring';
+  _dvCfg.fieldName  = document.getElementById('cfg-dv-field-name')?.value?.trim()  || 'meso_nombre';
+  _dvCfg.fieldScore = document.getElementById('cfg-dv-field-score')?.value?.trim() || 'meso_scorefinal';
+  _dvCfg.fieldArea  = document.getElementById('cfg-dv-field-area')?.value?.trim()  || 'meso_area';
+  _dvCfg.fieldHoras = document.getElementById('cfg-dv-field-horas')?.value?.trim() || 'meso_horasestimadas';
+  _dvCfg.fieldCls   = document.getElementById('cfg-dv-field-cls')?.value?.trim()   || 'meso_clasificacion';
+  toast('✓ Configuración Dataverse guardada en sesión');
+}
+
+function dvStatusShow(type, msg) {
+  const el  = document.getElementById('cfg-dv-status');
+  const msg_el = document.getElementById('cfg-dv-status-msg');
+  const spin = document.getElementById('cfg-dv-spinner');
+  if (!el) return;
+  const colors = {loading:{bg:'#F3E8FF',color:'#742774'}, ok:{bg:'var(--d3t)',color:'var(--d3)'}, error:{bg:'var(--d1t)',color:'var(--d1)'}};
+  const c = colors[type]||colors.loading;
+  el.style.display='flex'; el.style.background=c.bg; el.style.color=c.color;
+  if (spin) spin.style.display = type==='loading'?'block':'none';
+  if (msg_el) msg_el.textContent = msg;
+}
+
+async function dvGetToken() {
+  if (_dvToken && Date.now() < _dvTokenExp) return _dvToken;
+  dvSaveCfg();
+  const {tenant, clientId, secret, url} = _dvCfg;
+  if (!tenant||!clientId||!secret||!url) throw new Error('Completa todos los campos de configuración Dataverse');
+  const resource = url.endsWith('/') ? url : url+'/';
+  const body = new URLSearchParams({
+    grant_type:'client_credentials', client_id:clientId,
+    client_secret:secret, scope: resource+'.default'
+  });
+  const res = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,{
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(`Auth error ${res.status}: ${err.error_description||err.error||'unknown'}`);
+  }
+  const data = await res.json();
+  _dvToken = data.access_token;
+  _dvTokenExp = Date.now() + (data.expires_in - 60)*1000;
+  return _dvToken;
+}
+
+async function dvTest() {
+  dvSaveCfg();
+  dvStatusShow('loading','Autenticando con Azure AD...');
+  try {
+    const token = await dvGetToken();
+    dvStatusShow('loading','Verificando acceso a Dataverse...');
+    const url = `${_dvCfg.url}/api/data/v9.2/${_dvCfg.table}s?$top=1&$select=${_dvCfg.fieldName}`;
+    const res = await fetch(url, { headers:{'Authorization':'Bearer '+token,'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0'} });
+    if (res.status===401) throw new Error('Sin acceso a Dataverse (401). Verifica permisos de la app.');
+    if (res.status===404) throw new Error(`Tabla "${_dvCfg.table}" no encontrada. Créala en Power Platform.`);
+    if (!res.ok) throw new Error(`Error ${res.status} accediendo a Dataverse.`);
+    const data = await res.json();
+    dvStatusShow('ok', `✓ Conexión correcta · Tabla "${_dvCfg.table}" · ${data.value?.length??0} registros de prueba`);
+    const badge = document.getElementById('cfg-dv-badge');
+    if (badge) { badge.style.display='inline-block';badge.style.background='#F3E8FF';badge.style.color='#742774';badge.style.border='1px solid rgba(116,39,116,.2)';badge.textContent='✓ conectado'; }
+    const syncBtn = document.getElementById('cfg-dv-sync-btn');
+    if (syncBtn) syncBtn.disabled = false;
+    const dvBtn = document.getElementById('pem-dv-btn');
+    if (dvBtn) dvBtn.style.display='flex';
+  } catch(e) {
+    dvStatusShow('error','✗ '+e.message);
+  }
+}
+
+async function dvSyncAll() {
+  if (!portfolioData.length) { toast('Sin proyectos en la cartera para sincronizar'); return; }
+  dvStatusShow('loading',`Sincronizando ${portfolioData.length} proyectos...`);
+  try {
+    const token = await dvGetToken();
+    let ok=0, err=0;
+    for (const p of portfolioData) {
+      try { await dvUpsertProject(p, token); ok++; }
+      catch(e) { err++; console.warn('DV upsert error:', e.message); }
+    }
+    dvStatusShow(err?'error':'ok', `✓ ${ok} proyectos sincronizados${err?' · '+err+' errores':''}`);
+    toast(`↑ Dataverse: ${ok} proyectos sincronizados`);
+  } catch(e) {
+    dvStatusShow('error','✗ '+e.message);
+  }
+}
+
+async function dvUpsertProject(p, token) {
+  const c   = _dvCfg;
+  const url = `${c.url}/api/data/v9.2/${c.table}s`;
+  const cl  = clsf(p.sf||0);
+  const pool = p.horas==null?'Sin estimar':p.horas<(parseInt(document.getElementById('thr-s')?.value)||30)?'Corto':p.horas<(parseInt(document.getElementById('thr-m')?.value)||100)?'Medio':'Largo';
+  const body = {
+    [c.fieldName]:  p.nom,
+    [c.fieldArea]:  p.area||'',
+    [c.fieldScore]: p.sf||0,
+    [c.fieldHoras]: p.horas||null,
+    [c.fieldCls]:   cl.et,
+    meso_sponsor:    p.sponsor||'',
+    meso_pool:       pool,
+    meso_adoid:      p.adoId||null,
+    meso_adoestado:  p.adoState||'',
+    meso_scorebase:  p.sb||0,
+    meso_d1score:    p.dimScores?.[0]||0,
+    meso_d2score:    p.dimScores?.[1]||0,
+    meso_d3score:    p.dimScores?.[2]||0,
+    meso_d4score:    p.dimScores?.[3]||0,
+    meso_d5score:    p.dimScores?.[4]||0,
+    meso_d6score:    p.dimScores?.[5]||0,
+    meso_fechasolicitud: p.reqDate||null,
+  };
+  // Use PATCH with alternate key on name if exists, else POST
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',
+             'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0',
+             'Prefer':'return=minimal'},
+    body: JSON.stringify(body)
+  });
+  if (!res.ok && res.status!==204) {
+    const t = await res.text().catch(()=>'');
+    throw new Error(`${res.status}: ${t.substring(0,100)}`);
+  }
+}
+
+async function pemSaveDataverse() {
+  const p = portfolioData[_pemIdx];
+  if (!p) return;
+  pemSave(); // save locally first
+  try {
+    const token = await dvGetToken();
+    await dvUpsertProject(p, token);
+    toast('✓ Proyecto guardado en Dataverse');
+  } catch(e) {
+    toast('✗ Error Dataverse: '+e.message);
+  }
 }
 
 /* INIT */
