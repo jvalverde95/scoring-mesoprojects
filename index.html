@@ -1405,11 +1405,16 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
           <div style="margin-top:10px;padding:10px 12px;background:#F3E8FF;border-radius:6px;border:1px solid rgba(116,39,116,.15)">
             <div style="font-size:9px;font-weight:700;color:#742774;margin-bottom:4px">Campos recomendados para la tabla meso_proyectoscoring</div>
             <div style="font-size:9px;color:#9333EA;line-height:1.7;font-family:monospace">
-              meso_nombre (Text) · meso_area (Text) · meso_sponsor (Text)<br>
-              meso_scorefinal (Decimal) · meso_scorebase (Decimal) · meso_clasificacion (Choice)<br>
-              meso_horasestimadas (Whole Number) · meso_pool (Choice: Corto/Medio/Largo)<br>
-              meso_adoid (Whole Number) · meso_adoestado (Text) · meso_fechasolicitud (Date)<br>
-              meso_d1score · meso_d2score · meso_d3score · meso_d4score · meso_d5score · meso_d6score (Decimal)
+              <strong>Proyecto:</strong> meso_nombre (Text) · meso_area (Text) · meso_sponsor (Text) · meso_clasificacion (Text) · meso_pool (Text) · meso_horasestimadas (Whole Number) · meso_adoid (Whole Number) · meso_adoestado (Text) · meso_adotipo (Text) · meso_fechasolicitud (Date) · meso_diascartera (Whole Number) · meso_autoprioritario (Yes/No)<br>
+              <strong>Scoring:</strong> meso_scorefinal (Decimal) · meso_scorebase (Decimal) · meso_aging (Decimal)<br>
+              <strong>Dims:</strong> meso_d1score · meso_d2score · meso_d3score · meso_d4score · meso_d5score · meso_d6score (Decimal)<br>
+              <strong>D1:</strong> meso_d1_riesgo_legal · meso_d1_seguridad_prl · meso_d1_riesgo_reputacional · meso_d1_obligacion_normativa<br>
+              <strong>D2:</strong> meso_d2_mandato_consejo · meso_d2_expansion_int · meso_d2_innovacion_idi · meso_d2_urgencia_estrategica<br>
+              <strong>D3:</strong> meso_d3_impacto_ingresos · meso_d3_ahorro_eficiencia · meso_d3_roi_payback · meso_d3_calidad_servicio<br>
+              <strong>D4:</strong> meso_d4_madurez_trl · meso_d4_integracion_erp · meso_d4_escalabilidad · meso_d4_ciberseg_gdpr<br>
+              <strong>D5:</strong> meso_d5_capacidad_interna · meso_d5_gestion_cambio · meso_d5_time_to_value<br>
+              <strong>D6:</strong> meso_d6_experiencia_empleado · meso_d6_sostenibilidad_esg · meso_d6_formacion_cultura<br>
+              <em style="color:#9333EA">(todos los campos Decimal = 1.000–10.000 · precisión 3 decimales)</em>
             </div>
           </div>
         </div>
@@ -4967,40 +4972,100 @@ async function dvSyncAll() {
 }
 
 async function dvUpsertProject(p, token) {
-  const c   = _dvCfg;
-  const url = `${c.url}/api/data/v9.2/${c.table}s`;
-  const cl  = clsf(p.sf||0);
-  const pool = p.horas==null?'Sin estimar':p.horas<(parseInt(document.getElementById('thr-s')?.value)||30)?'Corto':p.horas<(parseInt(document.getElementById('thr-m')?.value)||100)?'Medio':'Largo';
+  const c    = _dvCfg;
+  const cl   = clsf(p.sf||0);
+  const thrS = parseInt(document.getElementById('thr-s')?.value)||30;
+  const thrM = parseInt(document.getElementById('thr-m')?.value)||100;
+  const pool = p.horas==null?'Sin estimar':p.horas<thrS?'Corto':p.horas<thrM?'Medio':'Largo';
+
   const body = {
     [c.fieldName]:  p.nom,
     [c.fieldArea]:  p.area||'',
-    [c.fieldScore]: p.sf||0,
-    [c.fieldHoras]: p.horas||null,
-    [c.fieldCls]:   cl.et,
     meso_sponsor:    p.sponsor||'',
+    [c.fieldScore]: +(p.sf||0).toFixed(3),
+    meso_scorebase:  +(p.sb||0).toFixed(3),
+    meso_aging:      +(p.af||1).toFixed(4),
+    [c.fieldCls]:   cl.et,
+    meso_autoprioritario: p.autoP||false,
+    [c.fieldHoras]: p.horas||null,
     meso_pool:       pool,
     meso_adoid:      p.adoId||null,
     meso_adoestado:  p.adoState||'',
-    meso_scorebase:  p.sb||0,
-    meso_d1score:    p.dimScores?.[0]||0,
-    meso_d2score:    p.dimScores?.[1]||0,
-    meso_d3score:    p.dimScores?.[2]||0,
-    meso_d4score:    p.dimScores?.[3]||0,
-    meso_d5score:    p.dimScores?.[4]||0,
-    meso_d6score:    p.dimScores?.[5]||0,
+    meso_adotipo:    p.adoType||'',
     meso_fechasolicitud: p.reqDate||null,
+    meso_diascartera: p.reqDate ? Math.round((new Date()-new Date(p.reqDate))/86400000) : null,
+
+    // Scores por dimensión (D1-D6)
+    meso_d1score: +((p.dimScores?.[0]||0).toFixed(3)),
+    meso_d2score: +((p.dimScores?.[1]||0).toFixed(3)),
+    meso_d3score: +((p.dimScores?.[2]||0).toFixed(3)),
+    meso_d4score: +((p.dimScores?.[3]||0).toFixed(3)),
+    meso_d5score: +((p.dimScores?.[4]||0).toFixed(3)),
+    meso_d6score: +((p.dimScores?.[5]||0).toFixed(3)),
+
+    // Scores individuales por criterio (22 sub-dimensiones)
+    meso_d1_riesgo_legal: p.scores?.['c1_1']||5,  // D1 — Riesgo legal/regulatorio
+    meso_d1_seguridad_prl: p.scores?.['c1_2']||5,  // D1 — Seguridad y PRL
+    meso_d1_riesgo_reputacional: p.scores?.['c1_3']||5,  // D1 — Riesgo reputacional
+    meso_d1_obligacion_normativa: p.scores?.['c1_4']||5,  // D1 — Obligación normativa
+    meso_d2_mandato_consejo: p.scores?.['c2_1']||5,  // D2 — Mandato Consejo
+    meso_d2_expansion_int: p.scores?.['c2_2']||5,  // D2 — Expansión internacional
+    meso_d2_innovacion_idi: p.scores?.['c2_3']||5,  // D2 — Innovación / I+D
+    meso_d2_urgencia_estrategica: p.scores?.['c2_4']||5,  // D2 — Urgencia estratégica
+    meso_d3_impacto_ingresos: p.scores?.['c3_1']||5,  // D3 — Impacto en ingresos
+    meso_d3_ahorro_eficiencia: p.scores?.['c3_2']||5,  // D3 — Ahorro / Eficiencia
+    meso_d3_roi_payback: p.scores?.['c3_3']||5,  // D3 — ROI / Payback
+    meso_d3_calidad_servicio: p.scores?.['c3_4']||5,  // D3 — Calidad / Servicio
+    meso_d4_madurez_trl: p.scores?.['c4_1']||5,  // D4 — Madurez tecnológica (TRL)
+    meso_d4_integracion_erp: p.scores?.['c4_2']||5,  // D4 — Integración ERP/sistemas
+    meso_d4_escalabilidad: p.scores?.['c4_3']||5,  // D4 — Escalabilidad
+    meso_d4_ciberseg_gdpr: p.scores?.['c4_4']||5,  // D4 — Ciberseguridad / GDPR
+    meso_d5_capacidad_interna: p.scores?.['c5_1']||5,  // D5 — Capacidad interna IT
+    meso_d5_gestion_cambio: p.scores?.['c5_2']||5,  // D5 — Gestión del cambio
+    meso_d5_time_to_value: p.scores?.['c5_3']||5,  // D5 — Time to value
+    meso_d6_experiencia_empleado: p.scores?.['c6_1']||5,  // D6 — Experiencia del empleado
+    meso_d6_sostenibilidad_esg: p.scores?.['c6_2']||5,  // D6 — Sostenibilidad / ESG
+    meso_d6_formacion_cultura: p.scores?.['c6_3']||5,  // D6 — Formación y cultura
   };
-  // Use PATCH with alternate key on name if exists, else POST
+
+  // POST to create (Dataverse will generate GUID)
+  // For upsert by ADO ID: use alternate key if meso_adoid is unique
+  let url = `${c.url}/api/data/v9.2/${c.table}s`;
+  let method = 'POST';
+
+  // If project has adoId, try upsert via alternate key
+  if (p.adoId) {
+    url = `${c.url}/api/data/v9.2/${c.table}s(meso_adoid=${p.adoId})`;
+    method = 'PATCH';
+  } else if (p._dvId) {
+    // Already created — update by Dataverse GUID
+    url = `${c.url}/api/data/v9.2/${c.table}s(${p._dvId})`;
+    method = 'PATCH';
+  }
+
   const res = await fetch(url, {
-    method:'POST',
-    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',
-             'Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0',
-             'Prefer':'return=minimal'},
+    method,
+    headers:{
+      'Authorization': 'Bearer '+token,
+      'Content-Type':  'application/json',
+      'Accept':        'application/json',
+      'OData-MaxVersion': '4.0',
+      'OData-Version':    '4.0',
+      'Prefer':           'return=representation',  // get back the created record ID
+    },
     body: JSON.stringify(body)
   });
+
   if (!res.ok && res.status!==204) {
     const t = await res.text().catch(()=>'');
-    throw new Error(`${res.status}: ${t.substring(0,100)}`);
+    throw new Error(`${res.status}: ${t.substring(0,150)}`);
+  }
+  // Store Dataverse GUID for future updates
+  if (res.status===201) {
+    try {
+      const data = await res.json();
+      if (data[`${c.table}id`]) p._dvId = data[`${c.table}id`];
+    } catch(e) { /* ignore */ }
   }
 }
 
