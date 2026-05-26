@@ -1754,30 +1754,24 @@ function getReqDate() {
 function updateRegCountdown() {
   const days = getRegDays();
   const el   = document.getElementById('reg-cd');
-  const ha   = null; // h-reg removed in wizard UI
-  if (days === null) { el.style.display = 'none'; ha.style.display = 'none'; return; }
-  el.style.display = 'block';
+  if (days === null) { if(el) el.style.display = 'none'; return; }
+  if(el) el.style.display = 'block';
   const absD = Math.abs(days);
   if (days < 0) {
-    el.className = 'reg-countdown danger';
-    el.textContent = `⚠ Fecha vencida hace ${absD} días — D1 c4 = 10 (automático)`;
-    ha.style.display = 'block'; ha.textContent = `⚠ Fecha regulatoria vencida hace ${absD} días`;
+    if(el){ el.className = 'reg-cd danger';
+    el.textContent = `⚠ Fecha vencida hace ${absD} días — D1 c4 = 10 (automático)`; }
   } else if (days <= 30) {
     el.className = 'reg-countdown danger';
     el.textContent = `⚠ Vence en ${days} días — D1 c4 = 10 (automático)`;
-    ha.style.display = 'block'; ha.textContent = `⚠ Fecha regulatoria en ${days} días`;
   } else if (days <= 90) {
     el.className = 'reg-countdown danger';
     el.textContent = `⚠ Vence en ${days} días — D1 c4 = 9 (automático)`;
-    ha.style.display = 'block';
   } else if (days <= 180) {
     el.className = 'reg-countdown warning';
     el.textContent = `Vence en ${days} días — D1 c4 = 7 (automático)`;
-    ha.style.display = 'none';
   } else {
     el.className = 'reg-countdown safe';
     el.textContent = `Vence en ${days} días — D1 c4 = ${regDateNote(null, days)} (automático)`;
-    ha.style.display = 'none';
   }
   // Auto-set c1_4
   const note = regDateNote(null, days);
@@ -3267,35 +3261,47 @@ function handleLandingExcel(inp) {
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
 const NAV_PAGES = ['charts','pools','config'];
 
-// Patch goStep to handle new pages
-const _origGoStep = goStep;
 function goStep(t) {
-  // Deactivate icon nav buttons
-  ['nav-charts','nav-pools','nav-config'].forEach(id => {
+  const SPECIAL = ['summary','charts','pools','config'];
+  const isSpecial = SPECIAL.includes(t);
+  const idx = isSpecial ? null : parseInt(t);
+
+  // 1. Hide all steps, deactivate all nav
+  document.querySelectorAll('.step').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.ndot').forEach((n, i) => {
+    n.classList.toggle('active', !isSpecial && i+1 === idx);
+    n.classList.toggle('done',   !isSpecial && typeof idx==='number' && i+1 < idx);
+  });
+  ['nav-sum','nav-charts','nav-pools','nav-config'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
 
-  if (NAV_PAGES.includes(t)) {
-    document.querySelectorAll('.step').forEach(p => p.classList.remove('on'));
-    document.querySelectorAll('.ndot').forEach(n => { n.classList.remove('active'); n.classList.remove('done'); });
-    document.getElementById('nav-sum')?.classList.remove('active');
+  // 2. Show the correct panel and activate nav
+  if (t === 'summary') {
+    const p = document.getElementById('step-summary');
+    if (p) p.classList.add('on');
+    const ns = document.getElementById('nav-sum');
+    if (ns) ns.classList.add('active');
+    updSummary();
+  } else if (NAV_PAGES.includes(t)) {
     const panel = document.getElementById('step-' + t);
     if (panel) panel.classList.add('on');
     const navEl = document.getElementById('nav-' + t);
     if (navEl) navEl.classList.add('active');
-    currentStep = t;
-    updateProg();
-    updateWizHeader(t);
-    window.scrollTo({top:0, behavior:'smooth'});
-
-    // Refresh content
     if (t === 'charts') refreshChartsStep();
     if (t === 'pools')  refreshPoolsStep();
     if (t === 'config') renderConfigStep();
   } else {
-    _origGoStep(t);
+    const p = document.getElementById('step-' + idx);
+    if (p) p.classList.add('on');
   }
+
+  // 3. Update state
+  currentStep = isSpecial ? t : idx;
+  updateProg();
+  updateWizHeader(isSpecial ? t : idx);
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 /* ═══ CHARTS STEP ═══════════════════════════════════════ */
@@ -3595,45 +3601,64 @@ function resetCfgWeights() {
 
 
 
-/* ═══ PATCH updateWizHeader for new pages ═══════════════ */
-const _orig_updateWizHeader = updateWizHeader;
 function updateWizHeader(step) {
-  const badge=document.getElementById('wh-badge');
-  const nameEl=document.getElementById('wh-name');
-  const metaEl=document.getElementById('wh-meta');
-  const scoreEl=document.getElementById('wh-score');
-  const btnPrev=document.getElementById('btn-prev');
-  const btnNext=document.getElementById('btn-next');
+  const badge  = document.getElementById('wh-badge');
+  const nameEl = document.getElementById('wh-name');
+  const metaEl = document.getElementById('wh-meta');
+  const scoreEl= document.getElementById('wh-score');
+  const btnPrev= document.getElementById('btn-prev');
+  const btnNext= document.getElementById('btn-next');
 
-  if (step==='charts') {
-    if(badge){badge.style.cssText='background:#EEF3FC;font-size:16px;';badge.textContent='📊';}
-    if(nameEl) nameEl.textContent='gráficas de cartera';
-    if(metaEl) metaEl.textContent=portfolioData.length+' proyectos · visualización y posicionamiento';
-    if(scoreEl){scoreEl.textContent=portfolioData.length||'—';scoreEl.style.color='var(--ink)';}
-    if(btnPrev){btnPrev.style.visibility='hidden';}
-    if(btnNext){btnNext.textContent='ir al resumen →';btnNext.className='wb next';btnNext.onclick=()=>goStep('summary');}
-    return;
-  }
-  if (step==='pools') {
-    if(badge){badge.style.cssText='background:#FAF5E6;font-size:16px;';badge.textContent='🗂';}
-    if(nameEl) nameEl.textContent='clasificación por nivel';
-    if(metaEl) metaEl.textContent='pools de ejecución · estimación técnica de horas';
-    const counts={L:0,M:0,S:0}; portfolioData.forEach(p=>{const pool=getPool(p);if(pool)counts[pool]++;});
-    if(scoreEl){scoreEl.textContent=counts.L+'/'+counts.M+'/'+counts.S;scoreEl.style.color='var(--ink)';scoreEl.style.fontSize='22px';}
-    if(btnPrev){btnPrev.style.visibility='hidden';}
-    if(btnNext){btnNext.textContent='ir al resumen →';btnNext.className='wb next';btnNext.onclick=()=>goStep('summary');}
-    return;
-  }
-  if (step==='config') {
-    if(badge){badge.style.cssText='background:var(--surf);font-size:16px;';badge.textContent='⚙';}
-    if(nameEl) nameEl.textContent='configuración del modelo';
-    if(metaEl) metaEl.textContent='pesos de dimensiones · umbrales de scoring y pools';
+  const DT=['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
+  const DC=['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];
+
+  const set = (el,txt) => { if(el) el.textContent=txt; };
+  const vis = (el,v)   => { if(el) el.style.visibility=v; };
+  const next = (txt,cls,fn) => { if(btnNext){btnNext.textContent=txt;btnNext.className='wb '+cls;btnNext.onclick=fn;} };
+  const prev = (txt,fn) => { if(btnPrev){btnPrev.style.visibility='visible';btnPrev.textContent=txt;btnPrev.onclick=fn;} };
+
+  if (step === 0) {
+    if(badge){badge.style.cssText='background:var(--surf);color:var(--ink4);font-size:16px;';badge.textContent='📋';}
+    set(nameEl,'datos del proyecto'); set(metaEl,'información básica · paso 0 de 7');
     if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
-    if(btnPrev){btnPrev.style.visibility='hidden';}
-    if(btnNext){btnNext.textContent='aplicar y volver →';btnNext.className='wb fin';btnNext.onclick=()=>goStep('summary');}
-    return;
+    vis(btnPrev,'hidden');
+    next('empezar D1 →','next',()=>stepNav(1));
+  } else if (step === 'summary') {
+    if(badge){badge.style.cssText='background:var(--gl);font-size:14px;';badge.textContent='✓';}
+    set(nameEl,'resumen y resultados'); set(metaEl,'scoring final · sigmoid boost + aging factor');
+    const sf = scoreFinal(getReqDate());
+    if(scoreEl){scoreEl.textContent=sf.toFixed(1);scoreEl.style.color=scColorHex(sf);}
+    vis(btnPrev,'visible'); prev('← D6',()=>goStep(6));
+    next('↺ nueva evaluación','fin',()=>resetAll());
+  } else if (step === 'charts') {
+    if(badge){badge.style.cssText='background:#EEF3FC;font-size:16px;';badge.textContent='📊';}
+    set(nameEl,'gráficas de cartera'); set(metaEl,(portfolioData.length||0)+' proyectos · visualización y posicionamiento');
+    if(scoreEl){scoreEl.textContent=portfolioData.length||'—';scoreEl.style.color='var(--ink)';}
+    vis(btnPrev,'hidden'); next('ir al resumen →','next',()=>goStep('summary'));
+  } else if (step === 'pools') {
+    if(badge){badge.style.cssText='background:#FAF5E6;font-size:16px;';badge.textContent='🗂';}
+    set(nameEl,'clasificación por nivel'); set(metaEl,'pools de ejecución · estimación técnica de horas');
+    const counts={L:0,M:0,S:0}; portfolioData.forEach(p=>{const pool=getPool(p);if(pool)counts[pool]++;});
+    if(scoreEl){scoreEl.textContent=counts.L+'/'+counts.M+'/'+counts.S;scoreEl.style.color='var(--ink)';}
+    vis(btnPrev,'hidden'); next('ir al resumen →','next',()=>goStep('summary'));
+  } else if (step === 'config') {
+    if(badge){badge.style.cssText='background:var(--surf);font-size:16px;';badge.textContent='⚙';}
+    set(nameEl,'configuración del modelo'); set(metaEl,'pesos de dimensiones · umbrales de scoring y pools');
+    if(scoreEl){scoreEl.textContent='—';scoreEl.style.color='var(--ink4)';}
+    vis(btnPrev,'hidden'); next('aplicar y volver →','fin',()=>goStep('summary'));
+  } else {
+    // Dimension steps 1-6
+    const d = DIMS[step - 1];
+    if (!d) return;
+    if(badge){badge.style.cssText=`background:${DT[step-1]};color:${DC[step-1]};font-size:10px;font-weight:800;`;badge.textContent=d.id;}
+    set(nameEl, d.nom);
+    set(metaEl, `Peso: ${Math.round(d.peso*100)}% · ${d.criterios.length} criterios · paso ${step} de 7`);
+    const ds = scoreDim(d.criterios);
+    if(scoreEl){scoreEl.textContent=ds.toFixed(1);scoreEl.style.color=scColorHex(ds);}
+    vis(btnPrev,'visible');
+    prev(step===1?'← datos':`← D${step-1}`,()=>stepNav(-1));
+    next(step===6?'ver resumen →':`D${step+1} →`, step===6?'fin':'next', ()=>stepNav(1));
   }
-  _orig_updateWizHeader(step);
 }
 
 
@@ -3771,9 +3796,7 @@ function adoMapToProject(wi) {
 
   // Área: último segmento del AreaPath (p.ej. "DYNAMICS 365\Finanzas" → "Finanzas")
   const areaPath = f['System.AreaPath'] || '';
-  const area     = areaPath.includes('\')
-    ? areaPath.split('\').pop().trim()
-    : (areaPath.split('/').pop().trim() || 'Sin área');
+  const area     = (areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim() || 'Sin área';
 
   // Tags: para enriquecer el scoring IA
   const tags = (f['System.Tags'] || '').split(';').map(t=>t.trim()).filter(Boolean);
@@ -4249,8 +4272,7 @@ async function aiScoreOne(idx, apiKeyParam) {
     `TAGS: ${(p.adoTags||[]).join(', ') || 'ninguno'}`,
     `DESCRIPCIÓN:
 ${p.adoDesc || 'Sin descripción disponible'}`,
-  ].join('
-');
+  ].join('\n');
 
   const PROMPT = `Eres un experto en scoring de proyectos tecnológicos para mesoestetic Pharma Group S.L. (empresa de cosmética médica y dermatológica, ~300 personas, +100 países, ~90M EUR).
 
