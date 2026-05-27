@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta name="version" content="20260526-1638">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>mesoestetic · project scoring</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
@@ -1086,48 +1089,107 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
     <!-- STEP: POOLS -->
     <div class="step" id="step-pools">
-      <div class="s-title">clasificación por nivel</div>
-      <div class="s-sub">Proyectos agrupados por estimación técnica de horas — edita las horas directamente en cada proyecto</div>
-      <div class="cfg-section" style="margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <div style="font-size:11px;font-weight:600;color:var(--ink)">Umbrales de clasificación:</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span class="pool-tag pool-S" style="font-size:9px">Corto &lt;</span>
-            <input type="number" class="thr-inp" id="thr-s2" value="30" min="1" style="width:60px;padding:5px 8px;font-size:12px" oninput="syncThresholds('s',this.value)">
-            <span style="font-size:10px;color:var(--ink3)">horas</span>
-            <span class="pool-tag pool-M" style="font-size:9px">Medio &lt;</span>
-            <input type="number" class="thr-inp" id="thr-m2" value="100" min="1" style="width:60px;padding:5px 8px;font-size:12px" oninput="syncThresholds('m',this.value)">
-            <span style="font-size:10px;color:var(--ink3)">horas · Largo ≥ <span id="thr-l-lbl2" style="font-weight:700">100h</span></span>
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div class="s-title" style="margin-bottom:2px">Clasificación por nivel</div>
+          <div class="s-sub" style="margin:0">Proyectos agrupados por horas estimadas · haz clic en cualquier proyecto para editar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #EBEBEB;border-radius:8px;padding:8px 16px;flex-shrink:0">
+          <span style="font-size:9px;font-weight:700;color:#CC1F26;letter-spacing:.06em;text-transform:uppercase">Largo ≥</span>
+          <input type="number" id="thr-m2" value="100" min="1"
+            style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#CC1F26"
+            oninput="syncThresholds('m',this.value)">
+          <span style="font-size:9px;color:#CCC">h</span>
+          <span style="width:1px;height:16px;background:#EBEBEB;flex-shrink:0"></span>
+          <span style="font-size:9px;font-weight:700;color:#C07800;letter-spacing:.06em;text-transform:uppercase">Medio ≥</span>
+          <input type="number" id="thr-s2" value="30" min="1"
+            style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#C07800"
+            oninput="syncThresholds('s',this.value)">
+          <span style="font-size:9px;color:#CCC">h</span>
+          <span style="width:1px;height:16px;background:#EBEBEB;flex-shrink:0"></span>
+          <span style="font-size:9px;font-weight:700;color:#087B50;letter-spacing:.06em;text-transform:uppercase">Corto &lt; <span id="thr-l-lbl2">30</span>h</span>
+        </div>
+      </div>
+
+      <!-- Summary cards: LARGO | MEDIO | CORTO | SIN ESTIMAR -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+
+        <!-- LARGO (izquierda) -->
+        <div style="background:#FEF0F1;border:1.5px solid rgba(204,31,38,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#CC1F26;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#CC1F26"></div>
+            <span style="font-size:9px;font-weight:700;color:#CC1F26;letter-spacing:.1em;text-transform:uppercase">Largo</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#CC1F26;line-height:1;margin-bottom:4px" id="pcv-l-count">—</div>
+          <div style="font-size:9px;color:#CC1F26;opacity:.7">≥ <span id="pcv-l-range">100</span>h · Alta complejidad</div>
+          <div style="height:3px;background:rgba(204,31,38,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-l-bar" style="height:3px;background:#CC1F26;border-radius:2px;width:0%;transition:width .4s"></div>
           </div>
         </div>
-        <div class="pool-cfg-visual" id="pool-cfg-visual">
-          <div class="pool-cfg-card" style="background:var(--d3t);border-color:rgba(8,123,80,.15)">
-            <div style="font-size:9px;font-weight:700;color:var(--d3);letter-spacing:.08em;text-transform:uppercase">🟢 Corto</div>
-            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-s-count">—</div>
-            <div class="pool-range-lbl">Hasta <span id="pcv-s-range">30</span>h</div>
-            <div class="pool-viz-bar" id="pcv-s-bar" style="background:var(--d3);width:30%"></div>
+
+        <!-- MEDIO -->
+        <div style="background:#FAF5E6;border:1.5px solid rgba(192,120,0,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#C07800;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#C07800"></div>
+            <span style="font-size:9px;font-weight:700;color:#C07800;letter-spacing:.1em;text-transform:uppercase">Medio</span>
           </div>
-          <div class="pool-cfg-card" style="background:var(--d4t);border-color:rgba(192,120,0,.15)">
-            <div style="font-size:9px;font-weight:700;color:var(--d4);letter-spacing:.08em;text-transform:uppercase">🟡 Medio</div>
-            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-m-count">—</div>
-            <div class="pool-range-lbl"><span id="pcv-m-range">30–100</span>h</div>
-            <div class="pool-viz-bar" id="pcv-m-bar" style="background:var(--d4);width:40%"></div>
+          <div style="font-size:40px;font-weight:800;color:#C07800;line-height:1;margin-bottom:4px" id="pcv-m-count">—</div>
+          <div style="font-size:9px;color:#C07800;opacity:.7"><span id="pcv-m-range">30–100</span>h · Complejidad media</div>
+          <div style="height:3px;background:rgba(192,120,0,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-m-bar" style="height:3px;background:#C07800;border-radius:2px;width:0%;transition:width .4s"></div>
           </div>
-          <div class="pool-cfg-card" style="background:var(--d1t);border-color:rgba(204,31,38,.15)">
-            <div style="font-size:9px;font-weight:700;color:var(--d1);letter-spacing:.08em;text-transform:uppercase">🔴 Largo</div>
-            <div style="font-family:'Inter',sans-serif;font-size:24px;color:var(--ink)" id="pcv-l-count">—</div>
-            <div class="pool-range-lbl">Más de <span id="pcv-l-range">100</span>h</div>
-            <div class="pool-viz-bar" id="pcv-l-bar" style="background:var(--d1);width:30%"></div>
+        </div>
+
+        <!-- CORTO -->
+        <div style="background:#ECF8F3;border:1.5px solid rgba(8,123,80,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#087B50;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#087B50"></div>
+            <span style="font-size:9px;font-weight:700;color:#087B50;letter-spacing:.1em;text-transform:uppercase">Corto</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#087B50;line-height:1;margin-bottom:4px" id="pcv-s-count">—</div>
+          <div style="font-size:9px;color:#087B50;opacity:.7">&lt; <span id="pcv-s-range">30</span>h · Quick wins</div>
+          <div style="height:3px;background:rgba(8,123,80,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-s-bar" style="height:3px;background:#087B50;border-radius:2px;width:0%;transition:width .4s"></div>
+          </div>
+        </div>
+
+        <!-- SIN ESTIMAR (derecha) -->
+        <div style="background:#F8F8F8;border:1.5px solid #E5E5E5;border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#CCC;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#CCC"></div>
+            <span style="font-size:9px;font-weight:700;color:#AAA;letter-spacing:.1em;text-transform:uppercase">Sin estimar</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#BBBBBB;line-height:1;margin-bottom:4px" id="pcv-n-count">—</div>
+          <div style="font-size:9px;color:#BBB">horas no definidas</div>
+          <div style="height:3px;background:#EBEBEB;border-radius:2px;margin-top:12px">
+            <div id="pcv-n-bar" style="height:3px;background:#CCC;border-radius:2px;width:0%;transition:width .4s"></div>
           </div>
         </div>
       </div>
-      <div id="pool-step-empty" style="padding:32px;text-align:center;color:var(--ink4);background:var(--w);border:1px solid var(--b);border-radius:var(--rl)">
-        <div style="font-size:28px;margin-bottom:10px">🗂</div>
-        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px">Sin proyectos en la cartera</div>
-        <div style="font-size:11px">Carga un Excel para clasificar proyectos por nivel</div>
-        <button class="cfg-apply" style="margin-top:14px" onclick="goStep('summary')">Cargar Excel →</button>
+
+      <!-- Empty state -->
+      <div id="pool-step-empty" style="padding:48px;text-align:center;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px">
+        <div style="font-size:36px;margin-bottom:12px">🗂</div>
+        <div style="font-size:14px;font-weight:600;color:#111;margin-bottom:6px">Sin proyectos en la cartera</div>
+        <div style="font-size:11px;color:#999">Carga un Excel o importa desde Azure DevOps</div>
+        <button class="cfg-apply" style="margin-top:16px" onclick="goStep('summary')">→ Cargar proyectos</button>
       </div>
-      <div id="pool-step-grid" class="pool-grid" style="background:var(--w);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;display:none"></div>
+
+      <!-- Pool grid: LARGO | MEDIO | CORTO | SIN ESTIMAR (rendered by renderPoolsStep) -->
+      <div id="pool-step-grid" style="display:none;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+          <div id="pool-col-L" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-M" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-S" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-N" style="display:flex;flex-direction:column;min-height:200px"></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- STEP: CONFIG -->
@@ -3317,66 +3379,101 @@ function renderChartsStep() {
 function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); }
 
 function renderPoolsStep() {
-  const thrS=parseInt(document.getElementById('thr-s')?.value||30);
-  const thrM=parseInt(document.getElementById('thr-m')?.value||100);
-  const pools={L:[],M:[],S:[],null:[]};
-  portfolioData.forEach(p=>{
-    const h=p.horas!=null?parseFloat(p.horas):null;
-    const pool=h===null?null:h<thrS?'S':h<thrM?'M':'L';
-    (pools[pool]||pools[null]).push(p);
-  });
-  ['L','M','S'].forEach(k=>pools[k].sort((a,b)=>b.sf-a.sf));
-  // Update counts in visual cards
-  ['s','m','l'].forEach(k=>{
-    const el=document.getElementById('pcv-'+k+'-count');
-    if(el) el.textContent=pools[k.toUpperCase()]?.length||0;
-    const bar=document.getElementById('pcv-'+k+'-bar');
-    const total=portfolioData.length||1;
-    if(bar) bar.style.width=Math.round(((pools[k.toUpperCase()]?.length||0)/total)*100)+'%';
-  });
-  const empty=document.getElementById('pool-step-empty');
-  const grid=document.getElementById('pool-step-grid');
-  if(!portfolioData.length){if(empty)empty.style.display='block';if(grid)grid.style.display='none';return;}
-  if(empty)empty.style.display='none';if(grid)grid.style.display='grid';
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
 
-  // Order: Largo → Medio → Corto → Sin estimar (left to right)
-  const poolDefs=[
-    {k:'L',  lbl:'🔴 Largos',       sub:'≥'+thrM+'h · Alta complejidad',  bg:'#FEF0F1',c:'var(--d1)',  border:'rgba(204,31,38,.15)'},
-    {k:'M',  lbl:'🟡 Medianos',      sub:thrS+'–'+thrM+'h · Complejidad media',bg:'var(--d4t)',c:'var(--d4)',border:'rgba(192,120,0,.15)'},
-    {k:'S',  lbl:'🟢 Cortos',        sub:'<'+thrS+'h · Quick wins',        bg:'var(--d3t)',c:'var(--d3)',border:'rgba(8,123,80,.15)'},
-    {k:null, lbl:'⬜ Sin estimar',   sub:'horas no definidas',              bg:'var(--surf)',c:'var(--ink4)',border:'var(--b2)'},
+  // Bucket projects
+  const pools = { L:[], M:[], S:[], N:[] };
+  portfolioData.forEach(p => {
+    const h = p.horas != null ? parseFloat(p.horas) : null;
+    const k = h === null ? 'N' : h < thrS ? 'S' : h < thrM ? 'M' : 'L';
+    pools[k].push(p);
+  });
+  ['L','M','S','N'].forEach(k => pools[k].sort((a,b) => b.sf - a.sf));
+
+  const total = portfolioData.length || 1;
+
+  // Update summary cards — ids match HTML above (l, m, s, n)
+  const cardDefs = [
+    { k:'L', suffix:'l', range: '≥'+thrM+'h' },
+    { k:'M', suffix:'m', range: thrS+'–'+thrM+'h' },
+    { k:'S', suffix:'s', range: '<'+thrS+'h' },
+    { k:'N', suffix:'n', range: '' },
   ];
-  // Override grid to 4 cols for this step
-  grid.style.gridTemplateColumns='repeat(4,1fr)';
-  grid.innerHTML=poolDefs.map(pd=>{
-    const items=pools[pd.k]||[];
-    const itemsHtml=items.length===0
-      ?`<div style="padding:16px;text-align:center;color:#C8C8C8;font-size:10px">Sin proyectos</div>`
-      :items.map(p=>{
-        const cl=clsf(p.sf);
-        const idx=portfolioData.indexOf(p);
-        return`<div class="pool-item" style="cursor:pointer" onclick="openProjectEdit(${idx})">
-          <div style="flex:1;min-width:0">
-            <div class="pi-name" title="${p.nom}">${p.nom.length>52?p.nom.substring(0,50)+'…':p.nom}</div>
-            <div class="pi-meta">${p.area||'—'} · ${p.horas?p.horas+'h':'—h'}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
-            <span class="pi-score" style="color:${scColorHex(p.sf)}">${p.sf.toFixed(1)}</span>
-            <span class="cls-badge" style="background:${cl.bg};color:${cl.c};border-color:${cl.b};font-size:7px;padding:1px 5px">${cl.et.split('/')[0].trim().split(' ').slice(0,2).join(' ')}</span>
-          </div>
-        </div>`;
-      }).join('');
-    return`<div class="pool-col" style="border-right:1px solid var(--b2)">
-      <div class="pool-col-hd" style="background:${pd.bg};border-bottom:1px solid ${pd.border}">
+  cardDefs.forEach(({k, suffix, range}) => {
+    const cnt = pools[k].length;
+    const cntEl = document.getElementById('pcv-'+suffix+'-count');
+    const barEl = document.getElementById('pcv-'+suffix+'-bar');
+    const rangeEl = document.getElementById('pcv-'+suffix+'-range');
+    if (cntEl)   cntEl.textContent  = cnt;
+    if (barEl)   barEl.style.width  = Math.round(cnt/total*100)+'%';
+    if (rangeEl) rangeEl.textContent = range;
+  });
+  // Update threshold label
+  const lbl2 = document.getElementById('thr-l-lbl2');
+  if (lbl2) lbl2.textContent = thrS+'h';
+
+  const empty = document.getElementById('pool-step-empty');
+  const grid  = document.getElementById('pool-step-grid');
+
+  if (!portfolioData.length) {
+    if (empty) empty.style.display = 'block';
+    if (grid)  grid.style.display  = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  if (grid)  grid.style.display  = 'block';
+
+  // Column definitions — LARGO(L) | MEDIO(M) | CORTO(S) | SIN ESTIMAR(N)
+  const colDefs = [
+    { k:'L', id:'pool-col-L', label:'Largos',      sub:'≥'+thrM+'h · Alta complejidad',       bc:'#CC1F26', bg:'#FEF0F1', brd:'rgba(204,31,38,.2)'  },
+    { k:'M', id:'pool-col-M', label:'Medianos',     sub:thrS+'–'+thrM+'h · Complejidad media', bc:'#C07800', bg:'#FAF5E6', brd:'rgba(192,120,0,.2)'  },
+    { k:'S', id:'pool-col-S', label:'Cortos',       sub:'<'+thrS+'h · Quick wins',             bc:'#087B50', bg:'#ECF8F3', brd:'rgba(8,123,80,.2)'   },
+    { k:'N', id:'pool-col-N', label:'Sin estimar',  sub:'horas no definidas',                  bc:'#AAAAAA', bg:'#F8F8F8', brd:'#E5E5E5'             },
+  ];
+
+  colDefs.forEach(pd => {
+    const col = document.getElementById(pd.id);
+    if (!col) return;
+    const items = pools[pd.k];
+
+    const header = `
+      <div style="padding:10px 14px;background:${pd.bg};border-bottom:1px solid ${pd.brd};flex-shrink:0;
+                  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1">
         <div>
-          <div style="font-size:10px;font-weight:700;color:${pd.c}">${pd.lbl}</div>
-          <div style="font-size:8px;color:${pd.c};opacity:.65;margin-top:2px">${pd.sub}</div>
+          <div style="font-size:10px;font-weight:700;color:${pd.bc};letter-spacing:.08em;text-transform:uppercase">${pd.label}</div>
+          <div style="font-size:8px;color:${pd.bc};opacity:.6;margin-top:2px">${pd.sub}</div>
         </div>
-        <div class="pool-cnt-badge">${items.length}</div>
-      </div>
-      <div style="max-height:460px;overflow-y:auto">${itemsHtml}</div>
-    </div>`;
-  }).join('');
+        <span style="font-size:11px;font-weight:800;color:${pd.bc};background:#fff;
+                     border:1.5px solid ${pd.brd};border-radius:20px;padding:2px 10px">${items.length}</span>
+      </div>`;
+
+    const rows = items.length === 0
+      ? `<div style="padding:28px 16px;text-align:center;color:#CCC;font-size:10px">Sin proyectos</div>`
+      : items.map(p => {
+          const idx = portfolioData.indexOf(p);
+          const cl  = clsf(p.sf);
+          const sfCol = scColorHex(p.sf);
+          const nom = p.nom.length > 46 ? p.nom.substring(0,44)+'…' : p.nom;
+          return `<div onclick="openProjectEdit(${idx})"
+            style="display:flex;align-items:center;gap:10px;padding:9px 14px;
+                   border-bottom:1px solid #F5F5F5;cursor:pointer;background:#fff;transition:background .1s"
+            onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='#fff'">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:10px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                   title="${p.nom.replace(/"/g,'&quot;')}">${nom}</div>
+              <div style="font-size:8px;color:#AAA;margin-top:1px">${p.area||'—'} · ${p.horas!=null?p.horas+'h':'—h'}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+              <span style="font-family:'Inter',sans-serif;font-size:15px;font-weight:800;color:${sfCol};line-height:1">${p.sf.toFixed(1)}</span>
+              <span style="font-size:7px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;
+                           background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et.split(' ').slice(0,2).join(' ')}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+    col.innerHTML = header + `<div style="overflow-y:auto;max-height:500px">${rows}</div>`;
+  });
 }
 
 /* ── CONFIG STEP ──────────────────────────────────── */
