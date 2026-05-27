@@ -4516,31 +4516,36 @@ async function dvGetToken() {
   if (!tenant || !clientId || !secret || !url)
     throw new Error('Faltan credenciales en ⚙ Config → Dataverse');
 
-  const resource = url.endsWith('/') ? url : url + '/';
-  const body = new URLSearchParams({
-    grant_type:    'client_credentials',
-    client_id:     clientId,
-    client_secret: secret,
-    scope:         resource + '.default',
-  });
+  const resource = (url.endsWith('/') ? url : url + '/') + '.default';
 
+  // Use /api/token proxy to avoid browser CORS block on login.microsoftonline.com
+  // The client_secret never goes to Azure AD from the browser — it goes through Vercel
   let res;
   try {
-    res = await fetch(
-      `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
-      { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }
-    );
+    res = await fetch('/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_id:     tenant,
+        client_id:     clientId,
+        client_secret: secret,
+        scope:         resource,
+      }),
+    });
   } catch(e) {
     throw new Error('NET_ERR:' + e.message);
   }
+
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    let msg = `HTTP ${res.status}`;
-    try { const j=await res.json(); msg=j.error_description||j.error||msg; } catch(_){}
-    throw new Error(msg);
+    throw new Error(data.error_description || data.error || `HTTP ${res.status}`);
   }
-  const data = await res.json();
+  if (!data.access_token) {
+    throw new Error('No se recibió access_token del proxy');
+  }
+
   _dvToken    = data.access_token;
-  _dvTokenExp = Date.now() + (data.expires_in - 60) * 1000;
+  _dvTokenExp = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
   return _dvToken;
 }
 
