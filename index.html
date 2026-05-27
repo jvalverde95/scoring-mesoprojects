@@ -11,6 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 :root{
@@ -805,7 +807,11 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .pem-crit-val{font-size:10px;font-weight:700;color:#111;text-align:right}
 .pem-footer{padding:14px 24px;border-top:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FAFAFA;border-radius:0 0 12px 12px;flex-shrink:0}
 @media print{#bar,#lnav,.wh,#rbar,.wdrawer{display:none!important}#shell{margin-top:0}.step{display:block!important;padding:10px}}
+
+
 </style>
+
+
 </head>
 <body>
 
@@ -1431,44 +1437,17 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
               <div class="cfg-note">Certificados y secretos → Nuevo secreto de cliente</div>
             </div>
 
-            <!-- Step 2: Table -->
+            <!-- Step 2: Solution info (hardcoded to ScoringDigitalProject schema) -->
             <div style="font-size:9px;font-weight:700;color:#742774;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px">
               <span style="width:18px;height:18px;border-radius:50%;background:#742774;color:#fff;font-size:9px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
-              tabla principal
+              solución dataverse — campos fijos
             </div>
-            <div class="cfg-field" style="margin-bottom:8px">
-              <label>Nombre lógico de la tabla</label>
-              <input type="text" class="cfg-inp" id="cfg-dv-table"
-                value="meso_proyectoscoring" placeholder="meso_proyectoscoring">
-              <div class="cfg-note">Nombre lógico en Power Apps → Tablas (sin el sufijo "s" del API)</div>
-            </div>
-
-            <!-- Key field mappings -->
-            <div style="font-size:9px;font-weight:700;color:#742774;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;margin-top:14px;display:flex;align-items:center;gap:6px">
-              <span style="width:18px;height:18px;border-radius:50%;background:#742774;color:#fff;font-size:9px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
-              campos clave (configurables)
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div class="cfg-field">
-                <label>Campo nombre</label>
-                <input type="text" class="cfg-inp" id="cfg-dv-field-name" value="meso_nombre">
-              </div>
-              <div class="cfg-field">
-                <label>Campo score final</label>
-                <input type="text" class="cfg-inp" id="cfg-dv-field-score" value="meso_scorefinal">
-              </div>
-              <div class="cfg-field">
-                <label>Campo área</label>
-                <input type="text" class="cfg-inp" id="cfg-dv-field-area" value="meso_area">
-              </div>
-              <div class="cfg-field">
-                <label>Campo horas</label>
-                <input type="text" class="cfg-inp" id="cfg-dv-field-horas" value="meso_horasestimadas">
-              </div>
-              <div class="cfg-field" style="grid-column:1/-1">
-                <label>Campo clasificación</label>
-                <input type="text" class="cfg-inp" id="cfg-dv-field-cls" value="meso_clasificacion">
-              </div>
+            <div style="padding:10px 12px;background:#F3E8FF;border-radius:6px;border:1px solid rgba(116,39,116,.15);font-size:9px;color:#742774;line-height:1.8">
+              <strong>Solución:</strong> ScoringDigitalProject v1.0.0.1 · Publisher: MESO<br>
+              <strong>Tabla principal:</strong> <code style="background:#E9D5FF;padding:1px 5px;border-radius:3px">meso_projectscoring</code><br>
+              <strong>Campos clave:</strong> meso_auditname · meso_auditid · meso_finalscore · meso_departmentarea · meso_estimatedhours<br>
+              <strong>22 criterios:</strong> meso_legalriskscore → meso_trainingandculturescore<br>
+              <strong>Tablas relacionadas:</strong> meso_auditevaluation · meso_criteriaconfiguration · meso_dimensionconfiguration · meso_globalparameters · meso_scorecriterio
             </div>
 
             <!-- Status -->
@@ -1994,6 +1973,8 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 </div>
 
 <div class="toast" id="toast"></div>
+
+
 
 <script>
 /* ══════════════════════════════════════════════════════════
@@ -3712,7 +3693,6 @@ function handleLandingExcel(inp) {
   }, 100);
 }
 
-
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
 const NAV_PAGES = ['charts','pools','config'];
 
@@ -4106,253 +4086,6 @@ async function cfgAdoLoad(){
   } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); }
 }
 
-/* ═══ AI EVALUATOR ═════════════════════════════════════════ */
-function openAiModal(adoItems){
-  _aiItems=adoItems;
-  _aiScored=adoItems.map(wi=>({wi,proj:adoMapToProject(wi),status:'pending',selected:false}));
-  _aiStopped=false;
-  renderAiColumns();
-  document.getElementById('ai-overlay').classList.add('open');
-}
-function closeAiModal(){
-  _aiStopped=true; _aiRunning=false;
-  document.getElementById('ai-overlay').classList.remove('open');
-}
-
-/* ═══ PROJECT EDIT MODAL ════════════════════════════════════ */
-let _pemIdx=0;
-function openProjectEdit(idx){
-  _pemIdx=idx; renderPemBody();
-  document.getElementById('proj-edit-overlay').classList.add('open');
-  const dvBtn=document.getElementById('pem-dv-btn');
-  if(dvBtn) dvBtn.style.display=_dvCfg.url?'flex':'none';
-}
-function closeProjEdit(){
-  document.getElementById('proj-edit-overlay').classList.remove('open');
-  renderPortfolio(); renderPools();
-  if(currentStep==='pools') renderPoolsStep();
-}
-function pemSave(){
-  const p=portfolioData[_pemIdx];
-  const updated=computeProj(p);
-  Object.assign(portfolioData[_pemIdx],updated);
-  portfolioData[_pemIdx].horas=p.horas;
-  toast('✓ Proyecto actualizado');
-  renderPemBody();
-}
-function pemPrev(){ if(_pemIdx>0){_pemIdx--;renderPemBody();} }
-function pemNext(){ if(_pemIdx<portfolioData.length-1){_pemIdx++;renderPemBody();} }
-async function pemSaveDataverse(){
-  const p=portfolioData[_pemIdx]; if(!p) return;
-  pemSave();
-  try{ const token=await dvGetToken(); await dvUpsertProject(p,token); toast('✓ Guardado en Dataverse'); }
-  catch(e){ toast('✗ Dataverse: '+e.message); }
-}
-
-/* ═══ DATAVERSE ════════════════════════════════════════════ */
-let _dvCfg={url:'',tenant:'',clientId:'',secret:'',table:'meso_proyectoscoring',
-  fieldName:'meso_nombre',fieldScore:'meso_scorefinal',fieldArea:'meso_area',
-  fieldHoras:'meso_horasestimadas',fieldCls:'meso_clasificacion'};
-let _dvToken=null, _dvTokenExp=0;
-function dvSaveCfg(){
-  const g=id=>document.getElementById(id)?.value?.trim()||'';
-  _dvCfg.url=g('cfg-dv-url'); _dvCfg.tenant=g('cfg-dv-tenant');
-  _dvCfg.clientId=g('cfg-dv-clientid'); _dvCfg.secret=g('cfg-dv-secret');
-  _dvCfg.table=g('cfg-dv-table')||'meso_proyectoscoring';
-  _dvCfg.fieldName=g('cfg-dv-field-name')||'meso_nombre';
-  _dvCfg.fieldScore=g('cfg-dv-field-score')||'meso_scorefinal';
-  _dvCfg.fieldArea=g('cfg-dv-field-area')||'meso_area';
-  _dvCfg.fieldHoras=g('cfg-dv-field-horas')||'meso_horasestimadas';
-  _dvCfg.fieldCls=g('cfg-dv-field-cls')||'meso_clasificacion';
-  toast('✓ Configuración Dataverse guardada');
-}
-function dvStatusShow(type,msg){
-  const el=document.getElementById('cfg-dv-status'), ml=document.getElementById('cfg-dv-status-msg'), sp=document.getElementById('cfg-dv-spinner');
-  const c={loading:{bg:'#F3E8FF',c:'#742774'},ok:{bg:'var(--d3t)',c:'var(--d3)'},error:{bg:'var(--d1t)',c:'var(--d1)'}};
-  const clr=c[type]||c.loading;
-  if(el){el.style.display='flex';el.style.background=clr.bg;el.style.color=clr.c;}
-  if(sp) sp.style.display=type==='loading'?'block':'none';
-  if(ml) ml.textContent=msg;
-}
-async function dvGetToken(){
-  if(_dvToken&&Date.now()<_dvTokenExp) return _dvToken;
-  dvSaveCfg();
-  const{url,tenant,clientId,secret}=_dvCfg;
-  if(!tenant||!clientId||!secret||!url) throw new Error('Completa todos los campos de Dataverse');
-
-  // Client Credentials via CORS — works from HTTPS origins (Vercel)
-  // For localhost testing use a proxy or the token endpoint directly
-  const resource = url.endsWith('/') ? url : url+'/';
-  const params = new URLSearchParams({
-    grant_type:    'client_credentials',
-    client_id:     clientId,
-    client_secret: secret,
-    scope:         resource + '.default',
-  });
-
-  let res;
-  try {
-    res = await fetch(
-      `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
-      {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body:    params.toString(),
-        // No 'mode: cors' — let browser decide; AAD supports CORS from HTTPS origins
-      }
-    );
-  } catch(fetchErr) {
-    // CORS block — only happens on localhost/file://, not on Vercel
-    throw new Error(
-      'Error de red al contactar Azure AD. ' +
-      'Desde localhost el navegador bloquea esta llamada por CORS. ' +
-      'Despliega la app en Vercel (HTTPS) y funcionará automáticamente. ' +
-      '(Detalle: ' + fetchErr.message + ')'
-    );
-  }
-
-  if(!res.ok){
-    let errMsg = `Error ${res.status}`;
-    try {
-      const e = await res.json();
-      errMsg = e.error_description || e.error || errMsg;
-    } catch(_){}
-    throw new Error('Auth error: ' + errMsg);
-  }
-
-  const data = await res.json();
-  _dvToken    = data.access_token;
-  _dvTokenExp = Date.now() + (data.expires_in - 60) * 1000;
-  return _dvToken;
-}
-async function dvTest(){
-  dvSaveCfg();
-  const {url, tenant, clientId, secret, table, fieldName} = _dvCfg;
-
-  // ── Step 1: validate fields ───────────────────────────────────────────────
-  const missing = [];
-  if (!url)      missing.push('URL del entorno');
-  if (!tenant)   missing.push('Tenant ID');
-  if (!clientId) missing.push('Client ID');
-  if (!secret)   missing.push('Client Secret');
-  if (missing.length) {
-    dvStatusShow('error', '✗ Faltan campos obligatorios: ' + missing.join(', '));
-    return;
-  }
-
-  // ── Step 2: check URL format ──────────────────────────────────────────────
-  if (!url.startsWith('https://')) {
-    dvStatusShow('error', '✗ La URL del entorno debe empezar por https://  Ej: https://org1234.crm.dynamics.com');
-    return;
-  }
-
-  // ── Step 3: detect localhost / file:// ────────────────────────────────────
-  const origin = window.location.origin;
-  const isLocal = origin.startsWith('file') || origin.includes('localhost') || origin.includes('127.0.0.1');
-  if (isLocal) {
-    dvStatusShow('error',
-      '✗ CORS bloqueado por el navegador. ' +
-      'login.microsoftonline.com y Dataverse solo permiten llamadas desde dominios HTTPS. ' +
-      'Solución: despliega en Vercel → abre https://tu-app.vercel.app → vuelve a intentarlo. ' +
-      'También puedes abrir con: python -m http.server 8080 y acceder via http://localhost:8080'
-    );
-    return;
-  }
-
-  // ── Step 4: get token ─────────────────────────────────────────────────────
-  dvStatusShow('loading', '① Autenticando con Azure AD (OAuth2)…');
-  let token;
-  try {
-    token = await dvGetToken();
-  } catch(e) {
-    const msg = e.message || '';
-    let hint = '';
-    if (msg.includes('AADSTS700016'))  hint = ' → Client ID incorrecto o app no registrada en este tenant.';
-    else if (msg.includes('AADSTS7000215')) hint = ' → Client Secret incorrecto o expirado.';
-    else if (msg.includes('AADSTS50020'))   hint = ' → Tenant ID incorrecto.';
-    else if (msg.includes('AADSTS650057'))  hint = ' → Falta permiso "Dynamics CRM → user_impersonation" en la app de Azure AD.';
-    else if (msg.includes('fetch') || msg.includes('network') || msg.includes('CORS'))
-      hint = ' → Problema de red o CORS. Asegúrate de acceder desde HTTPS (Vercel).';
-    dvStatusShow('error', '✗ Error de autenticación Azure AD: ' + msg + hint);
-    return;
-  }
-  dvStatusShow('loading', '② Token obtenido ✓ — Verificando acceso a Dataverse…');
-
-  // ── Step 5: test Dataverse access ─────────────────────────────────────────
-  let res;
-  try {
-    res = await fetch(
-      `${url.replace(/\/$/,'')}/api/data/v9.2/${table}s?$top=1&$select=${fieldName}`,
-      { headers: {
-          'Authorization':   'Bearer ' + token,
-          'Accept':          'application/json',
-          'OData-MaxVersion':'4.0',
-          'OData-Version':   '4.0',
-      }}
-    );
-  } catch(e) {
-    dvStatusShow('error',
-      '✗ No se pudo conectar a ' + url + ' — ' + e.message +
-      ' · Verifica que la URL del entorno es correcta y que el entorno está activo.'
-    );
-    return;
-  }
-
-  // ── Step 6: interpret HTTP status ─────────────────────────────────────────
-  if (res.status === 401) {
-    dvStatusShow('error',
-      '✗ Acceso denegado (401) — La app de Azure AD no tiene permisos sobre Dataverse. ' +
-      'Ve a Power Platform Admin Center → tu entorno → Usuarios de aplicación → ' +
-      'añade tu app con rol "Administrador del sistema" o "Basic User".'
-    );
-    return;
-  }
-  if (res.status === 403) {
-    dvStatusShow('error',
-      '✗ Sin permisos (403) — El usuario de aplicación existe pero no tiene suficientes permisos. ' +
-      'Asigna el rol "Administrador del sistema" en Power Platform Admin Center.'
-    );
-    return;
-  }
-  if (res.status === 404) {
-    dvStatusShow('error',
-      `✗ Tabla "${table}" no encontrada (404) — ` +
-      'Verifica que la tabla se creó correctamente en Power Apps y que el nombre es exactamente ' +
-      `"${table}" (minúsculas, con prefijo meso_).`
-    );
-    return;
-  }
-  if (!res.ok) {
-    let body = '';
-    try { body = await res.text(); } catch(_){}
-    dvStatusShow('error', `✗ Error ${res.status} de Dataverse: ${body.substring(0,200)}`);
-    return;
-  }
-
-  // ── Step 7: success ────────────────────────────────────────────────────────
-  const data = await res.json().catch(() => ({value:[]}));
-  dvStatusShow('ok',
-    `✓ Conexión correcta · Entorno: ${url.replace('https://','').split('.')[0]} · ` +
-    `Tabla "${table}" encontrada · ${data.value?.length ?? 0} registros de muestra`
-  );
-  const badge = document.getElementById('cfg-dv-badge');
-  if (badge) { badge.style.display='inline-block'; badge.textContent='✓ conectado'; }
-  const btn = document.getElementById('cfg-dv-sync-btn');
-  if (btn) btn.disabled = false;
-  const dvBtn = document.getElementById('pem-dv-btn');
-  if (dvBtn) dvBtn.style.display = 'flex';
-}
-async function dvSyncAll(){
-  if(!portfolioData.length){toast('Sin proyectos para sincronizar');return;}
-  dvStatusShow('loading',`Sincronizando ${portfolioData.length} proyectos...`);
-  try{
-    const token=await dvGetToken(); let ok=0,err=0;
-    for(const p of portfolioData){try{await dvUpsertProject(p,token);ok++;}catch(e){err++;console.warn(e.message);}}
-    dvStatusShow(err?'error':'ok',`✓ ${ok} proyectos sincronizados${err?' · '+err+' errores':''}`);
-    toast(`↑ Dataverse: ${ok} proyectos`);
-  } catch(e){ dvStatusShow('error','✗ '+e.message); }
-}
-
 /* ═══ CONFIG STEP ══════════════════════════════════════════ */
 function applyCfgWeights(){
   const total=DIMS.reduce((s,d)=>{const v=parseInt(document.getElementById('cfg-val-'+d.id)?.value||0);return s+(isNaN(v)?0:v);},0);
@@ -4417,6 +4150,78 @@ function updateWizHeader(step){
   }
 }
 
+
+
+
+function goLanding() {
+  const landing = document.getElementById('landing');
+  const shell   = document.getElementById('shell');
+  const bar     = document.getElementById('bar');
+  if (landing) landing.style.display = 'flex';
+  if (shell)   shell.style.display   = 'none';
+  if (bar)     bar.style.display     = 'none';
+  portfolioData = [];
+  renderPortfolio(); renderPools();
+}
+
+function renderConfigStep() {
+  renderCfgDimRows();
+  renderWeightEditor();
+  dvLoadCfg();
+}
+
+/* ═══ MODAL OPEN/CLOSE ════════════════════════════════════ */
+function openAiModal(adoItems) {
+  _aiItems  = adoItems;
+  _aiScored = adoItems.map(wi => ({wi, proj:adoMapToProject(wi), status:'pending', selected:false}));
+  _aiStopped = false;
+  renderAiColumns();
+  const el = document.getElementById('ai-overlay');
+  if (el) el.classList.add('open');
+}
+
+function openProjectEdit(idx) {
+  _pemIdx = idx;
+  renderPemBody();
+  const el = document.getElementById('proj-edit-overlay');
+  if (el) el.classList.add('open');
+  const dvBtn = document.getElementById('pem-dv-btn');
+  if (dvBtn) dvBtn.style.display = _dvCfg.url ? 'flex' : 'none';
+}
+
+/* ═══ MODAL HELPERS ═══════════════════════════════════════ */
+function closeAiModal() {
+  _aiStopped = true; _aiRunning = false;
+  const el = document.getElementById('ai-overlay');
+  if (el) el.classList.remove('open');
+}
+
+function closeProjEdit() {
+  const el = document.getElementById('proj-edit-overlay');
+  if (el) el.classList.remove('open');
+  renderPortfolio(); renderPools();
+  if (currentStep === 'pools') renderPoolsStep();
+}
+
+function pemSave() {
+  const p = portfolioData[_pemIdx];
+  if (!p) return;
+  const updated = computeProj(p);
+  Object.assign(portfolioData[_pemIdx], updated);
+  portfolioData[_pemIdx].horas = p.horas;
+  toast('✓ Proyecto actualizado');
+  renderPemBody();
+}
+
+function pemPrev() {
+  if (_pemIdx > 0) { _pemIdx--; renderPemBody(); }
+}
+
+function pemNext() {
+  if (_pemIdx < portfolioData.length - 1) { _pemIdx++; renderPemBody(); }
+}
+
+
 /* ═══ INIT ══════════════════════════════════════════════════ */
 document.getElementById('f-req').value = new Date().toISOString().split('T')[0];
 ['f-name','f-area','f-type'].forEach(id=>{
@@ -4428,7 +4233,6 @@ renderNav();
 renderWeightEditor();
 upd();
 goStep(0);
-
 
 /* ═══ AI EVALUATOR ENGINE ══════════════════════════════════ */
 let _aiItems=[], _aiScored=[], _aiRunning=false, _aiStopped=false;
@@ -4584,42 +4388,360 @@ function pemSetHoras(projIdx,val){
   const n=parseFloat(val); portfolioData[projIdx].horas=(Number.isFinite(n)&&n>0)?n:null;
 }
 
-/* ═══ DATAVERSE UPSERT ══════════════════════════════════════ */
-async function dvUpsertProject(p,token){
-  const c=_dvCfg, cl=clsf(p.sf||0);
-  const thrS=parseInt(document.getElementById('thr-s')?.value)||30;
-  const thrM=parseInt(document.getElementById('thr-m')?.value)||100;
-  const pool=p.horas==null?'Sin estimar':p.horas<thrS?'Corto':p.horas<thrM?'Medio':'Largo';
-  const body={
-    [c.fieldName]:p.nom,[c.fieldArea]:p.area||'',meso_sponsor:p.sponsor||'',
-    [c.fieldScore]:+(p.sf||0).toFixed(3),meso_scorebase:+(p.sb||0).toFixed(3),meso_aging:+(p.af||1).toFixed(4),
-    [c.fieldCls]:cl.et,meso_autoprioritario:p.autoP||false,[c.fieldHoras]:p.horas||null,
-    meso_pool:pool,meso_adoid:p.adoId||null,meso_adoestado:p.adoState||'',meso_adotipo:p.adoType||'',
-    meso_fechasolicitud:p.reqDate||null,meso_diascartera:p.reqDate?Math.round((new Date()-new Date(p.reqDate))/86400000):null,
-    meso_d1score:+(p.dimScores?.[0]||0).toFixed(3),meso_d2score:+(p.dimScores?.[1]||0).toFixed(3),
-    meso_d3score:+(p.dimScores?.[2]||0).toFixed(3),meso_d4score:+(p.dimScores?.[3]||0).toFixed(3),
-    meso_d5score:+(p.dimScores?.[4]||0).toFixed(3),meso_d6score:+(p.dimScores?.[5]||0).toFixed(3),
-    meso_d1_riesgo_legal:p.scores?.['c1_1']||5,meso_d1_seguridad_prl:p.scores?.['c1_2']||5,
-    meso_d1_riesgo_reputacional:p.scores?.['c1_3']||5,meso_d1_obligacion_normativa:p.scores?.['c1_4']||5,
-    meso_d2_mandato_consejo:p.scores?.['c2_1']||5,meso_d2_expansion_int:p.scores?.['c2_2']||5,
-    meso_d2_innovacion_idi:p.scores?.['c2_3']||5,meso_d2_urgencia_estrategica:p.scores?.['c2_4']||5,
-    meso_d3_impacto_ingresos:p.scores?.['c3_1']||5,meso_d3_ahorro_eficiencia:p.scores?.['c3_2']||5,
-    meso_d3_roi_payback:p.scores?.['c3_3']||5,meso_d3_calidad_servicio:p.scores?.['c3_4']||5,
-    meso_d4_madurez_trl:p.scores?.['c4_1']||5,meso_d4_integracion_erp:p.scores?.['c4_2']||5,
-    meso_d4_escalabilidad:p.scores?.['c4_3']||5,meso_d4_ciberseg_gdpr:p.scores?.['c4_4']||5,
-    meso_d5_capacidad_interna:p.scores?.['c5_1']||5,meso_d5_gestion_cambio:p.scores?.['c5_2']||5,
-    meso_d5_time_to_value:p.scores?.['c5_3']||5,
-    meso_d6_experiencia_empleado:p.scores?.['c6_1']||5,meso_d6_sostenibilidad_esg:p.scores?.['c6_2']||5,
-    meso_d6_formacion_cultura:p.scores?.['c6_3']||5,
-  };
-  let url=`${c.url}/api/data/v9.2/${c.table}s`, method='POST';
-  if(p.adoId){url=`${c.url}/api/data/v9.2/${c.table}s(meso_adoid=${p.adoId})`;method='PATCH';}
-  else if(p._dvId){url=`${c.url}/api/data/v9.2/${c.table}s(${p._dvId})`;method='PATCH';}
-  const res=await fetch(url,{method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/json','OData-MaxVersion':'4.0','OData-Version':'4.0','Prefer':'return=representation'},body:JSON.stringify(body)});
-  if(!res.ok&&res.status!==204){const t=await res.text().catch(()=>'');throw new Error(`${res.status}: ${t.substring(0,150)}`);}
-  if(res.status===201){try{const data=await res.json();if(data[`${c.table}id`])p._dvId=data[`${c.table}id`];}catch(e){}}
+/* ═══════════════════════════════════════════════════════
+   DATAVERSE — based on ScoringDigitalProject solution
+   Tables (real logical names from exported solution):
+     meso_projectscoring       → main project + all 22 scores
+     meso_auditevaluation      → evaluation history
+     meso_criteriaconfiguration→ criteria catalogue
+     meso_dimensionconfiguration→ dimension config
+     meso_globalparameters     → thresholds & aging
+     meso_scorecriterio        → normalized criterion scores
+   ═══════════════════════════════════════════════════════ */
+
+// ── Dataverse field mapping (real field names from solution) ─────────────────
+const DV_TABLES = {
+  project:   'meso_projectscorings',          // collection endpoint (plural)
+  audit:     'meso_auditevaluations',
+  criteria:  'meso_criteriaconfigurations',
+  dimension: 'meso_dimensionconfigurations',
+  params:    'meso_globalparameterss',
+  score:     'meso_scoreciterios',
+};
+
+// Map from app criterion IDs → real Dataverse field names in meso_ProjectScoring
+
+/* ═══════════════════════════════════════════════════════════════
+   DATAVERSE MODULE
+   Solution: ScoringDigitalProject v1.0.0.1 · Publisher: MESO
+   
+   Real table names (logical, lowercase for API):
+     meso_projectscoring       → /api/data/v9.2/meso_projectscorings
+     meso_auditevaluation      → /api/data/v9.2/meso_auditevaluations
+     meso_criteriaconfiguration→ /api/data/v9.2/meso_criteriaconfigurations
+     meso_dimensionconfiguration→/api/data/v9.2/meso_dimensionconfigurations
+     meso_globalparameters     → /api/data/v9.2/meso_globalparameterss
+     meso_scorecriterio        → /api/data/v9.2/meso_scoreciterios
+
+   Criterion ID → real field name in meso_ProjectScoring:
+     c1_1 → meso_legalriskscore          c1_2 → meso_safetyriskscore
+     c1_3 → meso_reputationalriskscore   c1_4 → meso_regulatoryobligationscore
+     c2_1 → meso_boardmandatescore       c2_2 → meso_internationalexpansionscore
+     c2_3 → meso_innovationrdscore       c2_4 → meso_strategicurgencyscore
+     c3_1 → meso_revenueimpactscore      c3_2 → meso_efficiencysavingsscore
+     c3_3 → meso_roipaybackscore         c3_4 → meso_servicequalityscore
+     c4_1 → meso_trlmaturityscore        c4_2 → meso_erpintegrationscore
+     c4_3 → meso_scalabilityscore        c4_4 → meso_cybersecuritygdprscore
+     c5_1 → meso_internalcapacityscore   c5_2 → meso_changemanagementscore
+     c5_3 → meso_timetovaluescore
+     c6_1 → meso_employeeexperiencescore c6_2 → meso_sustainabilityesgscore
+     c6_3 → meso_trainingandculturescore
+   ═══════════════════════════════════════════════════════════════ */
+
+const CRIT_FIELD_MAP = {
+  c1_1:'meso_legalriskscore',         c1_2:'meso_safetyriskscore',
+  c1_3:'meso_reputationalriskscore',  c1_4:'meso_regulatoryobligationscore',
+  c2_1:'meso_boardmandatescore',      c2_2:'meso_internationalexpansionscore',
+  c2_3:'meso_innovationrdscore',      c2_4:'meso_strategicurgencyscore',
+  c3_1:'meso_revenueimpactscore',     c3_2:'meso_efficiencysavingsscore',
+  c3_3:'meso_roipaybackscore',        c3_4:'meso_servicequalityscore',
+  c4_1:'meso_trlmaturityscore',       c4_2:'meso_erpintegrationscore',
+  c4_3:'meso_scalabilityscore',       c4_4:'meso_cybersecuritygdprscore',
+  c5_1:'meso_internalcapacityscore',  c5_2:'meso_changemanagementscore',
+  c5_3:'meso_timetovaluescore',
+  c6_1:'meso_employeeexperiencescore',c6_2:'meso_sustainabilityesgscore',
+  c6_3:'meso_trainingandculturescore',
+};
+
+// meso_prioritypool picklist values (from solution)
+// 0=Corto, 1=Medio, 2=Largo, 3=Sin estimar
+function getPoolCode(p) {
+  if (p.horas == null) return 3;
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  if (p.horas < thrS) return 0;
+  if (p.horas < thrM) return 1;
+  return 2;
 }
 
+let _dvCfg = { url:'', tenant:'', clientId:'', secret:'' };
+let _dvToken = null, _dvTokenExp = 0;
+
+/* ── Config persistence ─────────────────────────────────────── */
+function dvSaveCfg() {
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  _dvCfg = {
+    url:      g('cfg-dv-url'),
+    tenant:   g('cfg-dv-tenant'),
+    clientId: g('cfg-dv-clientid'),
+    secret:   g('cfg-dv-secret'),
+  };
+  try {
+    sessionStorage.setItem('dv_url',    _dvCfg.url);
+    sessionStorage.setItem('dv_tenant', _dvCfg.tenant);
+    sessionStorage.setItem('dv_cid',    _dvCfg.clientId);
+  } catch(_){}
+  toast('✓ Configuración Dataverse guardada');
+}
+
+function dvLoadCfg() {
+  try {
+    const set = (id, val) => { if (!val) return; const e=document.getElementById(id); if(e) e.value=val; };
+    set('cfg-dv-url',      sessionStorage.getItem('dv_url'));
+    set('cfg-dv-tenant',   sessionStorage.getItem('dv_tenant'));
+    set('cfg-dv-clientid', sessionStorage.getItem('dv_cid'));
+  } catch(_){}
+}
+
+/* ── Status display ─────────────────────────────────────────── */
+function dvStatusShow(type, msg) {
+  const el   = document.getElementById('cfg-dv-status');
+  const msgEl= document.getElementById('cfg-dv-status-msg');
+  const spin = document.getElementById('cfg-dv-spinner');
+  const colors = {
+    loading:{ bg:'#F3E8FF', c:'#742774' },
+    ok:     { bg:'#ECF8F3', c:'#087B50' },
+    error:  { bg:'#FEF0F1', c:'#CC1F26' },
+  };
+  const clr = colors[type] || colors.loading;
+  if (el) { el.style.display='flex'; el.style.background=clr.bg; el.style.color=clr.c; }
+  if (spin) spin.style.display = type==='loading' ? 'block' : 'none';
+  if (msgEl) msgEl.textContent = msg;
+}
+
+/* ── OAuth2 token ───────────────────────────────────────────── */
+async function dvGetToken() {
+  if (_dvToken && Date.now() < _dvTokenExp) return _dvToken;
+  const { url, tenant, clientId, secret } = _dvCfg;
+  if (!tenant || !clientId || !secret || !url)
+    throw new Error('Faltan credenciales en ⚙ Config → Dataverse');
+
+  const resource = url.endsWith('/') ? url : url + '/';
+  const body = new URLSearchParams({
+    grant_type:    'client_credentials',
+    client_id:     clientId,
+    client_secret: secret,
+    scope:         resource + '.default',
+  });
+
+  let res;
+  try {
+    res = await fetch(
+      `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
+      { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }
+    );
+  } catch(e) {
+    throw new Error('NET_ERR:' + e.message);
+  }
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try { const j=await res.json(); msg=j.error_description||j.error||msg; } catch(_){}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  _dvToken    = data.access_token;
+  _dvTokenExp = Date.now() + (data.expires_in - 60) * 1000;
+  return _dvToken;
+}
+
+/* ── Helper: DV API call ────────────────────────────────────── */
+async function dvApi(method, path, token, body=null) {
+  const url = `${_dvCfg.url.replace(/\/$/,'')}/api/data/v9.2/${path}`;
+  const headers = {
+    'Authorization':    'Bearer ' + token,
+    'Accept':           'application/json',
+    'OData-MaxVersion': '4.0',
+    'OData-Version':    '4.0',
+  };
+  if (body) headers['Content-Type'] = 'application/json';
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res;
+}
+
+/* ── Test connection — 6 diagnostic steps ───────────────────── */
+async function dvTest() {
+  dvSaveCfg();
+  const { url, tenant, clientId, secret } = _dvCfg;
+
+  // Step 1: required fields
+  const missing = [];
+  if (!url)      missing.push('URL del entorno');
+  if (!tenant)   missing.push('Tenant ID');
+  if (!clientId) missing.push('Client ID');
+  if (!secret)   missing.push('Client Secret');
+  if (missing.length) {
+    dvStatusShow('error', '✗ Faltan: ' + missing.join(', ')); return;
+  }
+
+  // Step 2: URL format
+  if (!url.startsWith('https://')) {
+    dvStatusShow('error', '✗ URL debe empezar por https://  Ej: https://org1234.crm4.dynamics.com'); return;
+  }
+
+  // Step 3: token
+  dvStatusShow('loading', '① Autenticando con Azure AD…');
+  let token;
+  try {
+    token = await dvGetToken();
+  } catch(e) {
+    const m = e.message;
+    const hints = {
+      'NET_ERR':           ' → Error de red. Comprueba conexión a internet.',
+      'AADSTS700016':      ' → Client ID no existe en este tenant.',
+      'AADSTS7000215':     ' → Client Secret incorrecto o expirado.',
+      'AADSTS50020':       ' → Tenant ID incorrecto.',
+      'AADSTS650057':      ' → Falta permiso "Dynamics CRM → user_impersonation" en Azure AD → API permissions.',
+      'AADSTS700082':      ' → Secreto expirado. Genera uno nuevo en Azure AD → Certificates & secrets.',
+      'unauthorized_client':' → App sin permiso de Client Credentials. Verifica configuración en Azure AD.',
+    };
+    const hint = Object.entries(hints).find(([k]) => m.includes(k));
+    dvStatusShow('error', '✗ Azure AD: ' + m + (hint ? hint[1] : '')); return;
+  }
+
+  // Step 4: ping Dataverse
+  dvStatusShow('loading', '② Token ✓ — Conectando con Dataverse…');
+  let res;
+  try {
+    res = await dvApi('GET', 'meso_projectscorings?$top=1&$select=meso_projectscoringid', token);
+  } catch(e) {
+    dvStatusShow('error', '✗ No se pudo conectar a ' + url + ' — ' + e.message); return;
+  }
+
+  // Step 5: interpret status
+  const STATUS_HINTS = {
+    401: '✗ Sin acceso (401) → Power Platform Admin Center → tu entorno → Usuarios de aplicación → añade tu app con rol "Administrador del sistema".',
+    403: '✗ Sin permisos (403) → Asigna rol "Administrador del sistema" en Power Platform Admin Center.',
+    404: '✗ Tabla meso_projectscoring no encontrada (404) → Verifica que importaste la solución ScoringDigitalProject v1.0.0.1 en este entorno.',
+  };
+  if (STATUS_HINTS[res.status]) {
+    dvStatusShow('error', STATUS_HINTS[res.status]); return;
+  }
+  if (!res.ok) {
+    let body = ''; try { body = await res.text(); } catch(_){}
+    dvStatusShow('error', `✗ Error ${res.status}: ${body.substring(0,200)}`); return;
+  }
+
+  // Step 6: success
+  const data = await res.json().catch(() => ({value:[]}));
+  const envName = url.replace('https://','').split('.')[0];
+  dvStatusShow('ok', `✓ Conectado · ${envName} · meso_projectscoring OK · ${data.value?.length??0} registros`);
+
+  const badge = document.getElementById('cfg-dv-badge');
+  if (badge) { badge.style.display='inline-block'; badge.textContent='✓ conectado'; }
+  const syncBtn = document.getElementById('cfg-dv-sync-btn');
+  if (syncBtn) syncBtn.disabled = false;
+  const dvBtn = document.getElementById('pem-dv-btn');
+  if (dvBtn) dvBtn.style.display = 'flex';
+}
+
+/* ── Build project record body ──────────────────────────────── */
+function dvBuildBody(p) {
+  const cl = clsf(p.sf || 0);
+  const body = {
+    // Main fields
+    meso_auditname:           p.nom     || '',
+    meso_departmentarea:      p.area    || '',
+    meso_sponsor:             p.sponsor || '',
+    meso_auditid:             p.adoId   || null,
+    meso_requestdate:         p.reqDate || null,
+    meso_daysinportfolio:     p.reqDate
+      ? Math.round((Date.now() - new Date(p.reqDate)) / 86400000) : null,
+    meso_estimatedhours:      p.horas   || null,
+    meso_priorityclassification: cl.et  || '',
+    meso_ispriorityauto:      !!(p.dimScores && p.dimScores[0] >= 8),
+    meso_prioritypool:        getPoolCode(p),
+    meso_syncdatetime:        new Date().toISOString(),
+    // Scoring
+    meso_finalscore:          +(p.sf  || 0).toFixed(3),
+    meso_basescore:           +(p.sb  || 0).toFixed(3),
+    meso_agingfactor:         +(p.af  || 1).toFixed(4),
+    // Dimension scores
+    meso_dimension1score:     +(p.dimScores?.[0] || 0).toFixed(3),
+    meso_dimension2score:     +(p.dimScores?.[1] || 0).toFixed(3),
+    meso_dimension3score:     +(p.dimScores?.[2] || 0).toFixed(3),
+    meso_dimension4score:     +(p.dimScores?.[3] || 0).toFixed(3),
+    meso_dimension5score:     +(p.dimScores?.[4] || 0).toFixed(3),
+    meso_dimension6score:     +(p.dimScores?.[5] || 0).toFixed(3),
+  };
+  // 22 criterion scores → real field names
+  Object.entries(CRIT_FIELD_MAP).forEach(([cid, field]) => {
+    body[field] = Math.round(p.scores?.[cid] || 5);
+  });
+  return body;
+}
+
+/* ── Upsert single project ──────────────────────────────────── */
+async function dvUpsertProject(p, token) {
+  const body = dvBuildBody(p);
+
+  // Check if record exists by auditid (ADO Work Item ID)
+  let existingId = p._dvId || null;
+  if (!existingId && p.adoId) {
+    const chk = await dvApi('GET',
+      `meso_projectscorings?$filter=meso_auditid eq ${p.adoId}&$select=meso_projectscoringid`,
+      token
+    );
+    if (chk.ok) {
+      const d = await chk.json();
+      if (d.value?.length) existingId = d.value[0].meso_projectscoringid;
+    }
+  }
+
+  const method = existingId ? 'PATCH' : 'POST';
+  const path   = existingId
+    ? `meso_projectscorings(${existingId})`
+    : 'meso_projectscorings';
+
+  const res = await dvApi(method, path, token, body);
+  if (!res.ok && res.status !== 204) {
+    const t = await res.text().catch(()=>'');
+    throw new Error(`${res.status}: ${t.substring(0,120)}`);
+  }
+  if (res.status === 201) {
+    try { const d=await res.json(); if(d.meso_projectscoringid) p._dvId=d.meso_projectscoringid; }
+    catch(_){}
+  } else if (existingId) {
+    p._dvId = existingId;
+  }
+}
+
+/* ── Sync full portfolio ─────────────────────────────────────── */
+async function dvSyncAll() {
+  if (!portfolioData.length) { toast('Sin proyectos para sincronizar'); return; }
+  dvStatusShow('loading', `Sincronizando ${portfolioData.length} proyectos…`);
+  try {
+    const token = await dvGetToken();
+    let ok=0, err=0;
+    for (const p of portfolioData) {
+      try { await dvUpsertProject(p, token); ok++; }
+      catch(e) { err++; console.warn('DV:', p.nom, e.message); }
+    }
+    dvStatusShow(err?'error':'ok', `✓ ${ok} sincronizados${err?' · '+err+' errores (consola)':''}`);
+    toast(`↑ Dataverse: ${ok} proyectos`);
+  } catch(e) {
+    dvStatusShow('error', '✗ ' + e.message);
+  }
+}
+
+/* ── Save single project from edit modal ────────────────────── */
+async function pemSaveDataverse() {
+  const p = portfolioData[_pemIdx];
+  if (!p) return;
+  pemSave();
+  try {
+    const token = await dvGetToken();
+    await dvUpsertProject(p, token);
+    toast('✓ Guardado en Dataverse');
+    dvStatusShow('ok', '✓ Proyecto guardado en Dataverse');
+  } catch(e) {
+    toast('✗ Dataverse: ' + e.message);
+    dvStatusShow('error', '✗ ' + e.message);
+  }
+}
 </script>
 </body>
 </html>
