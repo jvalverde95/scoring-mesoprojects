@@ -98,18 +98,99 @@ function aiBulkHoras(){
   _aiScored.forEach(item=>{if(item.selected){item.proj.horas=val;if(item.status!=='pending')item.status='complete';count++;}});
   renderAiColumns(); toast(`✓ ${count} proyectos: ${val}h asignadas`);
 }
-function aiImportAll(){
-  if(!_aiScored.length){toast('Sin proyectos para cargar');return;}
-  portfolioData=_aiScored.map(item=>{
-    const p=item.proj, proj=computeProj({nom:p.nom,area:p.area,sponsor:p.sponsor,scores:p.scores,reqDate:p.reqDate,regDate:p.regDate});
-    proj.horas=p.horas||null;proj.adoId=p.adoId;proj.adoState=p.adoState;proj.adoType=p.adoType;return proj;
+async function aiImportAll() {
+  if (!_aiScored.length) { toast('Sin proyectos para cargar'); return; }
+
+  // ── 1. Build local portfolio ──────────────────────────────────
+  portfolioData = _aiScored.map(item => {
+    const p = item.proj;
+    const proj = computeProj({
+      nom: p.nom, area: p.area, sponsor: p.sponsor,
+      scores: p.scores, reqDate: p.reqDate, regDate: p.regDate,
+    });
+    proj.horas    = p.horas    || null;
+    proj.adoId    = p.adoId    || null;
+    proj.adoState = p.adoState || '';
+    proj.adoType  = p.adoType  || '';
+    return proj;
   });
-  portfolioData.forEach(p=>{if(p.horas===undefined)p.horas=null;});
-  renderPortfolio();renderPools();
-  const el=document.getElementById('portfolio');if(el)el.style.display='block';
-  const cp=document.getElementById('charts-panel');if(cp)cp.style.display='block';
-  const bc=document.getElementById('btn-clear');if(bc)bc.style.display='flex';
-  renderCharts();closeAiModal();goStep('summary');
-  const scored=_aiScored.filter(s=>s.status!=='pending').length;
-  toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados`);
+  portfolioData.forEach(p => { if (p.horas === undefined) p.horas = null; });
+
+  // Render local portfolio immediately
+  renderPortfolio(); renderPools();
+  const el = document.getElementById('portfolio');    if (el) el.style.display = 'block';
+  const cp = document.getElementById('charts-panel'); if (cp) cp.style.display = 'block';
+  const bc = document.getElementById('btn-clear');    if (bc) bc.style.display = 'flex';
+  renderCharts();
+  closeAiModal();
+  goStep('summary');
+
+  const scored = _aiScored.filter(s => s.status !== 'pending').length;
+  toast(`✓ ${portfolioData.length} proyectos en cartera · ${scored} evaluados`);
+
+  // ── 2. Sync to Dataverse if configured ───────────────────────
+  const hasDvCreds = _dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret;
+  if (!hasDvCreds) return;  // no config — done
+
+  // Show loading banner
+  const banner    = document.getElementById('dv-loading-banner');
+  const bannerMsg = document.getElementById('dv-loading-msg');
+  if (banner) {
+    banner.style.display    = 'flex';
+    banner.style.background = 'var(--d5t)';
+    banner.style.color      = 'var(--d5)';
+  }
+  if (bannerMsg) bannerMsg.textContent = `⟳ Guardando ${portfolioData.length} proyectos en Dataverse…`;
+
+  // Show spinner in summary nav badge
+  dvStatusShow('loading', `Guardando ${portfolioData.length} proyectos en Dataverse…`);
+
+  try {
+    const token = await dvGetToken();
+    let ok = 0, err = 0, errMsgs = [];
+
+    for (let i = 0; i < portfolioData.length; i++) {
+      const p = portfolioData[i];
+      // Update progress
+      if (bannerMsg) bannerMsg.textContent = `⟳ Guardando en Dataverse… ${i + 1} / ${portfolioData.length}`;
+      try {
+        await dvUpsertProject(p, token);
+        ok++;
+      } catch(e) {
+        err++;
+        errMsgs.push(`${p.nom?.substring(0, 30)}: ${e.message}`);
+        console.warn('dvUpsertProject error:', p.nom, e.message);
+      }
+    }
+
+    // Show result
+    if (err === 0) {
+      if (banner) { banner.style.background = 'var(--d3t)'; banner.style.color = 'var(--d3)'; }
+      if (bannerMsg) bannerMsg.textContent = `✓ ${ok} proyectos guardados en Dataverse`;
+      dvStatusShow('ok', `✓ ${ok} proyectos guardados en Dataverse`);
+      toast(`✓ ${ok} proyectos guardados en Dataverse`);
+    } else {
+      if (banner) { banner.style.background = 'var(--d1t)'; banner.style.color = 'var(--d1)'; }
+      if (bannerMsg) bannerMsg.textContent = `⚠ ${ok} guardados · ${err} errores`;
+      dvStatusShow('error', `⚠ ${ok} guardados · ${err} errores. Ver consola para detalles.`);
+      toast(`⚠ Dataverse: ${ok} ok · ${err} errores`);
+      console.error('Dataverse sync errors:\n' + errMsgs.join('\n'));
+    }
+
+    // Refresh portfolio to show Dataverse status dots
+    renderPortfolio();
+
+  } catch(e) {
+    // Token error or network error
+    if (banner) { banner.style.background = 'var(--d1t)'; banner.style.color = 'var(--d1)'; }
+    if (bannerMsg) bannerMsg.textContent = `✗ Error Dataverse: ${e.message}`;
+    dvStatusShow('error', '✗ ' + e.message);
+    toast('✗ Error guardando en Dataverse: ' + e.message);
+    console.error('aiImportAll Dataverse error:', e);
+  } finally {
+    // Hide banner after 5 seconds
+    setTimeout(() => {
+      if (banner) banner.style.display = 'none';
+    }, 5000);
+  }
 }

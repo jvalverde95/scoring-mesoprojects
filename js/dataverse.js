@@ -166,22 +166,3 @@ function updateBulkDeleteBtn() {
   const count = document.getElementById('bulk-count');
   if (count) count.textContent = n > 0 ? `${n} seleccionado${n>1?'s':''}` : '';
 }
-
-// Auto-sync after aiImportAll — hook into the existing function
-const _origAiImportAll = aiImportAll;
-aiImportAll = async function() {
-  _origAiImportAll();
-  // After loading into portfolio, sync to Dataverse if connected
-  if (_dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret) {
-    setTimeout(async () => {
-      try {
-        const token = await dvGetToken();
-        let ok = 0;
-        for (const p of portfolioData) {
-          try { await dvUpsertProject(p, token); ok++; } catch(e) {}
-        }
-        if (ok) toast(`↑ ${ok} proyectos sincronizados con Dataverse`);
-      } catch(e) { console.warn('Auto-sync after import:', e.message); }
-    }, 500);
-  }
-};
