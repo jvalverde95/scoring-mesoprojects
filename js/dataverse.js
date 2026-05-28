@@ -1,12 +1,39 @@
-/* ═══ DATAVERSE CRUD — load, create, delete ════════════════
-   Runs on startup to load portfolio from Dataverse.
-   All field names from ScoringDigitalProject v1.0.0.1
+/* ═══ DATAVERSE — ScoringDigitalProject v1.0.0.1 ════════════
+   State variables, field maps and all DV functions.
+   Load order: after scoring.js (needs DIMS, CRIT_IDS, computeProj)
    ═══════════════════════════════════════════════════════════ */
 
-// Reverse map: Dataverse field → app criterion ID
-const DV_CRIT_REVERSE = Object.fromEntries(
-  Object.entries(CRIT_FIELD_MAP).map(([cid, field]) => [field, cid])
-);
+// ── Runtime state ────────────────────────────────────────────
+let _dvCfg = { url:'', tenant:'', clientId:'', secret:'' };
+let _dvToken = null, _dvTokenExp = 0;
+
+// ── Criterion ID → real Dataverse field name ─────────────────
+const CRIT_FIELD_MAP = {
+  c1_1:'meso_legalriskscore',         c1_2:'meso_safetyriskscore',
+  c1_3:'meso_reputationalriskscore',  c1_4:'meso_regulatoryobligationscore',
+  c2_1:'meso_boardmandatescore',      c2_2:'meso_internationalexpansionscore',
+  c2_3:'meso_innovationrdscore',      c2_4:'meso_strategicurgencyscore',
+  c3_1:'meso_revenueimpactscore',     c3_2:'meso_efficiencysavingsscore',
+  c3_3:'meso_roipaybackscore',        c3_4:'meso_servicequalityscore',
+  c4_1:'meso_trlmaturityscore',       c4_2:'meso_erpintegrationscore',
+  c4_3:'meso_scalabilityscore',       c4_4:'meso_cybersecuritygdprscore',
+  c5_1:'meso_internalcapacityscore',  c5_2:'meso_changemanagementscore',
+  c5_3:'meso_timetovaluescore',
+  c6_1:'meso_employeeexperiencescore',c6_2:'meso_sustainabilityesgscore',
+  c6_3:'meso_trainingandculturescore',
+};
+
+// meso_prioritypool picklist: 0=Corto, 1=Medio, 2=Largo, 3=Sin estimar
+function getPoolCode(p) {
+  if (p.horas == null) return 3;
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  if (p.horas < thrS) return 0;
+  if (p.horas < thrM) return 1;
+  return 2;
+}
+
+
 
 // Parse a Dataverse record into app project format
 function dvRecordToProject(rec) {
