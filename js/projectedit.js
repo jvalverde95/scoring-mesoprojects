@@ -107,3 +107,60 @@ function dvLoadCfg() {
 /* ── Upsert single project ──────────────────────────────────── */
 /* ── Sync full portfolio ─────────────────────────────────────── */
 /* ── Save single project from edit modal ────────────────────── */
+
+/* ═══ INIT — runs after all modules loaded ══════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Set today's date in the wizard date field
+  const fReq = document.getElementById('f-req');
+  if (fReq) fReq.value = new Date().toISOString().split('T')[0];
+
+  // Wire up wizard input listeners
+  ['f-name','f-area','f-type'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.addEventListener('change', upd); e.addEventListener('input', upd); }
+  });
+
+  // Render UI components
+  renderDimSteps();
+  renderNav();
+  renderWeightEditor();
+  upd();
+  goStep(0);
+
+  // Apply hardcoded credentials first (from scoring.js HARDCODED_CREDS)
+  if (typeof HARDCODED_CREDS !== 'undefined') {
+    const hc = HARDCODED_CREDS;
+    const fill = (id, val) => {
+      if (!val) return;
+      const e = document.getElementById(id);
+      if (e) e.value = val;
+    };
+    fill('cfg-ado-org',     hc.ado_org);
+    fill('cfg-ado-project', hc.ado_project);
+    fill('cfg-ado-pat',     hc.ado_pat);
+    fill('ado-org',         hc.ado_org);
+    fill('ado-project',     hc.ado_project);
+    fill('cfg-dv-url',      hc.dv_url);
+    fill('cfg-dv-tenant',   hc.dv_tenant);
+    fill('cfg-dv-clientid', hc.dv_clientid);
+    fill('cfg-dv-secret',   hc.dv_secret);
+
+    // Populate _dvCfg runtime object directly
+    if (hc.dv_url) {
+      _dvCfg.url      = hc.dv_url;
+      _dvCfg.tenant   = hc.dv_tenant;
+      _dvCfg.clientId = hc.dv_clientid;
+      _dvCfg.secret   = hc.dv_secret;
+    }
+  }
+
+  // Then load saved credentials from localStorage (overrides hardcoded if user saved different ones)
+  try { loadAllCreds(); } catch(e) { console.warn('loadAllCreds:', e.message); }
+
+  // Auto-load portfolio from Dataverse if credentials available
+  setTimeout(() => {
+    try { dvLoadPortfolio(); } catch(e) { console.warn('dvLoadPortfolio:', e.message); }
+  }, 400);
+
+});
