@@ -130,9 +130,14 @@ async function aiImportAll() {
 
   // ── 2. Sync to Dataverse if configured ───────────────────────
   const hasDvCreds = _dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret;
-  if (!hasDvCreds) return;  // no config — done
+  if (!hasDvCreds) {
+    console.info('Dataverse no configurado — proyectos solo en local');
+    return;
+  }
 
-  // Show loading banner
+  console.log('Iniciando sync Dataverse:', _dvCfg.url, '— proyectos:', portfolioData.length);
+
+  // Show loading banner (in summary step)
   const banner    = document.getElementById('dv-loading-banner');
   const bannerMsg = document.getElementById('dv-loading-msg');
   if (banner) {
@@ -142,8 +147,9 @@ async function aiImportAll() {
   }
   if (bannerMsg) bannerMsg.textContent = `⟳ Guardando ${portfolioData.length} proyectos en Dataverse…`;
 
-  // Show spinner in summary nav badge
-  dvStatusShow('loading', `Guardando ${portfolioData.length} proyectos en Dataverse…`);
+  // Also show a persistent toast
+  toast(`⟳ Sincronizando ${portfolioData.length} proyectos con Dataverse…`);
+  dvStatusShow('loading', `⟳ Guardando ${portfolioData.length} proyectos…`);
 
   try {
     const token = await dvGetToken();
@@ -185,8 +191,9 @@ async function aiImportAll() {
     if (banner) { banner.style.background = 'var(--d1t)'; banner.style.color = 'var(--d1)'; }
     if (bannerMsg) bannerMsg.textContent = `✗ Error Dataverse: ${e.message}`;
     dvStatusShow('error', '✗ ' + e.message);
-    toast('✗ Error guardando en Dataverse: ' + e.message);
-    console.error('aiImportAll Dataverse error:', e);
+    // Use alert so error is impossible to miss
+    toast('✗ Dataverse: ' + e.message);
+    console.error('aiImportAll Dataverse error:', e.message, e);
   } finally {
     // Hide banner after 5 seconds
     setTimeout(() => {

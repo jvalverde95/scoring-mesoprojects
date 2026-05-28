@@ -1,3 +1,22 @@
+/* ── Global state — declared first so all modules can access ─ */
+let _dvCfg = { url:'', tenant:'', clientId:'', secret:'' };
+let _dvToken = null, _dvTokenExp = 0;
+
+const CRIT_FIELD_MAP = {
+  c1_1:'meso_legalriskscore',         c1_2:'meso_safetyriskscore',
+  c1_3:'meso_reputationalriskscore',  c1_4:'meso_regulatoryobligationscore',
+  c2_1:'meso_boardmandatescore',      c2_2:'meso_internationalexpansionscore',
+  c2_3:'meso_innovationrdscore',      c2_4:'meso_strategicurgencyscore',
+  c3_1:'meso_revenueimpactscore',     c3_2:'meso_efficiencysavingsscore',
+  c3_3:'meso_roipaybackscore',        c3_4:'meso_servicequalityscore',
+  c4_1:'meso_trlmaturityscore',       c4_2:'meso_erpintegrationscore',
+  c4_3:'meso_scalabilityscore',       c4_4:'meso_cybersecuritygdprscore',
+  c5_1:'meso_internalcapacityscore',  c5_2:'meso_changemanagementscore',
+  c5_3:'meso_timetovaluescore',
+  c6_1:'meso_employeeexperiencescore',c6_2:'meso_sustainabilityesgscore',
+  c6_3:'meso_trainingandculturescore',
+};
+
 /* ══════════════════════════════════════════════════════════
    ALGORITMO: Sigmoid Boost (base e=2) + Aging Factor
    ══════════════════════════════════════════════════════════ */
