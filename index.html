@@ -902,8 +902,9 @@
           style="background:var(--d1t);color:var(--d1);border:1px solid rgba(204,31,38,.25);font-size:9px;padding:5px 12px">
           🗑 Eliminar selección (0)
         </button>
-        <button class="cfg-apply cfg-reset" onclick="dvSyncAll()" style="font-size:9px;padding:5px 12px">
-          ↑ Sync Dataverse
+        <button id="btn-dv-sync" class="cfg-apply" onclick="dvSyncAll()"
+          style="background:#742774;font-size:9px;padding:5px 14px">
+          ↑ Guardar en Dataverse
         </button>
         <span id="bulk-count" style="font-size:9px;color:var(--ink4);margin-left:auto"></span>
       </div>
