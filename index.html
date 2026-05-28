@@ -12,6 +12,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="css/main.css">
 </head>
+
+</head>
 <body>
 
 <div id="bar" style="display:none">
@@ -876,6 +878,7 @@
             <span id="ado-badge-lbl">Azure DevOps</span>
           </button>
           <button class="btn-imp ghost" id="btn-clear" onclick="clearPortfolio()" style="display:none">✕ limpiar</button>
+          <button class="btn-imp" onclick="openNewProjectModal()" style="background:var(--d3);color:#fff;border:none">+ Nuevo proyecto</button>
           <button class="btn-imp ghost" id="btn-delete-selected" onclick="dvDeleteSelected()" disabled
             style="display:none;color:var(--d1);border-color:rgba(204,31,38,.3)">🗑 Eliminar</button>
         </div>

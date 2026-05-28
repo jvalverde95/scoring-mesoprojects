@@ -623,6 +623,7 @@ function renderPortfolio() {
       :!cl.et.includes(portFilter)
     );
     if(!hide)vis++;
+    const rank = idx < 3 ? ['gold','silver','bronze'][idx] : '';
     const realIdx = portfolioData.indexOf(p);
     const dvDot = p._dvId
       ? `<span title="Guardado en Dataverse" style="color:var(--d3);font-size:10px">●</span>`
