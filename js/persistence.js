@@ -114,6 +114,33 @@ function loadAllCreds() {
     if (b) { b.style.display='inline-block'; b.textContent='⟳ guardado';
              b.style.background='#EEF3FC'; b.style.color='#1848A0'; }
   }
+
+  // Apply HARDCODED_CREDS as fallback for any empty field
+  // (defined in scoring.js — loaded first)
+  if (typeof HARDCODED_CREDS !== 'undefined') {
+    const hc = HARDCODED_CREDS;
+    const setIfEmpty = (id, val) => {
+      if (!val) return;
+      const e = document.getElementById(id);
+      if (e && !e.value) e.value = val;
+    };
+    setIfEmpty('cfg-ado-org',     hc.ado_org);
+    setIfEmpty('cfg-ado-project', hc.ado_project);
+    setIfEmpty('cfg-ado-pat',     hc.ado_pat);
+    setIfEmpty('ado-org',         hc.ado_org);
+    setIfEmpty('ado-project',     hc.ado_project);
+    setIfEmpty('cfg-dv-url',      hc.dv_url);
+    setIfEmpty('cfg-dv-tenant',   hc.dv_tenant);
+    setIfEmpty('cfg-dv-clientid', hc.dv_clientid);
+    setIfEmpty('cfg-dv-secret',   hc.dv_secret);
+    // Also populate _dvCfg directly if not already set
+    if (hc.dv_url && !_dvCfg.url) {
+      _dvCfg.url      = hc.dv_url;
+      _dvCfg.tenant   = hc.dv_tenant;
+      _dvCfg.clientId = hc.dv_clientid;
+      _dvCfg.secret   = hc.dv_secret;
+    }
+  }
 }
 
 function clearAllCreds() {

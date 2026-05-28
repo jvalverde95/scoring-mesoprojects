@@ -642,8 +642,26 @@ function renderPortfolio() {
       :!cl.et.includes(portFilter)
     );
     if(!hide)vis++;
-    const rank = idx < 3 ? ['gold','silver','bronze'][idx] : '';
+    const rank    = idx < 3 ? ['gold','silver','bronze'][idx] : '';
     const realIdx = portfolioData.indexOf(p);
+    const dimCells= (p.dimScores||[0,0,0,0,0,0]).map(ds=>
+      `<td style="text-align:center;color:${scColorHex(ds)};font-weight:600;font-size:11px;">${ds.toFixed(1)}</td>`
+    ).join('');
+    const agingStr= p.af>1.001
+      ? `<span class="aging-badge" style="background:#F7FEE7;color:#3F6212;">+${((p.af-1)*100).toFixed(0)}%</span>`
+      : '<span style="color:#C0C0C0;font-size:10px;">—</span>';
+    const clsStyle= p.autoP
+      ? 'background:var(--d1t);color:var(--d1);border-color:rgba(204,31,38,.2);'
+      : `background:${cl.bg};color:${cl.c};border-color:${cl.b};`;
+    const regStr  = p.regDays===null
+      ? '<span style="color:#C0C0C0;font-size:10px;">—</span>'
+      : p.regDays<0
+        ? `<span class="reg-badge" style="background:var(--d1t);color:var(--d1);">VENCIDA</span>`
+        : p.regDays<30
+          ? `<span class="reg-badge" style="background:var(--d1t);color:var(--d1);">⚠ ${p.regDays}d</span>`
+          : p.regDays<90
+            ? `<span class="reg-badge" style="background:var(--d4t);color:var(--d4);">${p.regDays}d</span>`
+            : `<span class="reg-badge" style="background:var(--d3t);color:var(--d3);">${p.regDays}d</span>`;
     const dvDot = p._dvId
       ? `<span title="Guardado en Dataverse" style="color:var(--d3);font-size:10px">●</span>`
       : `<span title="Solo local" style="color:var(--ink4);font-size:10px">○</span>`;
@@ -1735,3 +1753,21 @@ function handleLandingExcel(inp) {
     goStep('summary');
   }, 100);
 }
+/* ── HARDCODED CREDENTIALS (optional) ────────────────────────
+   Edit the values below to auto-fill credentials on startup.
+   Leave empty ('') to require manual entry in ⚙ Config.
+   ⚠ Only use this if the repo is PRIVATE — never commit
+     real secrets to a public repository.
+   ──────────────────────────────────────────────────────────── */
+const HARDCODED_CREDS = {
+  // Azure DevOps
+  ado_org:     'mesoesteticAzureDevOps',   // e.g. 'mesoesteticAzureDevOps'
+  ado_project: 'DYNAMICS 365',   // e.g. 'DYNAMICS 365'
+  ado_pat:     '9kGGd7zPym7eW36ZTdOlOQKLYkA70gHKFUTCfEXFG9QO5RFCixzPJQQJ99CEACAAAAAIYiFxAAASAZDO1icS',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+
+  // Microsoft Dataverse
+  dv_url:      'https://operations-mesoestetic-pre.crm4.dynamics.com',   // e.g. 'https://org1234.crm4.dynamics.com'
+  dv_tenant:   '425835a2-4b10-4977-bf72-f9f1a1bf2864',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  dv_clientid: '4c9ecaa2-ac3f-4f2c-9570-5504272fee29',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  dv_secret:   '7Bu8Q~sL2m2aZyLBwAxzFHLt2UnA2oW5xkECubkS',   // e.g. 'your-client-secret-value'
+};
