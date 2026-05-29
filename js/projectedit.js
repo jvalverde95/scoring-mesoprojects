@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auto-load portfolio from Dataverse if credentials available
   setTimeout(() => {
     try { dvLoadPortfolio(); } catch(e) { console.warn('dvLoadPortfolio:', e.message); }
+    if(typeof renderDashboard==='function') setTimeout(renderDashboard, 600);
   }, 400);
 
 });

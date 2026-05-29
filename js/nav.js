@@ -1,10 +1,10 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard'];
 
 function goStep(t) {
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -14,7 +14,7 @@ function goStep(t) {
     n.classList.toggle('active', !isSpecial && i+1 === idx);
     n.classList.toggle('done',   !isSpecial && typeof idx==='number' && i+1 < idx);
   });
-  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint'].forEach(id => {
+  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint','nav-dashboard'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -40,7 +40,8 @@ function goStep(t) {
     if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows(); }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
-    if (t === 'sprint') { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
+    if (t === 'sprint')     { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
+    if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');
@@ -222,4 +223,23 @@ function startManualEval() {
   const shell = document.getElementById('shell');
   if (shell) shell.scrollTop = 0;
   toast('Nueva evaluación — rellena los datos y puntúa cada criterio');
+}
+
+function startApp() {
+  document.getElementById('landing').style.display='none';
+  document.getElementById('shell').style.display='';
+  document.getElementById('bar').style.display='';
+  goStep(0);
+}
+
+function enterApp() {
+  document.getElementById('landing').style.display='none';
+  document.getElementById('shell').style.display='';
+  document.getElementById('bar').style.display='';
+  // Go to dashboard if projects exist, else to projects screen
+  if (portfolioData.length > 0) {
+    goStep('dashboard');
+  } else {
+    goStep('dashboard');  // always start at dashboard
+  }
 }

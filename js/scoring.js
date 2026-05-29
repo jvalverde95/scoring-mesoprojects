@@ -698,6 +698,7 @@ function renderPortfolio() {
   });
   document.getElementById('port-count').textContent=`${vis} de ${portfolioData.length} proyectos`;
   if(typeof renderProjectsScreen==='function') renderProjectsScreen();
+  if(typeof renderDashboard==='function') renderDashboard();
   document.getElementById('port-empty').style.display=vis===0?'block':'none';
   document.getElementById('port-tbl').style.display=vis===0?'none':'table';
   // Update bulk toolbar
@@ -1721,11 +1722,6 @@ function updSummary() {
 
 
 /* ── LANDING ────────────────────────────────────────── */
-function startApp() {
-  document.getElementById('landing').style.display = 'none';
-  document.getElementById('shell').style.display = 'flex';
-  document.getElementById('bar').style.display = 'flex';
-}
 function landingAdoConnect() {
   startApp();
   setTimeout(() => goStep('config'), 80);

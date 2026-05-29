@@ -282,3 +282,135 @@ function applyBulkHorasEval() {
   renderSprintScreen();
   toast(`✓ ${count} proyectos actualizados con ${val}h`);
 }
+
+/* ═══ DASHBOARD ════════════════════════════════════════════
+   KPI rendering for the main dashboard screen.
+   ═══════════════════════════════════════════════════════════ */
+function renderDashboard() {
+  if (!portfolioData) return;
+
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+
+  const total      = portfolioData.length;
+  const scored     = portfolioData.filter(p => p.sf > 0).length;
+  const estimated  = portfolioData.filter(p => p.horas != null).length;
+  const unestimated= total - estimated;
+  const priority   = portfolioData.filter(p => {
+    const cl = clsf(p.sf || 0);
+    return cl.et === 'PRIORITARIO' || p.autoP;
+  }).length;
+  const avgScore   = total > 0
+    ? (portfolioData.reduce((s, p) => s + (p.sf || 0), 0) / total).toFixed(1)
+    : '—';
+  const totalHours = portfolioData
+    .filter(p => p.horas != null)
+    .reduce((s, p) => s + (p.horas || 0), 0);
+
+  // En marcha count
+  const cap = getDevCapacity();
+  const allCortos = portfolioData.filter(p => p.horas != null && p.horas < thrS).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const allMedios = portfolioData.filter(p => p.horas != null && p.horas >= thrS && p.horas < thrM).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const allLargos = portfolioData.filter(p => p.horas != null && p.horas >= thrM).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const inMarcha  = allCortos.slice(0, cap.corto).length
+                  + allMedios.slice(0, cap.medio).length
+                  + allLargos.slice(0, cap.largo).length;
+
+  // Pool counts
+  const nNone = unestimated;
+  const nS    = allCortos.length;
+  const nM    = allMedios.length;
+  const nL    = allLargos.length;
+  const maxPool = Math.max(nNone, nS, nM, nL, 1);
+
+  const set  = (id, v)  => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const setW = (id, pct)=> { const e = document.getElementById(id); if (e) e.style.width = Math.round(pct) + '%'; };
+  const setS = (id, bg, c) => {
+    const e = document.getElementById(id);
+    if (e) { e.style.background = bg; e.style.color = c; }
+  };
+
+  // KPI values
+  set('kpi-total',       total);
+  set('kpi-scored',      scored);
+  set('kpi-estimated',   estimated);
+  set('kpi-unestimated', unestimated);
+  set('kpi-priority',    priority);
+  set('kpi-avg-score',   avgScore);
+  set('kpi-sprint',      inMarcha);
+  set('kpi-total-hours', totalHours > 0 ? totalHours + 'h' : '—');
+
+  // Pool bars (relative width)
+  set('pool-n-none', nNone); setW('pool-bar-none', (nNone / maxPool) * 140);
+  set('pool-n-s',    nS);    setW('pool-bar-s',    (nS    / maxPool) * 140);
+  set('pool-n-m',    nM);    setW('pool-bar-m',    (nM    / maxPool) * 140);
+  set('pool-n-l',    nL);    setW('pool-bar-l',    (nL    / maxPool) * 140);
+
+  // Top 5
+  const top5El = document.getElementById('dash-top5');
+  if (top5El) {
+    if (!total) {
+      top5El.innerHTML = '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:16px 0">Sin proyectos</div>';
+    } else {
+      const top5 = [...portfolioData].sort((a, b) => (b.sf || 0) - (a.sf || 0)).slice(0, 5);
+      top5El.innerHTML = top5.map((p, i) => {
+        const cl = clsf(p.sf || 0);
+        return `
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;
+            border-bottom:1px solid var(--b2);cursor:pointer"
+            onclick="goStep('summary')">
+            <div style="font-size:11px;font-weight:700;color:var(--ink4);width:16px;flex-shrink:0">${i + 1}</div>
+            <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nom}</div>
+            <div style="font-size:12px;font-weight:900;color:${scColorHex(p.sf || 0)};
+              font-family:'Playfair Display',serif;flex-shrink:0">${(p.sf || 0).toFixed(1)}</div>
+          </div>`;
+      }).join('');
+    }
+  }
+
+  // Classification breakdown
+  const clsEl = document.getElementById('dash-cls-breakdown');
+  if (clsEl && total) {
+    const clsMap = {};
+    portfolioData.forEach(p => {
+      const key = p.autoP ? 'AUTO-PRIORITARIO' : (clsf(p.sf || 0).et || 'Sin clasificar');
+      clsMap[key] = (clsMap[key] || 0) + 1;
+    });
+    clsEl.innerHTML = Object.entries(clsMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cls, n]) => {
+        const cl = ['PRIORITARIO','AUTO-PRIORITARIO'].includes(cls) ? {bg:'var(--d1t)',c:'var(--d1)'}
+          : cls === 'ALTA PRIORIDAD' ? {bg:'var(--d2t)',c:'var(--d2)'}
+          : cls === 'PRIORIDAD MEDIA' ? {bg:'var(--d3t)',c:'var(--d3)'}
+          : {bg:'var(--surf)',c:'var(--ink3)'};
+        return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${cl.bg};color:${cl.c};font-weight:700">${cls}</span>
+          <span style="font-size:11px;font-weight:700;color:var(--ink)">${n}</span>
+        </div>`;
+      }).join('');
+  } else if (clsEl) {
+    clsEl.innerHTML = '<div style="font-size:10px;color:var(--ink4)">Sin proyectos</div>';
+  }
+
+  // System status
+  const adoConnected = typeof _adoConnected !== 'undefined' && _adoConnected;
+  const dvConnected  = typeof _dvCfg !== 'undefined' && _dvCfg.url && _dvCfg.tenant;
+  const teamCount    = typeof devTeam !== 'undefined' ? devTeam.length : 0;
+
+  const setBadge = (id, ok, text) => {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent   = text;
+    e.style.background = ok ? 'var(--d3t)' : 'var(--surf)';
+    e.style.color      = ok ? 'var(--d3)' : 'var(--ink4)';
+  };
+
+  setBadge('dash-ado-status', adoConnected, adoConnected ? '✓ Conectado' : 'No conectado');
+  setBadge('dash-dv-status',  !!dvConnected, dvConnected ? '✓ Conectado' : 'No conectado');
+  setBadge('dash-team-status', teamCount > 0, teamCount > 0 ? `${teamCount} miembro${teamCount > 1 ? 's' : ''}` : '—');
+
+  // Last sync time
+  const syncEl = document.getElementById('dash-last-sync');
+  if (syncEl) syncEl.textContent = total > 0 ? `Última actualización: ${new Date().toLocaleTimeString('es-ES')}` : '';
+}
