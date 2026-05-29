@@ -126,10 +126,54 @@ function aiImportAll() {
   ['btn-clear','bulk-toolbar'].forEach(id => {
     const e = document.getElementById(id); if (e) e.style.display = 'flex';
   });
-  renderCharts();
+  try { renderCharts(); } catch(_) {}  // guard for non-browser envs
   closeAiModal();
   goStep('summary');
 
   const scored = _aiScored.filter(s => s.status !== 'pending').length;
   toast(`✓ ${portfolioData.length} proyectos cargados en la app · ${scored} evaluados`);
+}
+
+/* ── Add completed manual wizard eval to evaluator pool ─────── */
+function addManualEvalToPool() {
+  const nom  = document.getElementById('f-name')?.value?.trim();
+  const area = document.getElementById('f-area')?.value?.trim();
+  if (!nom || nom === 'Mi proyecto') return;  // Skip if default/empty name
+
+  // Check if already in pool
+  const alreadyIn = _aiScored.some(item => item.proj?.nom === nom || item.proj?.adoId === nom);
+  if (alreadyIn) return;
+
+  // Build scores from current wizard state
+  const scores = {};
+  CRIT_IDS.forEach(cid => {
+    const el = document.getElementById('sl-' + cid);
+    scores[cid] = el ? parseInt(el.value) || 5 : 5;
+  });
+
+  const proj = {
+    nom, area,
+    sponsor: '',
+    scores,
+    reqDate: document.getElementById('f-req')?.value || null,
+    regDate: null,
+    adoId: null, adoState: '', adoType: 'Manual',
+    adoDesc: 'Evaluación manual desde el wizard',
+    adoTags: [], horas: null,
+  };
+
+  const item = {
+    wi: { id: Date.now(), fields: { 'System.Title': nom } },
+    proj,
+    status: 'scored',
+    selected: false,
+  };
+
+  _aiScored.push(item);
+
+  // Show evaluator columns if modal was open, or just update count
+  const badge = document.getElementById('ai-scored-count');
+  if (badge) badge.textContent = _aiScored.filter(s=>s.status!=='pending').length;
+
+  toast(`✓ "${nom}" añadido a proyectos evaluados — pulsa ↓ Cargar en cartera para añadirlo`);
 }

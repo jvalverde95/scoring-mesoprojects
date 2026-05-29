@@ -132,8 +132,40 @@
 <div id="shell" style="display:none">
   <div id="lnav">
     <div id="nav-dots"></div>
+    <!-- Manual eval button in nav -->
+    <div style="padding:6px 8px">
+      <button onclick="startManualEval()"
+        title="Crear evaluación manual"
+        style="width:100%;background:var(--d3);color:#fff;border:none;border-radius:8px;
+               padding:8px 4px;font-size:8px;font-weight:700;letter-spacing:.08em;
+               text-transform:uppercase;cursor:pointer;line-height:1.3">
+        ✏ Nueva<br>evaluación
+      </button>
+    </div>
     <div class="nav-sep"></div>
-    <!-- Bottom nav: resumen, gráficas, pools, config -->
+
+    <!-- ── Core screens ────────────────────────────────── -->
+    <div class="nav-ico" id="nav-projects" onclick="goStep('projects')" title="Proyectos — carga y gestión">
+      <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <line x1="6" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="6" y1="10.5" x2="14" y2="10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="6" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg></div>
+      <div class="nav-ico-lbl">proyectos</div>
+    </div>
+
+    <div class="nav-ico" id="nav-eval" onclick="goStep('eval')" title="Evaluación — scoring masivo y manual">
+      <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></div>
+      <div class="nav-ico-lbl">evaluar</div>
+    </div>
+
+    <div class="nav-sep"></div>
+
+    <!-- ── Results screens ─────────────────────────────── -->
     <div class="nsum" id="nav-sum" onclick="goStep('summary')">
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSI2MiIgeT0iMzAiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iNjAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj44NTwvdGV4dD4KICA8dGV4dCB4PSI1MCIgeT0iNzIiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjayxBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NZTwvdGV4dD4KPC9zdmc+" alt="resumen">
       <div class="nsum-lbl">res.</div>
@@ -147,7 +179,7 @@
 </svg></div>
       <div class="nav-ico-lbl">gráficas</div>
     </div>
-    <div class="nav-ico" id="nav-pools" onclick="goStep('pools')" title="Pools por horas">
+    <div class="nav-ico" id="nav-pools" onclick="goStep('pools')" title="Pools por horas — estimación">
       <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
   <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -155,6 +187,12 @@
   <rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
 </svg></div>
       <div class="nav-ico-lbl">pools</div>
+    </div>
+    <div class="nav-ico" id="nav-sprint" onclick="goStep('sprint')" title="En marcha — proyectos del equipo">
+      <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg></div>
+      <div class="nav-ico-lbl">en marcha</div>
     </div>
     <div class="nav-ico" id="nav-config" onclick="goStep('config')" title="Configuración">
       <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -401,8 +439,8 @@
 
     <!-- STEP: CONFIG -->
     <div class="step" id="step-config">
-      <div class="s-title">configuración del modelo</div>
-      <div class="s-sub">Ajusta los pesos de las dimensiones y parámetros del algoritmo sigmoid boost</div>
+      <div class="s-title">⚙ Configuración</div>
+      <div class="s-sub">Pesos del modelo · Umbrales de pools · Capacidad del equipo · Azure DevOps · Dataverse</div>
 
       <!-- Pesos dimensiones -->
       <div class="cfg-section">
@@ -479,7 +517,51 @@
         <!-- Header -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
           <div style="width:28px;height:28px;background:linear-gradient(135deg,#0078D4 60%,#50e6ff);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">Az</div>
-          <div class="cfg-sec-title" style="margin-bottom:0">azure devops — integración</div>
+          <!-- ── Pool thresholds ───────────────────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">Umbrales de pools (horas)</div>
+          <div class="cfg-sec-sub">Define los rangos de horas que separan Corto / Medio / Largo</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px;font-size:10px">
+              <span style="color:var(--d3);font-weight:700">Corto &lt;</span>
+              <input type="number" class="thr-inp" id="cfg-thr-s" value="30" min="1" max="999"
+                oninput="syncThrInputs()" style="width:60px;text-align:center;font-size:12px;border:1px solid var(--b);border-radius:4px;padding:3px">
+              <span style="color:var(--ink3)">horas</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:10px">
+              <span style="color:var(--d4);font-weight:700">Medio &lt;</span>
+              <input type="number" class="thr-inp" id="cfg-thr-m" value="100" min="1" max="9999"
+                oninput="syncThrInputs()" style="width:60px;text-align:center;font-size:12px;border:1px solid var(--b);border-radius:4px;padding:3px">
+              <span style="color:var(--ink3)">horas</span>
+            </div>
+            <div style="font-size:9px;color:var(--ink4)">
+              Largo ≥ <span id="cfg-thr-largo-lbl">100</span>h
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Developer capacity ──────────────────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">Capacidad del equipo</div>
+          <div class="cfg-sec-sub">
+            Proyectos simultáneos por desarrollador · Determina cuántos caben en "En marcha"
+          </div>
+          <div id="dev-rows" style="margin:12px 0;display:flex;flex-direction:column;gap:8px">
+            <!-- populated by renderDevRows() -->
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <button class="cfg-apply cfg-reset" onclick="addDevRow()">+ Añadir desarrollador</button>
+            <button class="cfg-apply" onclick="saveDevCapacity()">✓ Guardar</button>
+          </div>
+          <div style="margin-top:10px;padding:8px 12px;background:var(--surf);border-radius:6px;font-size:10px;border:1px solid var(--b)">
+            Capacidad total: <strong id="dev-cap-corto" style="color:var(--d3)">0</strong> cortos ·
+            <strong id="dev-cap-medio" style="color:var(--d4)">0</strong> medios ·
+            <strong id="dev-cap-largo" style="color:var(--d1)">0</strong> largos ·
+            <strong id="dev-cap-total" style="color:var(--ink)">0</strong> en total
+          </div>
+        </div>
+
+        <div class="cfg-sec-title" style="margin-bottom:0">azure devops — integración</div>
           <div id="cfg-ado-conn-badge" style="display:none;padding:3px 10px;border-radius:20px;font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase"></div>
         </div>
         <div class="cfg-sec-sub">Conecta con tu organización, prueba la conexión, elige la query guardada y carga los work items directamente en la cartera.</div>
@@ -777,7 +859,204 @@
     </div>
 
     <!-- STEP SUMMARY -->
-    <div class="step" id="step-summary">
+    
+<!-- ═══ PROJECTS SCREEN ═══════════════════════════════════════ -->
+<div class="step" id="step-projects">
+  <div class="s-title">📂 Proyectos</div>
+  <div class="s-sub">Carga proyectos desde distintas fuentes para evaluarlos y gestionarlos</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:24px 0">
+
+    <!-- Card: Excel -->
+    <div class="cfg-section" style="cursor:pointer" onclick="document.getElementById('excel-file-input').click()">
+      <div style="font-size:28px;margin-bottom:10px">📊</div>
+      <div class="cfg-sec-title">Importar Excel</div>
+      <div class="cfg-sec-sub">Sube un fichero .xlsx con proyectos. Columnas: nombre, área, sponsor, fecha…</div>
+      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none"
+        onchange="loadExcel(this)">
+      <button class="cfg-apply" style="margin-top:12px;width:100%" onclick="event.stopPropagation();document.getElementById('excel-file-input').click()">
+        ↑ Subir Excel
+      </button>
+    </div>
+
+    <!-- Card: Azure DevOps -->
+    <div class="cfg-section" style="cursor:pointer" onclick="goStep('config')">
+      <div style="font-size:28px;margin-bottom:10px">☁</div>
+      <div class="cfg-sec-title">Azure DevOps</div>
+      <div class="cfg-sec-sub">Conecta con tu proyecto ADO y carga work items desde una query existente.</div>
+      <button class="cfg-apply" style="margin-top:12px;width:100%;background:#0078D4"
+        onclick="event.stopPropagation();goStep('config')">
+        Configurar ADO →
+      </button>
+    </div>
+
+    <!-- Card: Manual -->
+    <div class="cfg-section">
+      <div style="font-size:28px;margin-bottom:10px">✏️</div>
+      <div class="cfg-sec-title">Proyecto manual</div>
+      <div class="cfg-sec-sub">Crea un proyecto nuevo directamente con nombre, área y datos básicos.</div>
+      <button class="cfg-apply" style="margin-top:12px;width:100%;background:var(--d3)"
+        onclick="openNewProjectModal()">
+        + Nuevo proyecto
+      </button>
+    </div>
+  </div>
+
+  <!-- Current portfolio summary -->
+  <div class="cfg-section">
+    <div class="cfg-sec-title">Proyectos cargados</div>
+    <div id="projects-screen-count" style="font-size:13px;color:var(--ink3);margin:8px 0">
+      Sin proyectos cargados
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="cfg-apply" onclick="goStep('eval')" style="background:var(--d5)">
+        → Ir a evaluar
+      </button>
+      <button class="cfg-apply" onclick="goStep('summary')" style="background:var(--ink3)">
+        Ver cartera
+      </button>
+      <button class="cfg-apply cfg-reset" id="btn-clear-projects" onclick="clearPortfolio()" style="display:none">
+        ✕ Limpiar todo
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading banner for DV -->
+  <div id="dv-loading-banner-proj" style="display:none;padding:10px 16px;border-radius:8px;margin-top:12px;font-size:11px;font-weight:600;background:var(--d5t);color:var(--d5);align-items:center;gap:8px">
+    <div style="width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
+    <span id="dv-loading-msg-proj">Cargando de Dataverse…</span>
+  </div>
+</div>
+
+
+<!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->
+<div class="step" id="step-eval">
+  <div class="s-title">⚡ Evaluación</div>
+  <div class="s-sub">Puntúa proyectos automáticamente o de forma manual · El resultado va directo a los pools</div>
+
+  <!-- Evaluación masiva -->
+  <div class="cfg-section" style="margin-bottom:16px">
+    <div class="cfg-sec-title">Evaluación automática (AI rules)</div>
+    <div class="cfg-sec-sub">Evalúa automáticamente todos los proyectos cargados usando las reglas del modelo</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+      <button class="cfg-apply" style="background:#742774" onclick="openAiModalFromEval()">
+        ⚡ Evaluar todos automáticamente
+      </button>
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3)">
+        <span>Horas masivo:</span>
+        <select id="eval-horas-masivo" class="cfg-inp" style="width:100px;padding:4px 8px;font-size:10px">
+          <option value="">— sin horas —</option>
+          <option value="8">8h</option>
+          <option value="16">16h</option>
+          <option value="40">40h</option>
+          <option value="80">80h</option>
+          <option value="160">160h</option>
+        </select>
+        <button class="cfg-apply cfg-reset" onclick="applyBulkHorasEval()" style="font-size:9px;padding:4px 10px">
+          Aplicar a selección
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evaluación manual wizard -->
+  <div class="cfg-section" style="margin-bottom:16px">
+    <div class="cfg-sec-title">Evaluación manual</div>
+    <div class="cfg-sec-sub">Crea un proyecto nuevo y puntúa criterio a criterio con el wizard</div>
+    <button class="cfg-apply" style="margin-top:10px;background:var(--d3)" onclick="startManualEval()">
+      ✏ Nueva evaluación manual
+    </button>
+  </div>
+
+  <!-- Proyectos sin evaluar -->
+  <div class="cfg-section">
+    <div class="cfg-sec-title">Proyectos pendientes de evaluación</div>
+    <div id="eval-pending-list" style="margin-top:10px;font-size:11px;color:var(--ink3)">
+      Sin proyectos pendientes
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="cfg-apply" onclick="goStep('pools')" style="background:var(--d4)">
+        Ver pools →
+      </button>
+      <button class="cfg-apply" onclick="goStep('summary')" style="background:var(--ink3)">
+        Ver cartera
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ SPRINT / EN MARCHA ══════════════════════════════════════ -->
+<div class="step" id="step-sprint">
+  <div class="s-title">🚀 En marcha</div>
+  <div class="s-sub">Proyectos asignados al equipo · separados por tamaño · capacidad total del equipo</div>
+
+  <!-- Team capacity summary -->
+  <div class="cfg-section" style="margin-bottom:16px">
+    <div class="cfg-sec-title">Capacidad del equipo</div>
+    <div id="sprint-capacity-summary" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:12px">
+      <div style="text-align:center;padding:12px;background:var(--d5t);border-radius:8px">
+        <div style="font-size:22px;font-weight:900;color:var(--d5)" id="sprint-cap-total">0</div>
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em">Capacidad total</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d3t);border-radius:8px">
+        <div style="font-size:22px;font-weight:900;color:var(--d3)" id="sprint-cap-corto">0</div>
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em">Proyectos cortos</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d4t);border-radius:8px">
+        <div style="font-size:22px;font-weight:900;color:var(--d4)" id="sprint-cap-medio">0</div>
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em">Proyectos medios</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d1t);border-radius:8px">
+        <div style="font-size:22px;font-weight:900;color:var(--d1)" id="sprint-cap-largo">0</div>
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em">Proyectos largos</div>
+      </div>
+    </div>
+    <button class="cfg-apply cfg-reset" style="margin-top:12px;font-size:9px" onclick="goStep('config')">
+      ⚙ Configurar equipo →
+    </button>
+  </div>
+
+  <!-- Sprint columns: Corto / Medio / Largo -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--d3)"></div>
+        <div style="font-weight:700;font-size:11px;color:var(--d3)">CORTO</div>
+        <div id="sprint-corto-count" style="font-size:9px;background:var(--d3t);color:var(--d3);padding:2px 7px;border-radius:20px;font-weight:700">0</div>
+      </div>
+      <div id="sprint-col-corto" style="display:flex;flex-direction:column;gap:8px;min-height:100px">
+        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--d4)"></div>
+        <div style="font-weight:700;font-size:11px;color:var(--d4)">MEDIO</div>
+        <div id="sprint-medio-count" style="font-size:9px;background:var(--d4t);color:var(--d4);padding:2px 7px;border-radius:20px;font-weight:700">0</div>
+      </div>
+      <div id="sprint-col-medio" style="display:flex;flex-direction:column;gap:8px;min-height:100px">
+        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:var(--d1)"></div>
+        <div style="font-weight:700;font-size:11px;color:var(--d1)">LARGO</div>
+        <div id="sprint-largo-count" style="font-size:9px;background:var(--d1t);color:var(--d1);padding:2px 7px;border-radius:20px;font-weight:700">0</div>
+      </div>
+      <div id="sprint-col-largo" style="display:flex;flex-direction:column;gap:8px;min-height:100px">
+        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="step" id="step-summary">
 
       <!-- HERO negro full width -->
       <div class="sum-hero" style="margin-bottom:16px">
@@ -1227,6 +1506,7 @@
 <script src="js/persistence.js"></script>
 <script src="js/dataverse.js"></script>
 <script src="js/evaluator.js"></script>
+<script src="js/sprint.js"></script>
 <script src="js/projectedit.js"></script>
 </body>
 </html>

@@ -1,8 +1,10 @@
+let previousStep = null;
+
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint'];
 
 function goStep(t) {
-  const SPECIAL = ['summary','charts','pools','config'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -12,7 +14,7 @@ function goStep(t) {
     n.classList.toggle('active', !isSpecial && i+1 === idx);
     n.classList.toggle('done',   !isSpecial && typeof idx==='number' && i+1 < idx);
   });
-  ['nav-sum','nav-charts','nav-pools','nav-config'].forEach(id => {
+  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -24,14 +26,21 @@ function goStep(t) {
     const ns = document.getElementById('nav-sum');
     if (ns) ns.classList.add('active');
     updSummary();
+    // If coming from wizard steps (manual eval), add to evaluator pool
+    if (typeof previousStep === 'number' && previousStep >= 1 && previousStep <= 6) {
+      if (typeof addManualEvalToPool === 'function') addManualEvalToPool();
+    }
   } else if (NAV_PAGES.includes(t)) {
     const panel = document.getElementById('step-' + t);
     if (panel) panel.classList.add('on');
     const navEl = document.getElementById('nav-' + t);
     if (navEl) navEl.classList.add('active');
-    if (t === 'charts') refreshChartsStep();
-    if (t === 'pools')  refreshPoolsStep();
-    if (t === 'config') renderConfigStep();
+    if (t === 'charts')   refreshChartsStep();
+    if (t === 'pools')    refreshPoolsStep();
+    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows(); }
+    if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
+    if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
+    if (t === 'sprint') { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');
@@ -202,4 +211,15 @@ function syncThresholds(which, val) {
 
 function refreshPoolsStep() {
   renderPoolsStep();
+}
+
+/* ── Manual evaluation shortcut ─────────────────────────────── */
+function startManualEval() {
+  // Reset wizard to step 0 for a fresh manual evaluation
+  resetAll();
+  goStep(0);
+  // Scroll to top
+  const shell = document.getElementById('shell');
+  if (shell) shell.scrollTop = 0;
+  toast('Nueva evaluación — rellena los datos y puntúa cada criterio');
 }

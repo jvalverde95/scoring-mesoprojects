@@ -1,4 +1,4 @@
-/* ═══ ADO MODAL ══════════════════════════════════════════ */
+/* ═══ ADO MODAL ════════════════════════════════════════════ */
 function openAdoModal() {
   document.getElementById('ado-overlay').classList.add('open');
   adoStatusHide();
@@ -14,15 +14,114 @@ function adoStatusShow(type, msg) {
   if(ml) ml.textContent=msg;
 }
 function adoStatusHide(){ const el=document.getElementById('ado-status'); if(el) el.className='ado-status'; }
-function cfgAdoStatusShow(type, msg) { adoStatusShow(type, msg); }  // alias
-function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }  // kept for compat
-function _cfgAdoCreds() {
-  const g = id => (document.getElementById(id)?.value || '').trim();
+function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }
+
+async function adoConnect() {
+  const org=document.getElementById('ado-org')?.value?.trim();
+  const project=document.getElementById('ado-project')?.value?.trim();
+  const pat=document.getElementById('ado-pat')?.value?.trim();
+  if(!org||!project||!pat){adoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
+  const btn=document.getElementById('ado-connect-btn'); if(btn) btn.disabled=true;
+  adoStatusShow('loading','Guardando credenciales...');
+  try {
+    const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+    set('cfg-ado-org',org); set('cfg-ado-project',project); set('cfg-ado-pat',pat);
+    adoStatusShow('ok','✓ Credenciales guardadas. Ve a ⚙ Config para elegir la query.');
+    toast('Credenciales guardadas — abre ⚙ Config para elegir la query');
+    setTimeout(()=>{closeAdoModal();goStep('config');},1000);
+  } catch(e){ adoStatusShow('error',e.message); }
+  finally{ if(btn) btn.disabled=false; }
+}
+
+async function adoFetchRequirements(org, project, pat, queryId) {
+  const auth=adoBasicAuth(pat);
+  const base=`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
+  const runRes=await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`,{headers:{'Authorization':auth}});
+  if(runRes.status===401) throw new Error('PAT inválido o sin permisos (401).');
+  if(runRes.status===404) throw new Error(`Query "${queryId}" no encontrada (404).`);
+  if(!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
+  const runData=await runRes.json();
+  let ids=[];
+  if(runData.workItems) ids=runData.workItems.map(w=>w.id);
+  else if(runData.workItemRelations) ids=runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
+  ids=[...new Set(ids)];
+  if(!ids.length) throw new Error('La query no devolvió work items.');
+  const fields=['System.Id','System.Title','System.WorkItemType','System.State',
+    'System.AssignedTo','System.CreatedDate','System.Description',
+    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'];
+  const allItems=[];
+  for(let i=0;i<ids.length;i+=200){
+    const bRes=await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`,{
+      method:'POST',headers:{'Authorization':auth,'Content-Type':'application/json'},
+      body:JSON.stringify({ids:ids.slice(i,i+200),fields})});
+    if(!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
+    const bData=await bRes.json(); allItems.push(...(bData.value||[]));
+  }
+  return allItems;
+}
+
+function adoMapToProject(wi) {
+  const f=wi.fields||{};
+  const title=(f['System.Title']||`Work Item ${wi.id}`).trim();
+  const assignee=f['System.AssignedTo'];
+  const sponsor=typeof assignee==='object'?(assignee.displayName||assignee.uniqueName||'').replace(/<[^>]+>/g,'').trim():String(assignee||'').replace(/<[^>]+>/g,'').trim();
+  const descRaw=f['System.Description']||'';
+  const desc=descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
+  const areaPath=f['System.AreaPath']||'';
+  const area=(areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim()||'Sin área';
+  const tags=(f['System.Tags']||'').split(';').map(t=>t.trim()).filter(Boolean);
+  let reqDate=null;
+  const cd=f['System.CreatedDate'];
+  if(cd) reqDate=cd.substring(0,10);
+  const scores={}; CRIT_IDS.forEach(cid=>{scores[cid]=5;});
+  return {nom:`${wi.id} — ${title}`,area,sponsor,scores,reqDate,regDate:null,
+    adoId:wi.id,adoTitle:title,adoType:f['System.WorkItemType']||'',
+    adoState:f['System.State']||'',adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
+    adoDesc:desc,adoTags:tags,adoRaw:f};
+}
+
+/* ═══ CFG ADO ══════════════════════════════════════════════ */
+let _adoCreds=null, _adoConnected=false;
+
+function _cfgAdoCreds(){
   return {
-    org:     g('cfg-ado-org'),
-    project: g('cfg-ado-project'),
-    pat:     g('cfg-ado-pat'),
+    org:(document.getElementById('cfg-ado-org')?.value||'').trim(),
+    project:(document.getElementById('cfg-ado-project')?.value||'').trim(),
+    pat:(document.getElementById('cfg-ado-pat')?.value||'').trim(),
   };
+}
+
+function cfgAdoStatusShow(type,msg){
+  const el=document.getElementById('cfg-ado-status'),
+        sp=document.getElementById('cfg-ado-spinner'),
+        ml=document.getElementById('cfg-ado-status-msg');
+  const c={loading:{bg:'#EEF3FC',c:'#1848A0'},ok:{bg:'var(--d3t)',c:'var(--d3)'},error:{bg:'var(--d1t)',c:'var(--d1)'}};
+  const clr=c[type]||c.loading;
+  if(el){el.style.display='flex';el.style.background=clr.bg;el.style.color=clr.c;}
+  if(sp) sp.style.display=type==='loading'?'block':'none';
+  if(ml) ml.textContent=msg;
+}
+
+function cfgAdoSaveCreds(){
+  const c=_cfgAdoCreds();
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+  set('ado-org',c.org); set('ado-project',c.project); if(c.pat) set('ado-pat',c.pat);
+  saveAllCreds();
+  toast('Credenciales guardadas');
+}
+
+function cfgAdoQuerySelected(queryId){
+  const sel=document.getElementById('cfg-ado-query-select');
+  const note=document.getElementById('cfg-ado-query-note');
+  const btn=document.getElementById('cfg-ado-load-btn');
+  const prev=document.getElementById('cfg-ado-preview');
+  if(!queryId){if(note)note.textContent='Selecciona una query';if(btn)btn.disabled=true;return;}
+  const mi=document.getElementById('cfg-ado-query-id'); if(mi) mi.value=queryId;
+  const opt=sel?.querySelector(`option[value="${queryId}"]`);
+  if(note&&opt) note.textContent=`Query: "${opt.dataset.name}" · Tipo: ${opt.dataset.queryType||''}`;
+  if(btn) btn.disabled=false;
+  if(prev) prev.textContent='Listo para cargar';
+  saveAllCreds();
 }
 
 async function cfgAdoTest(){
@@ -65,90 +164,21 @@ async function cfgAdoTest(){
     const badge=document.getElementById('cfg-ado-conn-badge');
     if(badge){badge.style.display='inline-block';badge.style.background='#EEF3FC';badge.style.color='#0078D4';badge.style.border='1px solid rgba(0,120,212,.2)';badge.textContent=`✓ conectado · ${allQueries.length} queries`;}
     cfgAdoStatusShow('ok',`✓ Conectado · "${projData.name}" · ${allQueries.length} queries${autoMatch?` · "${autoMatch.name}" pre-seleccionada`:''}`);
-  } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); document.getElementById('cfg-ado-query-section').style.display='none';}
-}
-async function adoConnect() {
-  const org     = document.getElementById('ado-org')?.value?.trim();
-  const project = document.getElementById('ado-project')?.value?.trim();
-  const pat     = document.getElementById('ado-pat')?.value?.trim();
-  if (!org||!project||!pat) {
-    adoStatusShow('error','Rellena organización, proyecto y PAT.'); return;
+    saveAllCreds();
+  } catch(e){
+    cfgAdoStatusShow('error','✗ '+e.message);
+    const qs=document.getElementById('cfg-ado-query-section'); if(qs) qs.style.display='none';
   }
-  const btn = document.getElementById('ado-connect-btn');
-  if (btn) btn.disabled = true;
-  adoStatusShow('loading','Guardando credenciales...');
-  try {
-    const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
-    set('cfg-ado-org',org); set('cfg-ado-project',project); set('cfg-ado-pat',pat);
-    adoStatusShow('ok','✓ Credenciales guardadas. Ve a ⚙ Config para elegir la query.');
-    toast('Credenciales guardadas — abre ⚙ Config para elegir la query');
-    setTimeout(()=>{closeAdoModal();goStep('config');},1000);
-  } catch(e){ adoStatusShow('error',e.message); }
-  finally{ if(btn) btn.disabled=false; }
-}
-
-async function adoFetchRequirements(org, project, pat, queryId) {
-  const auth = adoBasicAuth(pat);
-  const base = `https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
-  const runRes = await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`,
-    {headers:{'Authorization':auth}});
-  if (runRes.status===401) throw new Error('PAT inválido o sin permisos (401).');
-  if (runRes.status===404) throw new Error(`Query "${queryId}" no encontrada (404).`);
-  if (!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
-  const runData = await runRes.json();
-  let ids = [];
-  if (runData.workItems) ids = runData.workItems.map(w=>w.id);
-  else if (runData.workItemRelations) ids = runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
-  ids = [...new Set(ids)];
-  if (!ids.length) throw new Error('La query no devolvió work items.');
-  const fields = ['System.Id','System.Title','System.WorkItemType','System.State',
-    'System.AssignedTo','System.CreatedDate','System.Description',
-    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority'];
-  const allItems = [];
-  for (let i=0; i<ids.length; i+=200) {
-    const bRes = await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`,{
-      method:'POST',
-      headers:{'Authorization':auth,'Content-Type':'application/json'},
-      body:JSON.stringify({ids:ids.slice(i,i+200),fields})
-    });
-    if (!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
-    const bData = await bRes.json();
-    allItems.push(...(bData.value||[]));
-  }
-  return allItems;
-}
-
-function adoMapToProject(wi) {
-  const f = wi.fields||{};
-  const title = (f['System.Title']||`Work Item ${wi.id}`).trim();
-  const assignee = f['System.AssignedTo'];
-  const sponsor = typeof assignee==='object'
-    ?(assignee.displayName||assignee.uniqueName||'').replace(/<[^>]+>/g,'').trim()
-    :String(assignee||'').replace(/<[^>]+>/g,'').trim();
-  const descRaw = f['System.Description']||'';
-  const desc = descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
-  const areaPath = f['System.AreaPath']||'';
-  const area = (areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim()||'Sin área';
-  const tags = (f['System.Tags']||'').split(';').map(t=>t.trim()).filter(Boolean);
-  let reqDate = null;
-  const cd = f['System.CreatedDate'];
-  if (cd) reqDate = cd.substring(0,10);
-  const scores = {};
-  CRIT_IDS.forEach(cid=>{ scores[cid]=5; });
-  return {
-    nom:`${wi.id} — ${title}`, area, sponsor, scores, reqDate, regDate:null,
-    adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
-    adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
-    adoDesc:desc, adoTags:tags, adoRaw:f
-  };
 }
 
 function cfgAdoGetTypes(){
   if(document.getElementById('cfg-ado-type-all')?.checked) return [];
-  const map=[['cfg-ado-type-req','Requirement'],['cfg-ado-type-task','Task'],['cfg-ado-type-us','User Story'],['cfg-ado-type-bug','Bug'],['cfg-ado-type-feat','Feature']];
+  const map=[['cfg-ado-type-req','Requirement'],['cfg-ado-type-task','Task'],
+             ['cfg-ado-type-us','User Story'],['cfg-ado-type-bug','Bug'],['cfg-ado-type-feat','Feature']];
   const types=map.filter(([id])=>document.getElementById(id)?.checked).map(([,t])=>t);
   return types.length?types:[];
 }
+
 async function cfgAdoLoad(){
   const {org,project,pat}=_cfgAdoCreds();
   const selVal=document.getElementById('cfg-ado-query-select')?.value;
@@ -163,7 +193,7 @@ async function cfgAdoLoad(){
   try{
     const allItems=await adoFetchRequirements(org,project,pat,queryId);
     const filtered=types.length?allItems.filter(wi=>types.includes(wi.fields?.['System.WorkItemType'])):allItems;
-    if(!filtered.length) throw new Error(`Sin work items del tipo (${types.join(', ')}) en esta query.`);
+    if(!filtered.length) throw new Error(`Sin work items${types.length?' del tipo ('+types.join(', ')+')':''} en esta query.`);
     _adoCreds={org,project,pat,queryId}; _adoConnected=true;
     const badge=document.getElementById('ado-badge');
     if(badge){badge.className='ado-badge connected';document.getElementById('ado-badge-lbl').textContent=`ADO · ${filtered.length} items`;}
@@ -173,23 +203,4 @@ async function cfgAdoLoad(){
     saveAllCreds();
     setTimeout(()=>openAiModal(filtered),300);
   } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); }
-}
-function cfgAdoQuerySelected(queryId) {
-  const sel  = document.getElementById('cfg-ado-query-select');
-  const note = document.getElementById('cfg-ado-query-note');
-  const btn  = document.getElementById('cfg-ado-load-btn');
-  const prev = document.getElementById('cfg-ado-preview');
-  if (!queryId) {
-    if (note) note.textContent = 'Selecciona una query';
-    if (btn)  btn.disabled = true;
-    return;
-  }
-  const mi = document.getElementById('cfg-ado-query-id');
-  if (mi) mi.value = queryId;
-  const opt = sel?.selectedOptions?.[0];
-  const name = opt?.textContent || queryId;
-  if (note) note.textContent = `Query: "${name}"`;
-  if (btn)  btn.disabled = false;
-  if (prev) prev.textContent = `Query seleccionada: ${name}`;
-  saveAllCreds();
 }

@@ -66,3 +66,15 @@ function renderConfigStep() {
   renderWeightEditor();
   dvLoadCfg();
 }
+
+function updateCfgTotal() {
+  const total = DIMS.reduce((s, d) => {
+    const v = parseInt(document.getElementById('cfg-val-' + d.id)?.value || 0);
+    return s + (isNaN(v) ? 0 : v);
+  }, 0);
+  const el = document.getElementById('cfg-total');
+  if (el) {
+    el.textContent = total + '%';
+    el.style.color = total === 100 ? 'var(--d3)' : 'var(--d1)';
+  }
+}

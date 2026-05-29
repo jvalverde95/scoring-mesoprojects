@@ -697,6 +697,7 @@ function renderPortfolio() {
     tbody.appendChild(tr);
   });
   document.getElementById('port-count').textContent=`${vis} de ${portfolioData.length} proyectos`;
+  if(typeof renderProjectsScreen==='function') renderProjectsScreen();
   document.getElementById('port-empty').style.display=vis===0?'block':'none';
   document.getElementById('port-tbl').style.display=vis===0?'none':'table';
   // Update bulk toolbar
@@ -1279,9 +1280,15 @@ function renderDimSteps() {
               <div class="c-right">
                 <div class="c-val" id="cv-${c.id}" style="color:${scColorHex(c.val)}">${c.val}</div>
                 <div class="c-boost" id="cb-${c.id}">boost: ${sigmoidBoost(c.val,c.C0,c.B0,c.A0,c.C,c.B,c.A).toFixed(2)}×</div>
-                <input type="range" class="c-slider" min="1" max="10" step="1" value="${c.val}"
-                  id="sl-${c.id}" ${c.isReg?'disabled style="opacity:.4;cursor:not-allowed;"':''}
-                  oninput="setNota('${c.id}','${d.id}',this.value)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input type="range" class="c-slider" min="1" max="10" step="1" value="${c.val}"
+                    id="sl-${c.id}" ${c.isReg?'disabled style="opacity:.4;cursor:not-allowed;"':''}
+                    oninput="setNota('${c.id}','${d.id}',this.value);document.getElementById('ni-${c.id}').value=this.value">
+                  <input type="number" id="ni-${c.id}" min="1" max="10" step="1" value="${c.val}"
+                    ${c.isReg?'disabled':''}
+                    style="width:46px;height:32px;border:1.5px solid var(--b);border-radius:6px;text-align:center;font-size:14px;font-weight:700;font-family:'Playfair Display',serif;color:${scColorHex(c.val)};background:var(--surf)"
+                    oninput="setNota('${c.id}','${d.id}',this.value);document.getElementById('sl-${c.id}').value=this.value;this.style.color=scColorHex(parseInt(this.value)||5)">
+                </div>
                 <div class="c-scale"><span>1</span><span>5</span><span>10</span></div>
               </div>
             </div>
@@ -1761,13 +1768,13 @@ function handleLandingExcel(inp) {
    ──────────────────────────────────────────────────────────── */
 const HARDCODED_CREDS = {
   // Azure DevOps
-  ado_org:     'mesoesteticAzureDevOps',   // e.g. 'mesoesteticAzureDevOps'
-  ado_project: 'DYNAMICS 365',   // e.g. 'DYNAMICS 365'
-  ado_pat:     '9kGGd7zPym7eW36ZTdOlOQKLYkA70gHKFUTCfEXFG9QO5RFCixzPJQQJ99CEACAAAAAIYiFxAAASAZDO1icS',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  ado_org:     '',   // e.g. 'mesoesteticAzureDevOps'
+  ado_project: '',   // e.g. 'DYNAMICS 365'
+  ado_pat:     '',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
   // Microsoft Dataverse
-  dv_url:      'https://operations-mesoestetic-pre.crm4.dynamics.com',   // e.g. 'https://org1234.crm4.dynamics.com'
-  dv_tenant:   '425835a2-4b10-4977-bf72-f9f1a1bf2864',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  dv_clientid: '4c9ecaa2-ac3f-4f2c-9570-5504272fee29',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  dv_secret:   '7Bu8Q~sL2m2aZyLBwAxzFHLt2UnA2oW5xkECubkS',   // e.g. 'your-client-secret-value'
+  dv_url:      '',   // e.g. 'https://org1234.crm4.dynamics.com'
+  dv_tenant:   '',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  dv_clientid: '',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  dv_secret:   '',   // e.g. 'your-client-secret-value'
 };
