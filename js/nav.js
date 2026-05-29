@@ -4,6 +4,9 @@ let previousStep = null;
 const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard'];
 
 function goStep(t) {
+  // Track where we're coming FROM (needed to detect manual eval → summary)
+  previousStep = currentStep;
+
   const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
