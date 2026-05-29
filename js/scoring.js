@@ -1764,13 +1764,13 @@ function handleLandingExcel(inp) {
    ──────────────────────────────────────────────────────────── */
 const HARDCODED_CREDS = {
   // Azure DevOps
-  ado_org:     '',   // e.g. 'mesoesteticAzureDevOps'
-  ado_project: '',   // e.g. 'DYNAMICS 365'
-  ado_pat:     '',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+  ado_org:     'mesoesteticAzureDevOps',   // e.g. 'mesoesteticAzureDevOps'
+  ado_project: 'DYNAMICS 365',   // e.g. 'DYNAMICS 365'
+  ado_pat:     'A0ELPGU4bw8HVIktYxjuc7ESBPP4Ar2LOjHY8acghUPkSwL8lPbMJQQJ99CEACAAAAAIYiFxAAASAZDO2ar3',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 
   // Microsoft Dataverse
-  dv_url:      '',   // e.g. 'https://org1234.crm4.dynamics.com'
-  dv_tenant:   '',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  dv_clientid: '',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  dv_secret:   '',   // e.g. 'your-client-secret-value'
+  dv_url:      'https://operations-mesoestetic-pre.crm4.dynamics.com',   // e.g. 'https://org1234.crm4.dynamics.com'
+  dv_tenant:   '425835a2-4b10-4977-bf72-f9f1a1bf2864',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+  dv_clientid: '4c9ecaa2-ac3f-4f2c-9570-5504272fee29',   // e.g. '4c9ecaa2-ac3f-4f2c-9570-5504272fee29'
+  dv_secret:   '7Bu8Q~sL2m2aZyLBwAxzFHLt2UnA2oW5xkECubkS',   // e.g. 'your-client-secret-value'
 };
