@@ -16,6 +16,25 @@ function adoStatusShow(type, msg) {
 function adoStatusHide(){ const el=document.getElementById('ado-status'); if(el) el.className='ado-status'; }
 function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }
 
+// Proxy helper — routes ADO calls through /api/ado to avoid CORS
+async function adoProxy(org, project, path, pat, method='GET', body=null) {
+  const headers = {
+    'Content-Type':    'application/json',
+    'X-ADO-Org':       org,
+    'X-ADO-Pat':       pat,
+    'X-ADO-Path':      path,
+  };
+  if (project) headers['X-ADO-Project'] = project;
+
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch('/api/ado', opts);
+  return res;
+}
+
+
+
 async function adoConnect() {
   const org=document.getElementById('ado-org')?.value?.trim();
   const project=document.getElementById('ado-project')?.value?.trim();
@@ -34,9 +53,8 @@ async function adoConnect() {
 }
 
 async function adoFetchRequirements(org, project, pat, queryId) {
-  const auth=adoBasicAuth(pat);
-  const base=`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}`;
-  const runRes=await fetch(`${base}/_apis/wit/wiql/${queryId}?api-version=7.1`,{headers:{'Authorization':auth}});
+  // auth/base handled by adoProxy
+  const runRes=await adoProxy(org, project, `_apis/wit/wiql/${queryId}?api-version=7.1`, pat);
   if(runRes.status===401) throw new Error('PAT inválido o sin permisos (401).');
   if(runRes.status===404) throw new Error(`Query "${queryId}" no encontrada (404).`);
   if(!runRes.ok) throw new Error(`Error ${runRes.status} ejecutando la query.`);
@@ -51,9 +69,7 @@ async function adoFetchRequirements(org, project, pat, queryId) {
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'];
   const allItems=[];
   for(let i=0;i<ids.length;i+=200){
-    const bRes=await fetch(`${base}/_apis/wit/workitemsbatch?api-version=7.1`,{
-      method:'POST',headers:{'Authorization':auth,'Content-Type':'application/json'},
-      body:JSON.stringify({ids:ids.slice(i,i+200),fields})});
+    const bRes=await adoProxy(org, project, `_apis/wit/workitemsbatch?api-version=7.1`, pat, 'POST', {ids:ids.slice(i,i+200),fields});
     if(!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
     const bData=await bRes.json(); allItems.push(...(bData.value||[]));
   }
@@ -131,15 +147,10 @@ async function cfgAdoTest(){
   try{
     let projRes;
     try {
-      projRes = await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`,
-        { headers:{'Authorization':adoBasicAuth(pat),'Accept':'application/json'} });
+      projRes = await adoProxy(org, null,
+        `_apis/projects/${encodeURIComponent(project)}?api-version=7.1`, pat);
     } catch(fetchErr) {
-      // True network/CORS error
-      throw new Error(
-        'No se puede conectar con Azure DevOps. ' +
-        'Comprueba que tu PAT es correcto y que tienes conexión a internet. ' +
-        '(Detalle: ' + fetchErr.message + ')'
-      );
+      throw new Error('Error de red con Azure DevOps: ' + fetchErr.message);
     }
     if(projRes.status===401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
     if(projRes.status===403) throw new Error('Sin permisos (403). Asegúrate de que el PAT tiene scope "Work Items (Read)".');
@@ -149,8 +160,8 @@ async function cfgAdoTest(){
     cfgAdoStatusShow('loading',`Proyecto "${projData.name}" OK. Cargando queries...`);
     let qRes;
     try {
-      qRes = await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`,
-        { headers:{'Authorization':adoBasicAuth(pat),'Accept':'application/json'} });
+      qRes = await adoProxy(org, project,
+        `_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`, pat);
     } catch(fetchErr) {
       throw new Error('Error de red cargando queries: ' + fetchErr.message);
     }
