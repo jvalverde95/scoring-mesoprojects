@@ -136,44 +136,91 @@ function aiImportAll() {
 
 /* ── Add completed manual wizard eval to evaluator pool ─────── */
 function addManualEvalToPool() {
-  const nom  = document.getElementById('f-name')?.value?.trim();
-  const area = document.getElementById('f-area')?.value?.trim();
-  if (!nom || nom === 'Mi proyecto') return;  // Skip if default/empty name
+  // Called when wizard reaches summary — show the "Guardar en cartera" banner
+  const nom  = (document.getElementById('f-name')?.value || '').trim();
+  const area = (document.getElementById('f-area')?.value || '').trim();
 
-  // Check if already in pool
-  const alreadyIn = _aiScored.some(item => item.proj?.nom === nom || item.proj?.adoId === nom);
-  if (alreadyIn) return;
+  // Don't show if name is empty or default
+  if (!nom || nom === 'Mi proyecto' || nom === '') return;
 
-  // Build scores from current wizard state
+  // Show the save banner in the summary screen
+  const banner = document.getElementById('save-to-portfolio-banner');
+  if (banner) banner.style.display = 'block';
+}
+
+function _buildManualProject() {
+  // Build the project object from current wizard state
+  const nom     = (document.getElementById('f-name')?.value || '').trim();
+  const areaEl  = document.getElementById('f-area');
+  const area    = areaEl?.value?.trim() || areaEl?.options?.[areaEl.selectedIndex]?.text || '';
+  const reqDate = document.getElementById('f-req')?.value || null;
+
   const scores = {};
   CRIT_IDS.forEach(cid => {
     const el = document.getElementById('sl-' + cid);
-    scores[cid] = el ? parseInt(el.value) || 5 : 5;
+    scores[cid] = el ? (parseInt(el.value) || 5) : 5;
   });
 
-  const proj = {
-    nom, area,
-    sponsor: '',
-    scores,
-    reqDate: document.getElementById('f-req')?.value || null,
-    regDate: null,
-    adoId: null, adoState: '', adoType: 'Manual',
-    adoDesc: 'Evaluación manual desde el wizard',
-    adoTags: [], horas: null,
-  };
+  const proj = computeProj({ nom, area, sponsor: '', scores, reqDate, regDate: null });
+  proj.horas     = null;
+  proj.adoId     = null;
+  proj.adoState  = '';
+  proj.adoType   = 'Manual';
+  proj._dvId     = null;
+  proj._selected = false;
+  return proj;
+}
 
-  const item = {
-    wi: { id: Date.now(), fields: { 'System.Title': nom } },
-    proj,
-    status: 'scored',
-    selected: false,
-  };
+function saveManualToPortfolio() {
+  const proj = _buildManualProject();
+  if (!proj.nom) { toast('El proyecto no tiene nombre'); return; }
 
-  _aiScored.push(item);
+  // Check for duplicate
+  const dup = portfolioData.findIndex(p => p.nom === proj.nom);
+  if (dup >= 0) {
+    // Update existing
+    Object.assign(portfolioData[dup], proj);
+    portfolioData[dup].horas = portfolioData[dup].horas;  // preserve hours
+    toast(`✓ "${proj.nom}" actualizado en cartera`);
+  } else {
+    portfolioData.push(proj);
+    toast(`✓ "${proj.nom}" añadido a la cartera`);
+  }
 
-  // Show evaluator columns if modal was open, or just update count
-  const badge = document.getElementById('ai-scored-count');
-  if (badge) badge.textContent = _aiScored.filter(s=>s.status!=='pending').length;
+  // Hide the banner
+  const banner = document.getElementById('save-to-portfolio-banner');
+  if (banner) banner.style.display = 'none';
 
-  toast(`✓ "${nom}" añadido a proyectos evaluados — pulsa ↓ Cargar en cartera para añadirlo`);
+  // Show portfolio sections
+  ['portfolio','charts-panel','btn-clear','bulk-toolbar'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.style.display = id.includes('btn') || id === 'bulk-toolbar' ? 'flex' : 'block';
+  });
+
+  renderPortfolio();
+  renderPools();
+  try { renderCharts(); } catch(_) {}
+  if (typeof renderDashboard === 'function') renderDashboard();
+
+  // Go to pools to see it
+  goStep('pools');
+}
+
+async function saveManualAndSync() {
+  saveManualToPortfolio();
+
+  // Sync to Dataverse if configured
+  if (_dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret) {
+    const lastProj = portfolioData[portfolioData.length - 1];
+    if (!lastProj) return;
+    try {
+      const token = await dvGetToken();
+      await dvUpsertProject(lastProj, token);
+      toast(`✓ "${lastProj.nom}" guardado en Dataverse`);
+    } catch(e) {
+      toast('✗ Error Dataverse: ' + e.message);
+    }
+  } else {
+    toast('Dataverse no configurado — proyecto guardado solo en local');
+  }
 }
