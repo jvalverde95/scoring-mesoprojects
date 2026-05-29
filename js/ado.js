@@ -129,15 +129,31 @@ async function cfgAdoTest(){
   if(!org||!project||!pat){cfgAdoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
   cfgAdoStatusShow('loading','Verificando credenciales...');
   try{
-    const projRes=await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`,
-      {headers:{'Authorization':adoBasicAuth(pat)}});
-    if(projRes.status===401) throw new Error('PAT inválido (401).');
-    if(projRes.status===404) throw new Error(`Proyecto "${project}" no encontrado (404).`);
-    if(!projRes.ok) throw new Error(`Error ${projRes.status}.`);
+    let projRes;
+    try {
+      projRes = await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/_apis/projects/${encodeURIComponent(project)}?api-version=7.1`,
+        { headers:{'Authorization':adoBasicAuth(pat),'Accept':'application/json'} });
+    } catch(fetchErr) {
+      // True network/CORS error
+      throw new Error(
+        'No se puede conectar con Azure DevOps. ' +
+        'Comprueba que tu PAT es correcto y que tienes conexión a internet. ' +
+        '(Detalle: ' + fetchErr.message + ')'
+      );
+    }
+    if(projRes.status===401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
+    if(projRes.status===403) throw new Error('Sin permisos (403). Asegúrate de que el PAT tiene scope "Work Items (Read)".');
+    if(projRes.status===404) throw new Error(`Proyecto "${project}" no encontrado (404). Comprueba el nombre exacto del proyecto en ADO.`);
+    if(!projRes.ok) throw new Error(`Error HTTP ${projRes.status} de Azure DevOps.`);
     const projData=await projRes.json();
     cfgAdoStatusShow('loading',`Proyecto "${projData.name}" OK. Cargando queries...`);
-    const qRes=await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`,
-      {headers:{'Authorization':adoBasicAuth(pat)}});
+    let qRes;
+    try {
+      qRes = await fetch(`https://dev.azure.com/${encodeURIComponent(org)}/${encodeURIComponent(project)}/_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`,
+        { headers:{'Authorization':adoBasicAuth(pat),'Accept':'application/json'} });
+    } catch(fetchErr) {
+      throw new Error('Error de red cargando queries: ' + fetchErr.message);
+    }
     if(!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
     const qData=await qRes.json();
     const allQueries=[];

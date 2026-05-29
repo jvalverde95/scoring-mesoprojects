@@ -102,12 +102,18 @@ function syncThrInputs() {
   try {
     const s = parseInt(document.getElementById('cfg-thr-s')?.value) || 30;
     const m = parseInt(document.getElementById('cfg-thr-m')?.value) || 100;
-    const setVal = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+    // Sync to pools panel inputs (one-way, no callbacks triggered)
+    const setVal = (id, v) => { const e = document.getElementById(id); if (e && e.value != v) e.value = v; };
     setVal('thr-s', s);
     setVal('thr-m', m);
+    // Update labels
     const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     setTxt('cfg-thr-largo-lbl', m);
-    if (typeof updThresholds === 'function') updThresholds();
+    setTxt('thr-s-lbl', s);
+    setTxt('thr-m-lbl', m);
+    // Re-render pools without triggering oninput
+    if (typeof renderPoolsStep === 'function') renderPoolsStep();
+    if (typeof renderPools === 'function') renderPools();
   } finally {
     _syncingThr = false;
   }
@@ -118,55 +124,86 @@ function renderSprintScreen() {
   updateDevCapSummary();
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
   const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  const cap  = getDevCapacity();
 
-  // Projects "en marcha" = those in pool Corto, Medio, or Largo (not Sin estimar)
-  const enMarcha = portfolioData.filter(p =>
-    p.horas !== null && p.horas !== undefined
-  );
+  // All projects with hours, sorted by score desc
+  const sorted = portfolioData
+    .filter(p => p.horas !== null && p.horas !== undefined)
+    .sort((a, b) => (b.sf || 0) - (a.sf || 0));
 
-  const cortos = enMarcha.filter(p => p.horas < thrS);
-  const medios = enMarcha.filter(p => p.horas >= thrS && p.horas < thrM);
-  const largos = enMarcha.filter(p => p.horas >= thrM);
+  const allCortos = sorted.filter(p => p.horas < thrS);
+  const allMedios = sorted.filter(p => p.horas >= thrS && p.horas < thrM);
+  const allLargos = sorted.filter(p => p.horas >= thrM);
+
+  // "En marcha" = top N by score according to team capacity
+  const inMarcha = {
+    corto: allCortos.slice(0, cap.corto),
+    medio: allMedios.slice(0, cap.medio),
+    largo: allLargos.slice(0, cap.largo),
+  };
+  // "Próximos" = next in queue after capacity
+  const proximos = {
+    corto: allCortos.slice(cap.corto, cap.corto + 3),
+    medio: allMedios.slice(cap.medio, cap.medio + 3),
+    largo: allLargos.slice(cap.largo, cap.largo + 3),
+  };
 
   const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  setTxt('sprint-corto-count', cortos.length);
-  setTxt('sprint-medio-count', medios.length);
-  setTxt('sprint-largo-count', largos.length);
+  setTxt('sprint-corto-count', `${inMarcha.corto.length}/${cap.corto}`);
+  setTxt('sprint-medio-count', `${inMarcha.medio.length}/${cap.medio}`);
+  setTxt('sprint-largo-count', `${inMarcha.largo.length}/${cap.largo}`);
 
-  const renderCol = (projects) => {
-    if (!projects.length) return '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
-    return projects.map(p => {
-      const cl = clsf(p.sf || 0);
-      return `
-        <div style="padding:10px 12px;background:#fff;border-radius:8px;border:1px solid var(--b);cursor:pointer"
-          onclick="openProjectEdit(portfolioData.indexOf(p))">
-          <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nom}">
-            ${p.nom}
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:9px;color:var(--ink3)">${p.area || '—'}</span>
-            <span style="font-size:13px;font-weight:900;color:${scColorHex(p.sf || 0)};font-family:'Playfair Display',serif">
-              ${(p.sf || 0).toFixed(1)}
-            </span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-top:4px">
-            <span style="font-size:8px;padding:2px 6px;border-radius:20px;background:${cl.bg || 'var(--surf)'};color:${cl.c || 'var(--ink3)'}">
-              ${cl.et || '—'}
-            </span>
-            <span style="font-size:9px;color:var(--ink3)">
-              ${p.horas != null ? p.horas + 'h' : '—'}
-            </span>
-          </div>
+  const renderCard = (p, isActive) => {
+    const cl = clsf(p.sf || 0);
+    const border = isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)';
+    const opacity = isActive ? '1' : '0.65';
+    const tag = isActive
+      ? '<span style="font-size:8px;background:var(--d3);color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">EN MARCHA</span>'
+      : '<span style="font-size:8px;background:var(--surf);color:var(--ink4);padding:2px 6px;border-radius:20px">PRÓXIMO</span>';
+    return `
+      <div style="padding:10px 12px;background:#fff;border-radius:8px;border:${border};
+        cursor:pointer;opacity:${opacity};margin-bottom:6px"
+        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))"
+        title="${p.nom}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          ${tag}
+          <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif">
+            ${(p.sf||0).toFixed(1)}
+          </span>
         </div>
-      `;
-    }).join('');
+        <div style="font-size:10px;font-weight:700;color:var(--ink);
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">
+          ${p.nom}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:9px;color:var(--ink3)">${p.area||'—'}</span>
+          <span style="font-size:8px;padding:2px 6px;border-radius:20px;
+            background:${cl.bg||'var(--surf)'};color:${cl.c||'var(--ink3)'}">${cl.et||'—'}</span>
+          <span style="font-size:9px;color:var(--ink3)">${p.horas}h</span>
+        </div>
+      </div>`;
+  };
+
+  const renderCol = (active, next, capN) => {
+    if (!active.length && !next.length) {
+      return '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
+    }
+    const slots = Array(Math.max(capN, active.length)).fill(null).map((_, i) => {
+      if (i < active.length) return renderCard(active[i], true);
+      return `<div style="padding:10px 12px;border:1px dashed var(--b2);border-radius:8px;
+        text-align:center;font-size:9px;color:var(--ink4);opacity:0.4">Hueco libre</div>`;
+    });
+    const nextCards = next.map(p => renderCard(p, false));
+    const sep = nextCards.length
+      ? '<div style="font-size:8px;color:var(--ink4);text-align:center;margin:8px 0;letter-spacing:.1em;text-transform:uppercase">· próximos ·</div>'
+      : '';
+    return slots.join('') + sep + nextCards.join('');
   };
 
   const setHTML = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-  setHTML('sprint-col-corto', renderCol(cortos));
-  setHTML('sprint-col-medio', renderCol(medios));
-  setHTML('sprint-col-largo', renderCol(largos));
+  setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, cap.corto));
+  setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, cap.medio));
+  setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, cap.largo));
 }
 
 /* ── Projects screen update ─────────────────────────────────── */
