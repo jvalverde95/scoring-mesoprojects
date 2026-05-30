@@ -437,47 +437,127 @@
 
     <!-- STEP: CHARTS -->
     <div class="step" id="step-charts">
-      <div class="s-title">gráficas de cartera</div>
-      <div class="s-sub">Visualización y posicionamiento estratégico de los proyectos cargados</div>
-      <div id="charts-step-empty" style="padding:40px;text-align:center;color:var(--ink4);background:var(--w);border:1px solid var(--b);border-radius:var(--rl)">
-        <div style="font-size:32px;margin-bottom:12px">📊</div>
-        <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px">Sin datos de cartera</div>
-        <div style="font-size:12px">Carga un Excel de proyectos desde el resumen para ver las gráficas</div>
-        <button class="cfg-apply" style="margin-top:16px" onclick="goStep('summary')">Ir a cargar Excel →</button>
+
+  <!-- Header + KPI strip -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div class="s-title" style="margin:0">📊 Análisis de cartera</div>
+      <div class="s-sub" style="margin:4px 0 0" id="charts-subtitle">Carga proyectos para ver el análisis</div>
+    </div>
+    <div id="charts-kpi-row" style="display:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-width:380px">
+      <div style="background:var(--surf);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid var(--b)">
+        <div id="ck-avg" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--ink)">—</div>
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Score medio</div>
       </div>
-      <div id="charts-step-content" style="display:none">
-        <div class="chart-panel">
-          <div class="chart-tabs" style="padding:10px 18px">
-            <button class="ctab on" onclick="switchChart('bubble',this)">Valor vs Riesgo</button>
-            <button class="ctab" onclick="switchChart('bars',this)">Ranking</button>
-            <button class="ctab" onclick="switchChart('dept',this)">Por Área</button>
-            <button class="ctab" onclick="switchChart('scatter',this)">Esfuerzo vs Impacto</button>
-            <button class="ctab" onclick="switchChart('heat',this)">Mapa D1×D2</button>
-            <button class="ctab" onclick="switchChart('quad',this)">Cuadrante</button>
-          </div>
-          <div class="chart-body">
-            <div class="csec on" id="chart2-bubble"><div class="chart-note">X=D3 Valor · Y=D1 Compliance · Tamaño=D2 · Color=clasificación</div><div style="position:relative;height:440px"><canvas id="c2-bubble"></canvas></div></div>
-            <div class="csec" id="chart2-bars"><div class="chart-note">Top 30 proyectos por score final</div><div style="position:relative;height:520px"><canvas id="c2-bars"></canvas></div></div>
-            <div class="csec" id="chart2-dept"><div class="chart-note">Score medio por área · línea = número de proyectos</div><div style="position:relative;height:360px"><canvas id="c2-dept"></canvas></div></div>
-            <div class="csec" id="chart2-scatter"><div class="chart-note">X=D5 Facilidad · Y=D3 Valor · Tamaño=D1 — superior derecho = quick wins</div><div style="position:relative;height:440px"><canvas id="c2-scatter"></canvas></div></div>
-            <div class="csec" id="chart2-heat"><div class="chart-note">Compliance (D1) × Estrategia (D2)</div><div style="position:relative;height:440px"><canvas id="c2-heat"></canvas></div></div>
-            <div class="csec" id="chart2-quad">
-              <div class="chart-note">X=D3 ROI · Y=D2 Urgencia · Tamaño=D1</div>
-              <div style="position:relative;height:400px"><canvas id="c2-quad"></canvas></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;font-size:10px">
-                <div style="padding:8px 11px;background:var(--s1t);border-radius:6px;border:1px solid rgba(10,82,40,.12)"><div style="font-weight:700;color:var(--s1c)">↗ invertir ahora</div><div style="color:var(--s1c);font-size:9px;opacity:.7;margin-top:1px">Alto valor + Alta urgencia</div></div>
-                <div style="padding:8px 11px;background:var(--s2t);border-radius:6px;border:1px solid rgba(26,58,110,.12)"><div style="font-weight:700;color:var(--s2c)">→ planificar</div><div style="color:var(--s2c);font-size:9px;opacity:.7;margin-top:1px">Alto valor + Baja urgencia</div></div>
-                <div style="padding:8px 11px;background:var(--d1t);border-radius:6px;border:1px solid rgba(204,31,38,.12)"><div style="font-weight:700;color:var(--d1)">↑ resolver primero</div><div style="color:var(--d1);font-size:9px;opacity:.7;margin-top:1px">Bajo valor + Alta urgencia</div></div>
-                <div style="padding:8px 11px;background:var(--s4t);border-radius:6px;border:1px solid rgba(58,66,72,.12)"><div style="font-weight:700;color:var(--s4c)">↓ backlog</div><div style="color:var(--s4c);font-size:9px;opacity:.7;margin-top:1px">Bajo valor + Baja urgencia</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div style="background:var(--d1t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(204,31,38,.15)">
+        <div id="ck-prio" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d1)">0</div>
+        <div style="font-size:9px;color:var(--d1);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Prioritarios</div>
+      </div>
+      <div style="background:var(--d3t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(8,123,80,.15)">
+        <div id="ck-est" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d3)">0</div>
+        <div style="font-size:9px;color:var(--d3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Con horas</div>
+      </div>
+      <div style="background:var(--d4t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(192,120,0,.15)">
+        <div id="ck-noest" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d4)">0</div>
+        <div style="font-size:9px;color:var(--d4);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Sin estimar</div>
       </div>
     </div>
+  </div>
 
-    <!-- STEP: POOLS -->
-    <div class="step" id="step-pools">
+  <!-- Empty state -->
+  <div id="charts-step-empty" style="padding:40px;text-align:center;color:var(--ink4);background:var(--surf);border:1px solid var(--b);border-radius:12px">
+    <div style="font-size:32px;margin-bottom:12px">📊</div>
+    <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px">Sin datos de cartera</div>
+    <div style="font-size:12px">Carga proyectos desde la pantalla Proyectos o vía Azure DevOps</div>
+    <button class="cfg-apply" style="margin-top:16px" onclick="goStep('projects')">Ir a Proyectos →</button>
+  </div>
+
+  <!-- Content -->
+  <div id="charts-step-content" style="display:none">
+
+    <!-- Tab navigation -->
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b)">
+      <button class="ctab on" onclick="switchChart('ranking',this)">Ranking</button>
+      <button class="ctab" onclick="switchChart('dims',this)">Perfil dimensional</button>
+      <button class="ctab" onclick="switchChart('quad',this)">Cuadrante</button>
+      <button class="ctab" onclick="switchChart('areas',this)">Por área</button>
+      <button class="ctab" onclick="switchChart('dist',this)">Distribución</button>
+      <button class="ctab" onclick="switchChart('matrix',this)">Matriz D1×D2</button>
+      <button class="ctab" onclick="switchChart('aging',this)">Aging</button>
+      <button class="ctab" onclick="switchChart('gaps',this)">Gaps</button>
+    </div>
+
+    <!-- ── RANKING ── -->
+    <div class="csec on" id="chart2-ranking">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Top proyectos por score · barra apilada = contribución por dimensión</div>
+      <div id="ch-ranking-list" style="display:flex;flex-direction:column;gap:5px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--b)">
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#CC1F26"></span>D1 Compliance</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#C4974A"></span>D2 Estrategia</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#087B50"></span>D3 ROI</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#C07800"></span>D4 Técnica</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#1848A0"></span>D5 Implant.</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:9px"><span style="width:8px;height:8px;border-radius:1px;background:#5C6570"></span>D6 Personas</span>
+      </div>
+      <div id="ch-ranking-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── PERFIL DIMENSIONAL ── -->
+    <div class="csec" id="chart2-dims">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Score medio de toda la cartera por dimensión · umbral recomendado: 6.0</div>
+      <div id="ch-dims-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div id="ch-dims-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── CUADRANTE ── -->
+    <div class="csec" id="chart2-quad">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:8px">D3 ROI (eje X) × D2 Estrategia (eje Y) · tamaño = D1 Compliance</div>
+      <div style="position:relative;height:420px"><canvas id="c2-quad" role="img" aria-label="Gráfico de cuadrante con proyectos posicionados por ROI y urgencia estratégica"></canvas></div>
+      <div id="ch-quad-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── POR ÁREA ── -->
+    <div class="csec" id="chart2-areas">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Score medio por área · proyectos entre paréntesis</div>
+      <div id="ch-areas-table"></div>
+      <div id="ch-areas-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── DISTRIBUCIÓN ── -->
+    <div class="csec" id="chart2-dist">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Número de proyectos por clasificación</div>
+      <div id="ch-dist-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="ch-dist-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── MATRIZ D1×D2 ── -->
+    <div class="csec" id="chart2-matrix">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:12px">Compliance D1 × Estrategia D2 — identifica proyectos regulatorios sin alineación estratégica</div>
+      <div id="ch-matrix-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+      <div id="ch-matrix-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── AGING ── -->
+    <div class="csec" id="chart2-aging">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Impacto del factor aging · proyectos que ganarán clasificación por antigüedad</div>
+      <div id="ch-aging-table"></div>
+      <div style="margin-top:12px;font-size:10px;color:var(--ink3)">Proyectos que cambiarán de clasificación en los próximos 90 días:</div>
+      <div id="ch-aging-soon" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+      <div id="ch-aging-insight" class="chart-insight"></div>
+    </div>
+
+    <!-- ── GAPS ── -->
+    <div class="csec" id="chart2-gaps">
+      <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Varianza por criterio — dónde el equipo evalúa de forma más inconsistente</div>
+      <div id="ch-gaps-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="ch-gaps-insight" class="chart-insight"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="step" id="step-pools">
       <!-- Toolbar -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
         <div>
