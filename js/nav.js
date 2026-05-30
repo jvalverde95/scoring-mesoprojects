@@ -1,13 +1,13 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki'];
 
 function goStep(t) {
   // Track where we're coming FROM (needed to detect manual eval → summary)
   previousStep = currentStep;
 
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -17,7 +17,7 @@ function goStep(t) {
     n.classList.toggle('active', !isSpecial && i+1 === idx);
     n.classList.toggle('done',   !isSpecial && typeof idx==='number' && i+1 < idx);
   });
-  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint','nav-dashboard'].forEach(id => {
+  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint','nav-dashboard','nav-wiki'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -45,6 +45,7 @@ function goStep(t) {
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
     if (t === 'sprint')     { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
+    if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');

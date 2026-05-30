@@ -291,80 +291,75 @@ function renderDashboard() {
 
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
   const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
-
-  const total      = portfolioData.length;
-  const scored     = portfolioData.filter(p => p.sf > 0).length;
-  const estimated  = portfolioData.filter(p => p.horas != null).length;
-  const unestimated= total - estimated;
-  const priority   = portfolioData.filter(p => {
-    const cl = clsf(p.sf || 0);
-    return cl.et === 'PRIORITARIO' || p.autoP;
+  const total       = portfolioData.length;
+  const scored      = portfolioData.filter(p => (p.sf||0) > 0).length;
+  const estimated   = portfolioData.filter(p => p.horas != null).length;
+  const unestimated = total - estimated;
+  const priority    = portfolioData.filter(p => {
+    const cl = clsf(p.sf||0);
+    return cl.et==='PRIORITARIO ESTRATÉGICO'||cl.et==='PRIORITARIO ESTRATÉGICO (D1)'||p.autoP;
   }).length;
-  const avgScore   = total > 0
-    ? (portfolioData.reduce((s, p) => s + (p.sf || 0), 0) / total).toFixed(1)
-    : '—';
-  const totalHours = portfolioData
-    .filter(p => p.horas != null)
-    .reduce((s, p) => s + (p.horas || 0), 0);
+  const avgScore = total > 0
+    ? (portfolioData.reduce((s,p)=>s+(p.sf||0),0)/total).toFixed(1) : '—';
+  const thrSn = thrS, thrMn = thrM;
+  const allCortos = portfolioData.filter(p=>p.horas!=null&&p.horas<thrSn).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const allMedios = portfolioData.filter(p=>p.horas!=null&&p.horas>=thrSn&&p.horas<thrMn).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const allLargos = portfolioData.filter(p=>p.horas!=null&&p.horas>=thrMn).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const cap       = getDevCapacity();
+  const inMarcha  = allCortos.slice(0,cap.corto).length + allMedios.slice(0,cap.medio).length + allLargos.slice(0,cap.largo).length;
+  const capTotal  = cap.corto + cap.medio + cap.largo;
+  const nNone=unestimated, nS=allCortos.length, nM=allMedios.length, nL=allLargos.length;
+  const maxPool=Math.max(nNone,nS,nM,nL,1);
+  const totalHours=portfolioData.filter(p=>p.horas!=null).reduce((s,p)=>s+(p.horas||0),0);
+  const hCorto=allCortos.reduce((s,p)=>s+(p.horas||0),0);
+  const hMedio=allMedios.reduce((s,p)=>s+(p.horas||0),0);
+  const hLargo=allLargos.reduce((s,p)=>s+(p.horas||0),0);
 
-  // En marcha count
-  const cap = getDevCapacity();
-  const allCortos = portfolioData.filter(p => p.horas != null && p.horas < thrS).sort((a,b)=>(b.sf||0)-(a.sf||0));
-  const allMedios = portfolioData.filter(p => p.horas != null && p.horas >= thrS && p.horas < thrM).sort((a,b)=>(b.sf||0)-(a.sf||0));
-  const allLargos = portfolioData.filter(p => p.horas != null && p.horas >= thrM).sort((a,b)=>(b.sf||0)-(a.sf||0));
-  const inMarcha  = allCortos.slice(0, cap.corto).length
-                  + allMedios.slice(0, cap.medio).length
-                  + allLargos.slice(0, cap.largo).length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const setW=(id,pct)=>{const e=document.getElementById(id);if(e)e.style.width=Math.min(120,Math.round(pct))+'px';};
 
-  // Pool counts
-  const nNone = unestimated;
-  const nS    = allCortos.length;
-  const nM    = allMedios.length;
-  const nL    = allLargos.length;
-  const maxPool = Math.max(nNone, nS, nM, nL, 1);
-
-  const set  = (id, v)  => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  const setW = (id, pct)=> { const e = document.getElementById(id); if (e) e.style.width = Math.round(pct) + '%'; };
-  const setS = (id, bg, c) => {
-    const e = document.getElementById(id);
-    if (e) { e.style.background = bg; e.style.color = c; }
-  };
-
-  // KPI values
-  set('kpi-total',       total);
-  set('kpi-scored',      scored);
-  set('kpi-estimated',   estimated);
+  set('kpi-total', total);
+  set('kpi-scored', scored);
+  const pct = total > 0 ? Math.round(scored/total*100)+'%' : '0%';
+  set('kpi-scored-pct', pct);
   set('kpi-unestimated', unestimated);
-  set('kpi-priority',    priority);
-  set('kpi-avg-score',   avgScore);
-  set('kpi-sprint',      inMarcha);
-  set('kpi-total-hours', totalHours > 0 ? totalHours + 'h' : '—');
+  set('kpi-priority', priority);
+  set('kpi-avg-score', avgScore);
+  set('kpi-sprint', inMarcha);
+  set('kpi-sprint-cap', 'cap: '+capTotal);
+  set('kpi-total-hours', totalHours > 0 ? totalHours.toLocaleString('es-ES') + 'h' : '—');
+  set('dash-h-corto', hCorto+'h cortos');
+  set('dash-h-medio', hMedio+'h medios');
+  set('dash-h-largo', hLargo+'h largos');
 
-  // Pool bars (relative width)
-  set('pool-n-none', nNone); setW('pool-bar-none', (nNone / maxPool) * 140);
-  set('pool-n-s',    nS);    setW('pool-bar-s',    (nS    / maxPool) * 140);
-  set('pool-n-m',    nM);    setW('pool-bar-m',    (nM    / maxPool) * 140);
-  set('pool-n-l',    nL);    setW('pool-bar-l',    (nL    / maxPool) * 140);
+  // Score ring
+  const ring = document.getElementById('kpi-score-ring');
+  if (ring && avgScore !== '—') {
+    const pctRing = parseFloat(avgScore)/10;
+    const circ = 2*Math.PI*14;
+    ring.setAttribute('stroke-dasharray', (circ*pctRing).toFixed(1)+' '+circ.toFixed(1));
+    ring.setAttribute('stroke', parseFloat(avgScore)>=7?'var(--d3)':parseFloat(avgScore)>=5?'#C07800':'var(--d1)');
+  }
+
+  set('pool-n-none', nNone); setW('pool-bar-none', nNone/maxPool*120);
+  set('pool-n-s',    nS);    setW('pool-bar-s',    nS/maxPool*120);
+  set('pool-n-m',    nM);    setW('pool-bar-m',    nM/maxPool*120);
+  set('pool-n-l',    nL);    setW('pool-bar-l',    nL/maxPool*120);
 
   // Top 5
   const top5El = document.getElementById('dash-top5');
   if (top5El) {
     if (!total) {
-      top5El.innerHTML = '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:16px 0">Sin proyectos</div>';
+      top5El.innerHTML='<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
     } else {
-      const top5 = [...portfolioData].sort((a, b) => (b.sf || 0) - (a.sf || 0)).slice(0, 5);
-      top5El.innerHTML = top5.map((p, i) => {
-        const cl = clsf(p.sf || 0);
-        return `
-          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;
-            border-bottom:1px solid var(--b2);cursor:pointer"
-            onclick="goStep('summary')">
-            <div style="font-size:11px;font-weight:700;color:var(--ink4);width:16px;flex-shrink:0">${i + 1}</div>
-            <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);
-              white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nom}</div>
-            <div style="font-size:12px;font-weight:900;color:${scColorHex(p.sf || 0)};
-              font-family:'Playfair Display',serif;flex-shrink:0">${(p.sf || 0).toFixed(1)}</div>
-          </div>`;
+      const top5=[...portfolioData].sort((a,b)=>(b.sf||0)-(a.sf||0)).slice(0,5);
+      top5El.innerHTML=top5.map((p,i)=>{
+        const c=(p.sf||0)>=8?'#087B50':(p.sf||0)>=6.5?'#C07800':'#CC1F26';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--b);cursor:pointer" onclick="goStep('summary')">
+          <div style="font-size:11px;font-weight:700;color:var(--ink4);width:16px;flex-shrink:0">${i+1}</div>
+          <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nom}</div>
+          <div style="font-size:13px;font-weight:900;color:${c};font-family:'Playfair Display',serif">${(p.sf||0).toFixed(1)}</div>
+        </div>`;
       }).join('');
     }
   }
@@ -372,45 +367,64 @@ function renderDashboard() {
   // Classification breakdown
   const clsEl = document.getElementById('dash-cls-breakdown');
   if (clsEl && total) {
-    const clsMap = {};
-    portfolioData.forEach(p => {
-      const key = p.autoP ? 'AUTO-PRIORITARIO' : (clsf(p.sf || 0).et || 'Sin clasificar');
-      clsMap[key] = (clsMap[key] || 0) + 1;
-    });
-    clsEl.innerHTML = Object.entries(clsMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([cls, n]) => {
-        const cl = ['PRIORITARIO','AUTO-PRIORITARIO'].includes(cls) ? {bg:'var(--d1t)',c:'var(--d1)'}
-          : cls === 'ALTA PRIORIDAD' ? {bg:'var(--d2t)',c:'var(--d2)'}
-          : cls === 'PRIORIDAD MEDIA' ? {bg:'var(--d3t)',c:'var(--d3)'}
-          : {bg:'var(--surf)',c:'var(--ink3)'};
-        return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${cl.bg};color:${cl.c};font-weight:700">${cls}</span>
-          <span style="font-size:11px;font-weight:700;color:var(--ink)">${n}</span>
-        </div>`;
-      }).join('');
-  } else if (clsEl) {
-    clsEl.innerHTML = '<div style="font-size:10px;color:var(--ink4)">Sin proyectos</div>';
+    const clsMap={};
+    portfolioData.forEach(p=>{const k=p.autoP?'AUTO-PRIO':clsf(p.sf||0).et;clsMap[k]=(clsMap[k]||0)+1;});
+    const maxN=Math.max(...Object.values(clsMap),1);
+    const CLS_CLR={'PRIORITARIO ESTRATÉGICO':'#087B50','PRIORITARIO ESTRATÉGICO (D1)':'#CC1F26','AUTO-PRIO':'#CC1F26','ALTA PRIORIDAD':'#1848A0','PRIORIDAD MEDIA':'#C07800','BAJA PRIORIDAD':'#5C6570','DESCARTAR / REPLANTEAR':'#B4B2A9'};
+    clsEl.innerHTML=Object.entries(clsMap).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-size:9px;color:${CLS_CLR[k]||'#888'};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k}</div>
+        <div style="height:4px;border-radius:2px;background:${CLS_CLR[k]||'#888'};opacity:.8;width:${Math.round(n/maxN*50)}px"></div>
+        <div style="font-size:10px;font-weight:700;color:var(--ink);min-width:16px;text-align:right">${n}</div>
+      </div>`).join('');
   }
 
   // System status
-  const adoConnected = typeof _adoConnected !== 'undefined' && _adoConnected;
-  const dvConnected  = typeof _dvCfg !== 'undefined' && _dvCfg.url && _dvCfg.tenant;
-  const teamCount    = typeof devTeam !== 'undefined' ? devTeam.length : 0;
-
-  const setBadge = (id, ok, text) => {
-    const e = document.getElementById(id);
-    if (!e) return;
-    e.textContent   = text;
-    e.style.background = ok ? 'var(--d3t)' : 'var(--surf)';
-    e.style.color      = ok ? 'var(--d3)' : 'var(--ink4)';
+  const adoOk = typeof _adoConnected!=='undefined' && _adoConnected;
+  const dvOk  = typeof _dvCfg!=='undefined' && _dvCfg.url && _dvCfg.tenant;
+  const teamN = typeof devTeam!=='undefined' ? devTeam.length : 0;
+  const setBadge=(id,ok,text)=>{
+    const e=document.getElementById(id); if(!e) return;
+    e.textContent=text;
+    e.style.background=ok?'var(--d3t)':'var(--surf)';
+    e.style.color=ok?'var(--d3)':'var(--ink4)';
+    e.style.borderColor=ok?'rgba(8,123,80,.2)':'var(--b)';
   };
+  setBadge('dash-ado-status', adoOk, adoOk?'✓ conectado':'sin conectar');
+  setBadge('dash-dv-status',  !!dvOk, dvOk?'✓ conectado':'sin conectar');
+  setBadge('dash-team-status', teamN>0, teamN>0?teamN+' miembro'+(teamN>1?'s':''):'no config.');
 
-  setBadge('dash-ado-status', adoConnected, adoConnected ? '✓ Conectado' : 'No conectado');
-  setBadge('dash-dv-status',  !!dvConnected, dvConnected ? '✓ Conectado' : 'No conectado');
-  setBadge('dash-team-status', teamCount > 0, teamCount > 0 ? `${teamCount} miembro${teamCount > 1 ? 's' : ''}` : '—');
+  // Last sync
+  set('dash-last-sync', total>0?'Portfolio · actualizado '+new Date().toLocaleTimeString('es-ES'):'Portfolio · sin datos');
 
-  // Last sync time
-  const syncEl = document.getElementById('dash-last-sync');
-  if (syncEl) syncEl.textContent = total > 0 ? `Última actualización: ${new Date().toLocaleTimeString('es-ES')}` : '';
+  // Alerts
+  const alerts=[];
+  if (unestimated>0) alerts.push(`${unestimated} proyecto${unestimated>1?'s':''} sin horas estimadas — asígnalas en la pantalla Pools`);
+  if (!adoOk && !dvOk) alerts.push('Azure DevOps y Dataverse no conectados — configura las credenciales en ⚙ Config');
+  if (scored<total*0.5 && total>5) alerts.push(`Solo el ${Math.round(scored/total*100)}% de los proyectos está puntuado — usa Evaluar para puntuar el resto`);
+  const alertsEl=document.getElementById('dash-alerts');
+  const alertsList=document.getElementById('dash-alerts-list');
+  if (alertsEl && alertsList) {
+    if (alerts.length) {
+      alertsEl.style.display='block';
+      alertsList.innerHTML=alerts.map(a=>`<div style="font-size:10px;color:#C07800;display:flex;align-items:flex-start;gap:6px"><span style="flex-shrink:0">·</span>${a}</div>`).join('');
+    } else {
+      alertsEl.style.display='none';
+    }
+  }
+}
+
+/* ── Wiki: update threshold values from config ──────────────── */
+function renderWikiThresholds() {
+  const thrS = document.getElementById('thr-s')?.value || 30;
+  const thrM = document.getElementById('thr-m')?.value || 100;
+  const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  s('wiki-thr-s', thrS); s('wiki-thr-s2b', thrS); s('wiki-thr-m', thrM); s('wiki-thr-m2', thrM);
+  // scoreThr values
+  if (typeof scoreThr !== 'undefined') {
+    s('wiki-thr-s1', scoreThr.s1);
+    s('wiki-thr-s2', scoreThr.s2);
+    s('wiki-thr-s3', scoreThr.s3);
+    s('wiki-thr-s4', scoreThr.s4);
+  }
 }

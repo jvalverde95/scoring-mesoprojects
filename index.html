@@ -338,6 +338,14 @@
       </svg></div>
       <div class="nav-ico-lbl">en marcha</div>
     </div>
+    <div class="nav-ico" id="nav-wiki" onclick="goStep('wiki')" title="Cómo funciona — documentación">
+      <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 2C6.69 2 4 4.69 4 8c0 2.4 1.34 4.48 3.31 5.56L7 16h6l-.31-2.44C14.66 12.48 16 10.4 16 8c0-3.31-2.69-6-6-6z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+        <line x1="8" y1="16" x2="12" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="9" y1="18" x2="11" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg></div>
+      <div class="nav-ico-lbl">wiki</div>
+    </div>
     <div class="nav-ico" id="nav-config" onclick="goStep('config')" title="Configuración">
       <div class="nav-ico-sym"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -1088,153 +1096,176 @@
 <!-- ═══ DASHBOARD ══════════════════════════════════════════════ -->
 <div class="step" id="step-dashboard">
 
-  <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+  <!-- Header row -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <div>
-      <div class="s-title" style="margin:0">📊 Dashboard</div>
-      <div class="s-sub" style="margin:4px 0 0">Resumen del estado del portfolio · actualizado en tiempo real</div>
+      <div class="s-title" style="margin:0;font-size:20px">Inicio</div>
+      <div class="s-sub" style="margin:3px 0 0" id="dash-last-sync">Portfolio · actualizado ahora</div>
     </div>
-    <div id="dash-last-sync" style="font-size:9px;color:var(--ink4)">—</div>
-  </div>
-
-  <!-- KPI row 1: Portfolio health -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0">
-      <div id="kpi-total" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--ink)">0</div>
-      <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Proyectos totales</div>
-    </div>
-
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0;background:var(--d3t)">
-      <div id="kpi-scored" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--d3)">0</div>
-      <div style="font-size:9px;color:var(--d3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Puntuados</div>
-    </div>
-
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0;background:var(--d5t)">
-      <div id="kpi-estimated" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--d5)">0</div>
-      <div style="font-size:9px;color:var(--d5);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Con horas</div>
-    </div>
-
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0;background:var(--d4t)">
-      <div id="kpi-unestimated" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--d4)">0</div>
-      <div style="font-size:9px;color:var(--d4);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Sin estimar</div>
+    <div style="display:flex;gap:8px">
+      <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('projects')">+ Cargar proyectos</button>
+      <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('eval')">⚡ Evaluar</button>
+      <button class="cfg-apply" style="font-size:9px;padding:5px 12px;background:var(--d3)" onclick="goStep('sprint')">🚀 Ver en marcha</button>
     </div>
   </div>
 
-  <!-- KPI row 2: Scoring -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+  <!-- KPI grid 3x3 -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
 
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0;background:var(--d1t)">
-      <div id="kpi-priority" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--d1)">0</div>
-      <div style="font-size:9px;color:var(--d1);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Prioritarios</div>
+    <!-- Total -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📂</div>
+      <div>
+        <div id="kpi-total" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Proyectos totales</div>
+      </div>
     </div>
 
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0">
-      <div id="kpi-avg-score" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--ink)">—</div>
-      <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Score medio</div>
+    <!-- Puntuados -->
+    <div style="background:var(--d3t);border:1px solid rgba(8,123,80,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(8,123,80,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✓</div>
+      <div>
+        <div id="kpi-scored" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d3);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Puntuados</div>
+      </div>
+      <div id="kpi-scored-pct" style="margin-left:auto;font-size:11px;color:var(--d3);font-weight:700">0%</div>
     </div>
 
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0;background:var(--d3t)">
-      <div id="kpi-sprint" style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--d3)">0</div>
-      <div style="font-size:9px;color:var(--d3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">En marcha</div>
+    <!-- Sin estimar -->
+    <div style="background:var(--d4t);border:1px solid rgba(192,120,0,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(192,120,0,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⏱</div>
+      <div>
+        <div id="kpi-unestimated" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d4);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d4);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Sin estimar</div>
+      </div>
     </div>
 
-    <div class="cfg-section" style="text-align:center;padding:16px 12px;margin:0">
-      <div id="kpi-total-hours" style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--ink)">—</div>
-      <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px">Horas estimadas</div>
+    <!-- Prioritarios -->
+    <div style="background:var(--d1t);border:1px solid rgba(204,31,38,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(204,31,38,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⚑</div>
+      <div>
+        <div id="kpi-priority" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d1);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d1);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Prioritarios</div>
+      </div>
+    </div>
+
+    <!-- Score medio -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">◎</div>
+      <div style="flex:1">
+        <div id="kpi-avg-score" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink);line-height:1">—</div>
+        <div style="font-size:9px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Score medio</div>
+      </div>
+      <div style="width:32px;height:32px;position:relative;flex-shrink:0">
+        <svg viewBox="0 0 36 36" style="width:32px;height:32px;transform:rotate(-90deg)">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--b)" stroke-width="3"/>
+          <circle id="kpi-score-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--d3)" stroke-width="3" stroke-dasharray="0 88" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- En marcha -->
+    <div style="background:#EEF3FC;border:1px solid rgba(26,58,95,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(26,58,95,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</div>
+      <div>
+        <div id="kpi-sprint" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:#1848A0;line-height:1">0</div>
+        <div style="font-size:9px;color:#1848A0;letter-spacing:.1em;text-transform:uppercase;margin-top:2px">En marcha</div>
+      </div>
+      <div id="kpi-sprint-cap" style="margin-left:auto;font-size:9px;color:#1848A0;font-weight:600;text-align:right">cap: 0</div>
     </div>
   </div>
 
-  <!-- Middle row: Pool breakdown + Top 5 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <!-- Middle: Pool bars + Top5 + Horas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
 
     <!-- Pool breakdown -->
-    <div class="cfg-section" style="margin:0">
-      <div class="cfg-sec-title">Distribución por pool</div>
-      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:10px;height:10px;border-radius:50%;background:var(--d1);flex-shrink:0"></div>
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Pools</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d4);flex-shrink:0"></div>
           <div style="font-size:10px;color:var(--ink3);flex:1">Sin estimar</div>
-          <div id="pool-bar-none" style="height:6px;border-radius:3px;background:var(--d1);min-width:4px;transition:width .3s;width:0%"></div>
-          <div id="pool-n-none" style="font-size:11px;font-weight:700;color:var(--ink);min-width:24px;text-align:right">0</div>
+          <div id="pool-bar-none" style="height:5px;border-radius:3px;background:var(--d4);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-none" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:10px;height:10px;border-radius:50%;background:var(--d3);flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d3);flex-shrink:0"></div>
           <div style="font-size:10px;color:var(--ink3);flex:1">Corto</div>
-          <div id="pool-bar-s" style="height:6px;border-radius:3px;background:var(--d3);min-width:4px;transition:width .3s;width:0%"></div>
-          <div id="pool-n-s" style="font-size:11px;font-weight:700;color:var(--ink);min-width:24px;text-align:right">0</div>
+          <div id="pool-bar-s" style="height:5px;border-radius:3px;background:var(--d3);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-s" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:10px;height:10px;border-radius:50%;background:var(--d4);flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#C07800;flex-shrink:0"></div>
           <div style="font-size:10px;color:var(--ink3);flex:1">Medio</div>
-          <div id="pool-bar-m" style="height:6px;border-radius:3px;background:var(--d4);min-width:4px;transition:width .3s;width:0%"></div>
-          <div id="pool-n-m" style="font-size:11px;font-weight:700;color:var(--ink);min-width:24px;text-align:right">0</div>
+          <div id="pool-bar-m" style="height:5px;border-radius:3px;background:#C07800;transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-m" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:10px;height:10px;border-radius:50%;background:var(--d1);flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d1);flex-shrink:0"></div>
           <div style="font-size:10px;color:var(--ink3);flex:1">Largo</div>
-          <div id="pool-bar-l" style="height:6px;border-radius:3px;background:var(--d1);min-width:4px;transition:width .3s;width:0%"></div>
-          <div id="pool-n-l" style="font-size:11px;font-weight:700;color:var(--ink);min-width:24px;text-align:right">0</div>
+          <div id="pool-bar-l" style="height:5px;border-radius:3px;background:var(--d1);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-l" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
         </div>
+      </div>
+      <!-- Mini bar chart of classifications -->
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--b)">
+        <div style="font-size:9px;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Clasificación</div>
+        <div id="dash-cls-breakdown" style="display:flex;flex-direction:column;gap:4px"></div>
       </div>
     </div>
 
     <!-- Top 5 projects -->
-    <div class="cfg-section" style="margin:0">
-      <div class="cfg-sec-title">Top 5 proyectos</div>
-      <div id="dash-top5" style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:16px 0">
-          Sin proyectos cargados
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Top 5 proyectos</div>
+      <div id="dash-top5" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>
+      </div>
+    </div>
+
+    <!-- System status + horas -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+
+      <!-- Horas totales -->
+      <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;flex:1">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Estimación total</div>
+        <div id="kpi-total-hours" style="font-size:22px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink)">—</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:2px">horas en cartera</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d3t);color:var(--d3)" id="dash-h-corto">—h cortos</span>
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d4t);color:var(--d4)" id="dash-h-medio">—h medios</span>
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d1t);color:var(--d1)" id="dash-h-largo">—h largos</span>
+        </div>
+      </div>
+
+      <!-- System status -->
+      <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;flex:1">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Sistema</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Azure DevOps</span>
+            <span id="dash-ado-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Dataverse</span>
+            <span id="dash-dv-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Equipo</span>
+            <span id="dash-team-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bottom row: Classification + Connection status -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-    <!-- Classification breakdown -->
-    <div class="cfg-section" style="margin:0">
-      <div class="cfg-sec-title">Por clasificación</div>
-      <div id="dash-cls-breakdown" style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:10px;color:var(--ink4)">—</div>
-      </div>
-    </div>
-
-    <!-- System status -->
-    <div class="cfg-section" style="margin:0">
-      <div class="cfg-sec-title">Estado del sistema</div>
-      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10px;color:var(--ink3)">Azure DevOps</span>
-          <span id="dash-ado-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);color:var(--ink4)">No conectado</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10px;color:var(--ink3)">Dataverse</span>
-          <span id="dash-dv-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);color:var(--ink4)">No conectado</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10px;color:var(--ink3)">Equipo</span>
-          <span id="dash-team-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);color:var(--ink4)">—</span>
-        </div>
-      </div>
-      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('projects')">
-          📂 Proyectos
-        </button>
-        <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('eval')">
-          ⚡ Evaluar
-        </button>
-        <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('sprint')">
-          🚀 En marcha
-        </button>
-      </div>
-    </div>
+  <!-- Alerts / Action needed row -->
+  <div id="dash-alerts" style="display:none;background:#FEF9EC;border:1px solid rgba(192,120,0,.2);border-radius:10px;padding:12px 16px">
+    <div style="font-size:10px;font-weight:700;color:#C07800;margin-bottom:6px">⚠ Acciones recomendadas</div>
+    <div id="dash-alerts-list" style="display:flex;flex-direction:column;gap:5px"></div>
   </div>
+
 </div>
 
-
-<!-- ═══ PROJECTS SCREEN ═══════════════════════════════════════ -->
 <div class="step" id="step-projects">
   <div class="s-title">📂 Proyectos</div>
   <div class="s-sub">Carga proyectos desde distintas fuentes para evaluarlos y gestionarlos</div>
@@ -1429,6 +1460,193 @@
 
   </div>
 </div>
+
+<div class="step" id="step-wiki">
+
+  <div class="s-title" style="margin:0 0 4px">📖 Cómo funciona</div>
+  <div class="s-sub" style="margin:0 0 20px">Documentación del sistema de evaluación · algoritmo · pools · carga de trabajo</div>
+
+  <!-- Algorithm section -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Algoritmo de scoring — Sigmoid Boost v3.0</div>
+    <div class="cfg-sec-sub">El score final combina 6 dimensiones con pesos diferenciados, aplicando una función sigmoid por criterio para potenciar valores extremos y añadiendo un factor de antigüedad.</div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:var(--surf);border-radius:8px;padding:12px 14px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:6px">1. Score por criterio (Sigmoid Boost)</div>
+        <div style="font-family:monospace;font-size:11px;color:var(--ink3);line-height:1.8;background:var(--w);padding:8px;border-radius:6px;border:1px solid var(--b)">
+          σ(S) = α₀ / (1 + 2^(−β₀ × (S − C₀)))<br>
+          Score_dim = Σ(P_i × σ(S_i)) / Σ(P_i × σ)
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;line-height:1.6">La función sigmoid amplifica notas altas (8–10) y penaliza notas bajas (1–3), forzando decisiones claras. Cada criterio tiene parámetros C₀, β₀, α₀ propios calibrados por dimensión.</div>
+      </div>
+      <div style="background:var(--surf);border-radius:8px;padding:12px 14px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:6px">2. Score base y factor aging</div>
+        <div style="font-family:monospace;font-size:11px;color:var(--ink3);line-height:1.8;background:var(--w);padding:8px;border-radius:6px;border:1px solid var(--b)">
+          Score_base = Σ(peso_dim × Score_dim)<br>
+          Aging = min(1 + días/365 × 0.15, 1.25)<br>
+          Score_final = min(Score_base × Aging, 10)
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:6px;line-height:1.6">El aging penaliza proyectos que llevan tiempo en cartera sin ejecutarse. Máximo boost del 25% tras ~1.67 años. El score final nunca supera 10.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 Dimensions -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Las 6 dimensiones</div>
+    <div class="cfg-sec-sub">Cada dimensión evalúa un aspecto diferente del proyecto. Los pesos son configurables desde ⚙ Config.</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="border-left:3px solid #CC1F26;border-radius:0 6px 6px 0;padding:10px 12px;background:var(--d1t)">
+        <div style="font-size:10px;font-weight:700;color:#CC1F26">D1 — Compliance (30%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Legalidad, seguridad laboral, riesgo reputacional, obligación regulatoria. <strong>Si D1 ≥ 8 el proyecto es Auto-prioritario.</strong> El criterio c1_4 se calcula automáticamente desde la fecha límite regulatoria.</div>
+      </div>
+      <div style="border-left:3px solid #C4974A;border-radius:0 6px 6px 0;padding:10px 12px;background:var(--surf)">
+        <div style="font-size:10px;font-weight:700;color:#C4974A">D2 — Estratégico (20%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Mandato del Consejo, expansión internacional, innovación I+D, urgencia estratégica. Alineación con el plan director.</div>
+      </div>
+      <div style="border-left:3px solid #087B50;border-radius:0 6px 6px 0;padding:10px 12px;background:var(--d3t)">
+        <div style="font-size:10px;font-weight:700;color:#087B50">D3 — ROI (20%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Impacto en ingresos, ahorro de eficiencia, payback del ROI, calidad de servicio. Valor económico directo o indirecto.</div>
+      </div>
+      <div style="border-left:3px solid #C07800;border-radius:0 6px 6px 0;padding:10px 12px;background:var(--d4t)">
+        <div style="font-size:10px;font-weight:700;color:#C07800">D4 — Técnica (12%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Madurez TRL, integración con ERP, escalabilidad, ciberseguridad y GDPR. Viabilidad técnica del proyecto.</div>
+      </div>
+      <div style="border-left:3px solid #1848A0;border-radius:0 6px 6px 0;padding:10px 12px;background:#EEF3FC">
+        <div style="font-size:10px;font-weight:700;color:#1848A0">D5 — Implantación (10%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Capacidad interna IT, gestión del cambio, time-to-value. Facilidad de ejecución real por el equipo.</div>
+      </div>
+      <div style="border-left:3px solid #5C6570;border-radius:0 6px 6px 0;padding:10px 12px;background:var(--surf)">
+        <div style="font-size:10px;font-weight:700;color:#5C6570">D6 — Personas / ESG (8%)</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.6">Experiencia empleado, sostenibilidad ESG, formación y cultura digital. Impacto en las personas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classification thresholds -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Clasificación por score final</div>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--d1t);color:var(--d1);font-weight:700;text-align:center">AUTO-PRIORITARIO</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">D1 ≥ 8</span>
+        <span style="font-size:10px;color:var(--ink3)">Independientemente del score final. Obligación legal/regulatoria activa.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s1t);color:var(--s1c);font-weight:700;text-align:center">PRIORITARIO ESTRAT.</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">Score ≥ <span id="wiki-thr-s1">8.0</span></span>
+        <span style="font-size:10px;color:var(--ink3)">Máxima prioridad. Ejecución inmediata.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s2t);color:var(--s2c);font-weight:700;text-align:center">ALTA PRIORIDAD</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">Score ≥ <span id="wiki-thr-s2">6.5</span></span>
+        <span style="font-size:10px;color:var(--ink3)">Planificación a corto plazo. Alto valor o urgencia.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s3t);color:var(--s3c);font-weight:700;text-align:center">PRIORIDAD MEDIA</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">Score ≥ <span id="wiki-thr-s3">5.0</span></span>
+        <span style="font-size:10px;color:var(--ink3)">Backlog activo. Revisar trimestralmente.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--s4t);color:var(--s4c);font-weight:700;text-align:center">BAJA PRIORIDAD</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">Score ≥ <span id="wiki-thr-s4">3.5</span></span>
+        <span style="font-size:10px;color:var(--ink3)">Parking. Replantear o descartar si no mejora.</span>
+      </div>
+      <div style="display:grid;grid-template-columns:160px 80px 1fr;gap:8px;align-items:center">
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--d1t);color:var(--d1);font-weight:700;text-align:center">DESCARTAR</span>
+        <span style="font-size:10px;color:var(--ink3);text-align:center">Score &lt; 3.5</span>
+        <span style="font-size:10px;color:var(--ink3)">Sin valor suficiente en el contexto actual.</span>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--ink4);margin-top:8px">Los umbrales son configurables desde ⚙ Config → Umbrales de clasificación.</div>
+  </div>
+
+  <!-- Pool system -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Sistema de pools (estimación por horas)</div>
+    <div class="cfg-sec-sub">Una vez puntuado, el proyecto se asigna a un pool según las horas estimadas. Los umbrales son configurables.</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+      <div style="text-align:center;padding:12px;background:var(--d4t);border-radius:8px;border:1px solid rgba(192,120,0,.15)">
+        <div style="font-size:18px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d4);margin-bottom:4px">?</div>
+        <div style="font-size:10px;font-weight:700;color:var(--d4)">Sin estimar</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:4px;line-height:1.5">Sin horas asignadas. Pendiente de estimación técnica.</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d3t);border-radius:8px;border:1px solid rgba(8,123,80,.15)">
+        <div style="font-size:18px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d3);margin-bottom:4px">&lt;<span id="wiki-thr-s">30</span>h</div>
+        <div style="font-size:10px;font-weight:700;color:var(--d3)">Corto</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:4px;line-height:1.5">Proyectos rápidos. Candidatos a quick wins cuando tienen score alto.</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d4t);border-radius:8px;border:1px solid rgba(192,120,0,.15)">
+        <div style="font-size:18px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d4);margin-bottom:4px"><span id="wiki-thr-s2b">30</span>–<span id="wiki-thr-m">100</span>h</div>
+        <div style="font-size:10px;font-weight:700;color:var(--d4)">Medio</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:4px;line-height:1.5">Proyectos de alcance moderado. Requieren planificación de sprint.</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--d1t);border-radius:8px;border:1px solid rgba(204,31,38,.15)">
+        <div style="font-size:18px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d1);margin-bottom:4px">&gt;<span id="wiki-thr-m2">100</span>h</div>
+        <div style="font-size:10px;font-weight:700;color:var(--d1)">Largo</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:4px;line-height:1.5">Proyectos grandes. Requieren asignación dedicada de recursos.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sprint / Workload -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Capacidad de trabajo y "En marcha"</div>
+    <div class="cfg-sec-sub">La pantalla "En marcha" selecciona automáticamente los proyectos que debería estar haciendo el equipo ahora mismo.</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">Cómo se calcula:</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--d3t);border:1px solid var(--d3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--d3);flex-shrink:0">1</div>
+            <div style="font-size:10px;color:var(--ink3);line-height:1.6">Configura en ⚙ Config cuántos proyectos Corto/Medio/Largo puede llevar cada desarrollador simultáneamente.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--d3t);border:1px solid var(--d3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--d3);flex-shrink:0">2</div>
+            <div style="font-size:10px;color:var(--ink3);line-height:1.6">La capacidad total del equipo = suma de todos los slots por tamaño.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div style="width:18px;height:18px;border-radius:50%;background:var(--d3t);border:1px solid var(--d3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--d3);flex-shrink:0">3</div>
+            <div style="font-size:10px;color:var(--ink3);line-height:1.6">Se ordenan los proyectos de cada pool por score descendente y se asignan los top-N según la capacidad. Los siguientes aparecen como "Próximos".</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--surf);border-radius:8px;padding:12px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">Ejemplo:</div>
+        <div style="font-size:10px;color:var(--ink3);line-height:1.8">
+          Equipo: 3 devs<br>
+          Dev A: 2 cortos, 1 medio, 0 largos<br>
+          Dev B: 2 cortos, 1 medio, 1 largo<br>
+          Dev C: 1 corto, 0 medios, 1 largo<br>
+          <hr style="border:none;border-top:1px solid var(--b);margin:6px 0">
+          <strong>Capacidad total:</strong> 5 cortos · 2 medios · 2 largos<br>
+          → Los 5 proyectos cortos con mayor score van "En marcha"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data sources -->
+  <div class="cfg-section">
+    <div class="cfg-sec-title">Fuentes de datos e integraciones</div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="padding:10px 12px;background:var(--surf);border-radius:8px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:#0078D4;margin-bottom:4px">☁ Azure DevOps</div>
+        <div style="font-size:10px;color:var(--ink3);line-height:1.6">Importa work items desde una query WIQL. Soporta Requirement, User Story, Task, Bug, Feature. Usa PAT con scope Work Items (Read). Paginación en batches de 200.</div>
+      </div>
+      <div style="padding:10px 12px;background:var(--surf);border-radius:8px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:#742774;margin-bottom:4px">⬡ Microsoft Dataverse</div>
+        <div style="font-size:10px;color:var(--ink3);line-height:1.6">Persistencia en Power Platform. Tabla meso_projectscoring con 22 campos de criterio + dimensiones + clasificación. Auth vía OAuth2 (client credentials). Upsert por meso_auditid.</div>
+      </div>
+      <div style="padding:10px 12px;background:var(--surf);border-radius:8px;border:1px solid var(--b)">
+        <div style="font-size:10px;font-weight:700;color:#087B50;margin-bottom:4px">📊 Excel / Manual</div>
+        <div style="font-size:10px;color:var(--ink3);line-height:1.6">Importa ficheros .xlsx con columnas: nombre, área, sponsor, fecha. También evaluación manual criterio a criterio con el wizard de 6 pasos. Los datos persisten en localStorage (cifrado XOR).</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 
 <div class="step" id="step-summary">
 
