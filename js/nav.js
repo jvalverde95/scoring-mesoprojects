@@ -17,10 +17,15 @@ function goStep(t) {
     n.classList.toggle('active', !isSpecial && i+1 === idx);
     n.classList.toggle('done',   !isSpecial && typeof idx==='number' && i+1 < idx);
   });
-  ['nav-sum','nav-charts','nav-pools','nav-config','nav-projects','nav-eval','nav-sprint','nav-dashboard','nav-wiki'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.remove('active');
-  });
+  // Deactivate all nav items (lnav-item and legacy classes)
+  document.querySelectorAll('.lnav-item, .nav-ico, .nsum').forEach(el => el.classList.remove('active'));
+
+  // 1b. Show/hide wizard steps panel based on step type
+  const wizardPanel = document.getElementById('nav-dots');
+  if (wizardPanel) {
+    const isWizardStep = !isSpecial && typeof idx === 'number';
+    wizardPanel.style.display = isWizardStep ? 'flex' : 'none';
+  }
 
   // 2. Show the correct panel and activate nav
   if (t === 'summary') {
