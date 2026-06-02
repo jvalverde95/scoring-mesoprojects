@@ -20,12 +20,14 @@ function goStep(t) {
   // Deactivate all nav items (lnav-item and legacy classes)
   document.querySelectorAll('.lnav-item, .nav-ico, .nsum').forEach(el => el.classList.remove('active'));
 
-  // 1b. Show/hide wizard steps panel based on step type
+  // 1b. Show/hide wizard steps + .wh header based on step type
   const wizardPanel = document.getElementById('nav-dots');
-  if (wizardPanel) {
-    const isWizardStep = !isSpecial && typeof idx === 'number';
-    wizardPanel.style.display = isWizardStep ? 'flex' : 'none';
-  }
+  const whHeader    = document.querySelector('.wh');
+  const isWizardStep = !isSpecial && typeof idx === 'number';
+  const showWh = isWizardStep || ['summary','charts','pools'].includes(t);
+
+  if (wizardPanel) wizardPanel.style.display = isWizardStep ? 'flex' : 'none';
+  if (whHeader) whHeader.style.display = showWh ? 'flex' : 'none';
 
   // 2. Show the correct panel and activate nav
   if (t === 'summary') {
@@ -119,7 +121,7 @@ function _chartKPIs(p) {
   const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   s('ck-avg',avg); s('ck-prio',prio); s('ck-est',est); s('ck-noest',noEst);
   const krow = document.getElementById('charts-kpi-row');
-  if (krow) krow.style.display = 'grid';
+  if (krow) { krow.style.display = 'flex'; }
   const sub = document.getElementById('charts-subtitle');
   if (sub) sub.textContent = p.length+' proyectos · actualizado ahora';
 }

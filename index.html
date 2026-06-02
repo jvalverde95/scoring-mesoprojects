@@ -349,7 +349,7 @@
 
 
 
-  <div id="main">
+  <div id="main" style="flex:1;min-width:0;overflow-x:hidden;display:flex;flex-direction:column">
     <div class="prog"><div class="prog-f" id="wiz-prog" style="width:0%"></div></div>
 
     <div class="wh">
@@ -439,27 +439,27 @@
     <div class="step" id="step-charts">
 
   <!-- Header + KPI strip -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;min-width:0">
     <div>
       <div class="s-title" style="margin:0">📊 Análisis de cartera</div>
       <div class="s-sub" style="margin:4px 0 0" id="charts-subtitle">Carga proyectos para ver el análisis</div>
     </div>
-    <div id="charts-kpi-row" style="display:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-width:380px">
-      <div style="background:var(--surf);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid var(--b)">
-        <div id="ck-avg" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--ink)">—</div>
-        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Score medio</div>
+    <div id="charts-kpi-row" style="display:none;gap:6px;flex-wrap:wrap">
+      <div style="background:var(--surf);border-radius:8px;padding:8px 12px;text-align:center;border:1px solid var(--b);min-width:80px;flex:1">
+        <div id="ck-avg" style="font-size:18px;font-weight:700;font-family:'Playfair Display',serif;color:var(--ink)">—</div>
+        <div style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Score medio</div>
       </div>
-      <div style="background:var(--d1t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(204,31,38,.15)">
-        <div id="ck-prio" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d1)">0</div>
-        <div style="font-size:9px;color:var(--d1);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Prioritarios</div>
+      <div style="background:var(--d1t);border-radius:8px;padding:8px 12px;text-align:center;border:1px solid rgba(204,31,38,.15);min-width:80px;flex:1">
+        <div id="ck-prio" style="font-size:18px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d1)">0</div>
+        <div style="font-size:8px;color:var(--d1);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Prioritarios</div>
       </div>
-      <div style="background:var(--d3t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(8,123,80,.15)">
-        <div id="ck-est" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d3)">0</div>
-        <div style="font-size:9px;color:var(--d3);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Con horas</div>
+      <div style="background:var(--d3t);border-radius:8px;padding:8px 12px;text-align:center;border:1px solid rgba(8,123,80,.15);min-width:80px;flex:1">
+        <div id="ck-est" style="font-size:18px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d3)">0</div>
+        <div style="font-size:8px;color:var(--d3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Con horas</div>
       </div>
-      <div style="background:var(--d4t);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid rgba(192,120,0,.15)">
-        <div id="ck-noest" style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d4)">0</div>
-        <div style="font-size:9px;color:var(--d4);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">Sin estimar</div>
+      <div style="background:var(--d4t);border-radius:8px;padding:8px 12px;text-align:center;border:1px solid rgba(192,120,0,.15);min-width:80px;flex:1">
+        <div id="ck-noest" style="font-size:18px;font-weight:700;font-family:'Playfair Display',serif;color:var(--d4)">0</div>
+        <div style="font-size:8px;color:var(--d4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px">Sin estimar</div>
       </div>
     </div>
   </div>
@@ -582,7 +582,7 @@
       </div>
 
       <!-- Summary cards: LARGO | MEDIO | CORTO | SIN ESTIMAR -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">
 
         <!-- LARGO (izquierda) -->
         <div style="background:#FEF0F1;border:1.5px solid rgba(204,31,38,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
@@ -651,7 +651,7 @@
 
       <!-- Pool grid: LARGO | MEDIO | CORTO | SIN ESTIMAR (rendered by renderPoolsStep) -->
       <div id="pool-step-grid" style="display:none;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;overflow:hidden">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr))">
           <div id="pool-col-L" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
           <div id="pool-col-M" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
           <div id="pool-col-S" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
@@ -813,9 +813,12 @@
                 → Generar PAT ↗
               </a>
             </label>
+            <div style="padding:8px 10px;background:#EEF3FC;border-radius:6px;font-size:10px;color:#1848A0">
+              ✓ PAT gestionado por Vercel env vars (ADO_PAT) — no se guarda en el navegador
+            </div>
             <input type="password" class="cfg-inp" id="cfg-ado-pat"
-              placeholder="Personal Access Token con permisos Work Items (Read)"
-              autocomplete="off">
+              placeholder="Solo para testing local (no se guarda)"
+              autocomplete="off" style="opacity:.5">
             <div class="cfg-note">El token no se guarda ni sale del navegador — solo en memoria de esta sesión.</div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -943,8 +946,12 @@
             </div>
             <div class="cfg-field" style="margin-bottom:14px">
               <label>Client Secret</label>
+              <div style="padding:8px 10px;background:var(--d3t);border-radius:6px;font-size:10px;color:var(--d3)">
+                ✓ Secret gestionado por Vercel env vars (DV_CLIENT_SECRET) — no se guarda en el navegador
+              </div>
               <input type="password" class="cfg-inp" id="cfg-dv-secret"
-                placeholder="Clave secreta de la aplicación" autocomplete="off">
+                placeholder="Solo para testing local (no se guarda)"
+                autocomplete="off" style="opacity:.5">
               <div class="cfg-note">Certificados y secretos → Nuevo secreto de cliente</div>
             </div>
 
@@ -1102,7 +1109,7 @@
   </div>
 
   <!-- KPI grid 3x3 -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px">
 
     <!-- Total -->
     <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
