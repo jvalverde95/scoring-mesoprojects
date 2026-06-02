@@ -109,59 +109,103 @@ function dvLoadCfg() {
 /* ── Save single project from edit modal ────────────────────── */
 
 /* ═══ INIT — runs after all modules loaded ══════════════════ */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
 
-  // Set today's date in the wizard date field
+  // ── 1. UI setup ──────────────────────────────────────────
   const fReq = document.getElementById('f-req');
   if (fReq) fReq.value = new Date().toISOString().split('T')[0];
 
-  // Wire up wizard input listeners
   ['f-name','f-area','f-type'].forEach(id => {
     const e = document.getElementById(id);
     if (e) { e.addEventListener('change', upd); e.addEventListener('input', upd); }
   });
 
-  // Render UI components
   renderDimSteps();
   renderNav();
   renderWeightEditor();
   upd();
-  goStep(0);
+  goStep('dashboard');
 
-  // Apply hardcoded credentials first (from scoring.js HARDCODED_CREDS)
-  if (typeof HARDCODED_CREDS !== 'undefined') {
-    const hc = HARDCODED_CREDS;
-    const fill = (id, val) => {
-      if (!val) return;
-      const e = document.getElementById(id);
-      if (e) e.value = val;
-    };
-    fill('cfg-ado-org',     hc.ado_org);
-    fill('cfg-ado-project', hc.ado_project);
-    fill('cfg-ado-pat',     hc.ado_pat);
-    fill('ado-org',         hc.ado_org);
-    fill('ado-project',     hc.ado_project);
-    fill('cfg-dv-url',      hc.dv_url);
-    fill('cfg-dv-tenant',   hc.dv_tenant);
-    fill('cfg-dv-clientid', hc.dv_clientid);
-    fill('cfg-dv-secret',   hc.dv_secret);
+  // ── 2. Load team capacity from localStorage ───────────────
+  if (typeof loadDevTeam === 'function') loadDevTeam();
 
-    // Populate _dvCfg runtime object directly
-    if (hc.dv_url) {
-      _dvCfg.url      = hc.dv_url;
-      _dvCfg.tenant   = hc.dv_tenant;
-      _dvCfg.clientId = hc.dv_clientid;
-      _dvCfg.secret   = hc.dv_secret;
+  // ── 3. Auto-configure from Vercel env vars (/api/config) ─
+  //    This gives the app the DV URL and ADO org/project
+  //    WITHOUT exposing any secrets to the frontend.
+  try {
+    const cfgRes = await fetch('/api/config');
+    if (cfgRes.ok) {
+      const cfg = await cfgRes.json();
+
+      // Populate _dvCfg URL (token and secret stay server-side)
+      if (cfg.dv_url) {
+        _dvCfg.url = cfg.dv_url;
+        // Mark DV as server-managed so UI shows correct status
+        _dvCfg._serverManaged = true;
+      }
+
+      // Populate ADO config fields in the UI
+      const setField = (id, val) => {
+        if (!val) return;
+        const e = document.getElementById(id);
+        if (e && !e.value) e.value = val;
+      };
+      setField('cfg-ado-org',     cfg.ado_org);
+      setField('cfg-ado-project', cfg.ado_project);
+      setField('ado-org',         cfg.ado_org);
+      setField('ado-project',     cfg.ado_project);
+
+      // Update Config screen status badges
+      if (cfg.has_dataverse) {
+        dvStatusShow('ok', '✓ Dataverse configurado desde el servidor');
+        const badge = document.getElementById('cfg-dv-badge');
+        if (badge) {
+          badge.style.display = 'inline-block';
+          badge.textContent   = '✓ env vars';
+          badge.style.background = 'var(--d3t)';
+          badge.style.color      = 'var(--d3)';
+        }
+      }
+      if (cfg.has_ado) {
+        const adoBadge = document.getElementById('cfg-ado-conn-badge');
+        if (adoBadge) {
+          adoBadge.style.display = 'inline-block';
+          adoBadge.textContent   = '✓ env vars';
+          adoBadge.style.background = '#EEF3FC';
+          adoBadge.style.color      = '#1848A0';
+        }
+      }
+
+      console.log('[init] Server config loaded:',
+        cfg.has_dataverse ? 'DV ✓' : 'DV ✗',
+        cfg.has_ado        ? 'ADO ✓' : 'ADO ✗');
     }
+  } catch(e) {
+    // /api/config not available (local dev without Vercel) — fallback to localStorage
+    console.warn('[init] /api/config not available, falling back to localStorage');
   }
 
-  // Then load saved credentials from localStorage (overrides hardcoded if user saved different ones)
+  // ── 4. Override with localStorage saved values if they exist ─
+  //    Allows user to test with different credentials from Config screen
   try { loadAllCreds(); } catch(e) { console.warn('loadAllCreds:', e.message); }
 
-  // Auto-load portfolio from Dataverse if credentials available
-  setTimeout(() => {
-    try { dvLoadPortfolio(); } catch(e) { console.warn('dvLoadPortfolio:', e.message); }
-    if(typeof renderDashboard==='function') setTimeout(renderDashboard, 600);
-  }, 400);
+  // ── 5. Auto-load portfolio from Dataverse ────────────────
+  //    Silent background load — no spinner, just populates when ready
+  if (_dvCfg.url) {
+    try {
+      // Load global params (pool thresholds) first
+      await dvLoadGlobalParams();
+    } catch(e) {
+      console.warn('[init] dvLoadGlobalParams:', e.message);
+    }
+    try {
+      await dvLoadPortfolio();
+    } catch(e) {
+      console.warn('[init] dvLoadPortfolio:', e.message);
+      if (typeof renderDashboard === 'function') renderDashboard();
+    }
+  } else {
+    if (typeof renderDashboard === 'function') renderDashboard();
+  }
 
 });

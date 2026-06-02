@@ -1,5 +1,5 @@
 /* ── Global state — declared first so all modules can access ─ */
-let _dvCfg = { url:'', tenant:'', clientId:'', secret:'' };
+let _dvCfg = { url:'', tenant:'', clientId:'', secret:'', _serverManaged: false };
 let _dvToken = null, _dvTokenExp = 0;
 
 const CRIT_FIELD_MAP = {
@@ -471,16 +471,17 @@ function parseExcelBuffer(buffer) {
 }
 
 /* Apply projects to app, preserving horas */
-function applyProjects(projects, filename) {
+async function applyProjects(projects, filename) {
   const prevHoras = {};
   portfolioData.forEach(p => { if (p.horas!=null) prevHoras[p.nom]=p.horas; });
   Object.assign(prevHoras, _savedHoras);
 
   portfolioData = projects.map(p => {
     const proj = computeProj(p);
-    // Priority: horas from Excel (__horas) > horas from previous session > null
     const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
     proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
+    proj._dvId = null;  // will be set by upsert
+    proj._selected = false;
     return proj;
   });
   portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
@@ -490,7 +491,40 @@ function applyProjects(projects, filename) {
   const cp=document.getElementById('charts-panel'); if(cp) cp.style.display='block';
   const bc=document.getElementById('btn-clear'); if(bc) bc.style.display='flex';
   const bt=document.getElementById('bulk-toolbar'); if(bt) bt.style.display='flex';
-  renderCharts();
+  try { renderCharts(); } catch(_) {}
+  if (typeof renderDashboard === 'function') renderDashboard();
+
+  // ── Auto-sync to Dataverse ──────────────────────────────────
+  // Show progress banner
+  const banner = document.getElementById('dv-loading-banner');
+  const msg    = document.getElementById('dv-loading-msg');
+  if (banner) { banner.style.display='flex'; banner.style.background='var(--d5t)'; banner.style.color='var(--d5)'; }
+  if (msg)    msg.textContent = `⟳ Guardando ${portfolioData.length} proyectos en Dataverse…`;
+
+  try {
+    const token = await dvGetToken();
+    let ok=0, err=0;
+    for (let i=0; i<portfolioData.length; i++) {
+      if (msg) msg.textContent = `⟳ Guardando en Dataverse… ${i+1} / ${portfolioData.length}`;
+      try { await dvUpsertProject(portfolioData[i], token); ok++; }
+      catch(e) { err++; console.warn('DV upsert:', portfolioData[i].nom, e.message); }
+    }
+    if (banner) {
+      banner.style.background = err ? 'var(--d1t)' : 'var(--d3t)';
+      banner.style.color      = err ? 'var(--d1)'  : 'var(--d3)';
+    }
+    if (msg) msg.textContent = err
+      ? `⚠ ${ok} guardados · ${err} errores`
+      : `✓ ${ok} proyectos guardados en Dataverse`;
+    toast(err ? `⚠ Dataverse: ${ok} ok · ${err} errores` : `✓ ${ok} proyectos guardados en Dataverse`);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 4000);
+  } catch(e) {
+    if (banner) { banner.style.background='var(--d1t)'; banner.style.color='var(--d1)'; }
+    if (msg)    msg.textContent = '✗ Error Dataverse: ' + e.message;
+    toast('✗ ' + e.message);
+    console.error('applyProjects DV sync:', e);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 6000);
+  }
 }
 
 /* One-time file input load */
@@ -1426,7 +1460,10 @@ function renderChartsStep() {
 }
 
 /* ── POOLS STEP ───────────────────────────────────── */
-function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); }
+function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); 
+  // Save to Dataverse when changed
+  if (typeof dvSaveGlobalParams === 'function') dvSaveGlobalParams();
+}
 
 function renderPoolsStep() {
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
@@ -1519,7 +1556,14 @@ function renderPoolsStep() {
               <span style="font-size:7px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;
                            background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et.split(' ').slice(0,2).join(' ')}</span>
             </div>
-          </div>`;
+          </div>
+          <button onclick="event.stopPropagation();dvDeleteOne(${idx})"
+            title="Eliminar proyecto"
+            style="opacity:0;padding:4px 8px;background:none;border:1px solid var(--d1);
+                   border-radius:4px;color:var(--d1);font-size:9px;cursor:pointer;
+                   transition:opacity .15s;flex-shrink:0;margin-left:4px"
+            onmouseover="this.style.opacity='1'"
+            onmouseout="this.style.opacity='0'">✕</button>`;
         }).join('');
 
     col.innerHTML = header + `<div style="overflow-y:auto;max-height:500px">${rows}</div>`;
@@ -1762,15 +1806,29 @@ function handleLandingExcel(inp) {
    ⚠ Only use this if the repo is PRIVATE — never commit
      real secrets to a public repository.
    ──────────────────────────────────────────────────────────── */
-const HARDCODED_CREDS = {
-  // Azure DevOps
-  ado_org:     'mesoesteticAzureDevOps',   // e.g. 'mesoesteticAzureDevOps'
-  ado_project: 'DYNAMICS 365',   // e.g. 'DYNAMICS 365'
-  ado_pat:     'A0ELPGU4bw8HVIktYxjuc7ESBPP4Ar2LOjHY8acghUPkSwL8lPbMJQQJ99CEACAAAAAIYiFxAAASAZDO2ar3',   // e.g. 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+/* ── CREDENTIALS CONFIGURATION ──────────────────────────────
+   All credentials must be set in Vercel → Settings → Environment Variables.
+   DO NOT put secrets in this file — it is committed to git.
 
-  // Microsoft Dataverse
-  dv_url:      'https://operations-mesoestetic-pre.crm4.dynamics.com',   // e.g. 'https://org1234.crm4.dynamics.com'
-  dv_tenant:   '425835a2-4b10-4977-bf72-f9f1a1bf2864',   // e.g. 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-  dv_clientid: '4c9ecaa2-ac3f-4f2c-9570-5504272fee29',   // e.g. '4c9ecaa2-ac3f-4f2c-9570-5504272fee29'
-  dv_secret:   '7Bu8Q~sL2m2aZyLBwAxzFHLt2UnA2oW5xkECubkS',   // e.g. 'your-client-secret-value'
+   Required Vercel env vars:
+     DV_URL            = https://yourorg.crm4.dynamics.com
+     DV_TENANT_ID      = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+     DV_CLIENT_ID      = xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+     DV_CLIENT_SECRET  = your-client-secret-value
+     ADO_ORG           = YourAzureDevOpsOrg
+     ADO_PROJECT       = YourProject
+     ADO_PAT           = your-personal-access-token
+
+   The app auto-configures from /api/config at startup.
+   Nothing below needs to be changed.
+   ─────────────────────────────────────────────────────────── */
+const HARDCODED_CREDS = {
+  // Leave these empty — credentials come from Vercel env vars via /api/config
+  ado_org:     '',
+  ado_project: '',
+  ado_pat:     '',    // NOT used — PAT lives in ADO_PAT env var
+  dv_url:      '',    // Will be auto-populated from /api/config
+  dv_tenant:   '',
+  dv_clientid: '',
+  dv_secret:   '',    // NOT used — secret lives in DV_CLIENT_SECRET env var
 };
