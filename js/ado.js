@@ -144,99 +144,96 @@ function cfgAdoQuerySelected(queryId){
 }
 
 async function cfgAdoTest(){
-  const {org,project,pat}=_cfgAdoCreds();
-  // org and project required; PAT optional (server uses ADO_PAT env var if not provided)
-  if(!org||!project){cfgAdoStatusShow('error','Rellena organización y proyecto.');return;}
-  cfgAdoStatusShow('loading','Verificando credenciales...');
-  try{
-    // Step 1: List all projects to find the correct name (avoids 404 from case/space issues)
-    const orgDisplay = org || '(desde env var ADO_ORG)';
-    const projDisplay = project || '(desde env var ADO_PROJECT)';
-    cfgAdoStatusShow('loading', `Conectando… org: ${orgDisplay} · proyecto: ${projDisplay}`);
-    let allProjects = [];
-    try {
-      const listRes = await adoProxy(org, null, '_apis/projects?api-version=7.1', pat);
-      if (listRes.status === 401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
-      if (listRes.status === 403) throw new Error('Sin permisos (403). El PAT necesita scope "Project and Team (Read)".');
-      // Try to get diagnostic info from error response
-      let errDetail = '';
-      try { const e = await listRes.clone().json(); errDetail = e.url || e.message || ''; } catch(_) {}
+  const {org, project} = _cfgAdoCreds();
+  if (!org)     { cfgAdoStatusShow('error', 'Rellena la organización (campo Org).'); return; }
+  if (!project) { cfgAdoStatusShow('error', 'Rellena el proyecto (campo Proyecto).'); return; }
 
-      if (listRes.status === 404) {
-        throw new Error(
-          `Organización no encontrada (404). ` +
-          `URL intentada: ${errDetail || 'ver Vercel → Functions logs'}. ` +
-          `Comprueba que ADO_ORG en Vercel coincide exactamente con la URL: https://dev.azure.com/[AQUÍ]/`
-        );
-      }
-      if (!listRes.ok) {
-        throw new Error(`Error HTTP ${listRes.status}. Detalle: ${errDetail || 'ver Vercel → Functions logs'}`);
-      }
-      const listData = await listRes.json();
-      allProjects = listData.value || [];
-    } catch(fetchErr) {
-      if (fetchErr.message.includes('PAT') || fetchErr.message.includes('permisos') || fetchErr.message.includes('HTTP')) throw fetchErr;
-      throw new Error('No se puede conectar con Azure DevOps: ' + fetchErr.message);
-    }
+  cfgAdoStatusShow('loading', `Conectando… org="${org}" proyecto="${project}"`);
 
-    // Find project by name (case-insensitive)
+  try {
+    // Step 1: list all projects in the org (org-level call, no project in URL)
+    const listRes = await adoProxy(org, null, '_apis/projects?api-version=7.1');
+    const listBody = await listRes.json().catch(() => ({}));
+
+    if (listRes.status === 401) throw new Error('PAT inválido (401). Crea un nuevo PAT en ADO con scope Work Items Read + Project Read y actualiza ADO_PAT en Vercel.');
+    if (listRes.status === 403) throw new Error('Sin permisos (403). El PAT necesita scope "Project and Team (Read)".');
+    if (listRes.status === 404) throw new Error(`Organización "${org}" no encontrada (404). URL: ${listBody.url || 'https://dev.azure.com/' + org}. Verifica ADO_ORG en Vercel.`);
+    if (!listRes.ok) throw new Error(`Error ${listRes.status}: ${listBody.detail || listBody.message || JSON.stringify(listBody).substring(0,200)}`);
+
+    const allProjects = listBody.value || [];
+    if (!allProjects.length) throw new Error('La organización no tiene proyectos o el PAT no tiene permisos de lectura.');
+
+    // Step 2: find project (case-insensitive)
     const projMatch = allProjects.find(p =>
       p.name.toLowerCase() === project.toLowerCase() ||
-      p.name.toLowerCase().includes(project.toLowerCase()) ||
-      project.toLowerCase().includes(p.name.toLowerCase())
+      p.name.toLowerCase().replace(/\s/g,'') === project.toLowerCase().replace(/\s/g,'')
     );
-    const projName = projMatch ? projMatch.name : project;
-    const projId   = projMatch ? projMatch.id   : project;
 
-    if (!projMatch && allProjects.length > 0) {
-      // Show available projects in the error to help user
-      const names = allProjects.map(p => p.name).join(', ');
-      throw new Error(`Proyecto "${project}" no encontrado. Proyectos disponibles: ${names}`);
+    if (!projMatch) {
+      const names = allProjects.map(p => `"${p.name}"`).join(', ');
+      throw new Error(`Proyecto "${project}" no encontrado. Proyectos disponibles: ${names}. Actualiza ADO_PROJECT en Vercel con el nombre exacto.`);
     }
 
-    cfgAdoStatusShow('loading', `✓ Conectado · "${projName}" · Cargando queries…`);
-
-    // Step 2: Load queries using the exact project name from ADO
-    let qRes;
-    try {
-      qRes = await adoProxy(org, projName,
-        `_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`, pat);
-    } catch(fetchErr) {
-      throw new Error('Error de red cargando queries: ' + fetchErr.message);
-    }
-    if(!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
-    // Update project field with exact name for future use
+    const projName = projMatch.name;
+    // Update field with exact name
     const projField = document.getElementById('cfg-ado-project');
-    if (projField && projMatch) projField.value = projName;
-    const qData=await qRes.json();
-    const allQueries=[];
-    function walkQueries(node,path=''){
-      if(!node) return;
-      const fullPath=path?`${path} / ${node.name}`:node.name;
-      if(node.queryType) allQueries.push({id:node.id,name:node.name,path:fullPath,queryType:node.queryType});
-      if(node.children) node.children.forEach(c=>walkQueries(c,path?fullPath:node.name));
+    if (projField) projField.value = projName;
+
+    cfgAdoStatusShow('loading', `"${projName}" encontrado. Cargando queries…`);
+
+    // Step 3: load queries
+    const qRes = await adoProxy(org, projName, '_apis/wit/queries?$depth=2&$expand=all&api-version=7.1');
+    if (!qRes.ok) {
+      const qBody = await qRes.json().catch(() => ({}));
+      throw new Error(`No se pudieron cargar las queries (${qRes.status}): ${qBody.message||''}`);
     }
-    (qData.value||[qData]).forEach(root=>walkQueries(root,''));
-    const sel=document.getElementById('cfg-ado-query-select');
-    if(sel){
-      sel.innerHTML='<option value="">— Selecciona una query —</option>';
-      allQueries.forEach(q=>{
-        const opt=document.createElement('option');
-        opt.value=q.id; opt.textContent=q.path||q.name;
-        opt.dataset.queryType=q.queryType; opt.dataset.name=q.name;
+    const qData = await qRes.json();
+
+    const allQueries = [];
+    function walkQueries(node, path='') {
+      if (!node) return;
+      const fullPath = path ? `${path} / ${node.name}` : node.name;
+      if (node.queryType) allQueries.push({ id:node.id, name:node.name, path:fullPath, queryType:node.queryType });
+      if (node.children) node.children.forEach(c => walkQueries(c, path ? fullPath : node.name));
+    }
+    (qData.value || [qData]).forEach(root => walkQueries(root, ''));
+
+    const sel = document.getElementById('cfg-ado-query-select');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Selecciona una query —</option>';
+      allQueries.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.id; opt.textContent = q.path || q.name;
+        opt.dataset.queryType = q.queryType; opt.dataset.name = q.name;
         sel.appendChild(opt);
       });
     }
-    const autoMatch=allQueries.find(q=>q.name.toLowerCase().includes('evolutivo')||q.name.toLowerCase().includes('pendientes')||q.name.toLowerCase().includes('gaps'));
-    if(autoMatch){sel.value=autoMatch.id;cfgAdoQuerySelected(autoMatch.id);}
-    const qs=document.getElementById('cfg-ado-query-section'); if(qs) qs.style.display='block';
-    const badge=document.getElementById('cfg-ado-conn-badge');
-    if(badge){badge.style.display='inline-block';badge.style.background='#EEF3FC';badge.style.color='#0078D4';badge.style.border='1px solid rgba(0,120,212,.2)';badge.textContent=`✓ conectado · ${allQueries.length} queries`;}
-    cfgAdoStatusShow('ok',`✓ Conectado · "${projData.name}" · ${allQueries.length} queries${autoMatch?` · "${autoMatch.name}" pre-seleccionada`:''}`);
+
+    const autoMatch = allQueries.find(q =>
+      q.name.toLowerCase().includes('evolutivo') ||
+      q.name.toLowerCase().includes('pendientes') ||
+      q.name.toLowerCase().includes('gaps')
+    );
+    if (autoMatch && sel) { sel.value = autoMatch.id; cfgAdoQuerySelected(autoMatch.id); }
+
+    const qs = document.getElementById('cfg-ado-query-section');
+    if (qs) qs.style.display = 'block';
+
+    const badge = document.getElementById('cfg-ado-conn-badge');
+    if (badge) {
+      badge.style.display = 'inline-block';
+      badge.style.background = '#EEF3FC'; badge.style.color = '#0078D4';
+      badge.style.border = '1px solid rgba(0,120,212,.2)';
+      badge.textContent = `✓ ${projName} · ${allQueries.length} queries`;
+    }
+
+    cfgAdoStatusShow('ok', `✓ Conectado · "${projName}" · ${allQueries.length} queries${autoMatch ? ` · "${autoMatch.name}" pre-seleccionada` : ''}`);
     saveAllCreds();
-  } catch(e){
-    cfgAdoStatusShow('error','✗ '+e.message);
-    const qs=document.getElementById('cfg-ado-query-section'); if(qs) qs.style.display='none';
+
+  } catch(e) {
+    cfgAdoStatusShow('error', '✗ ' + e.message);
+    const qs = document.getElementById('cfg-ado-query-section');
+    if (qs) qs.style.display = 'none';
   }
 }
 
