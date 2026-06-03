@@ -46,11 +46,11 @@ function saveAllCreds() {
       : (existing.ado_query_name || ''),
     // ADO type filters
     ado_types_all: document.getElementById('cfg-ado-type-all')?.checked ?? true,
-    // Dataverse credentials
+    // Dataverse — URL and tenant only (secrets are in Vercel env vars)
     dv_url:        g('cfg-dv-url'),
     dv_tenant:     g('cfg-dv-tenant'),
     dv_clientid:   g('cfg-dv-clientid'),
-    dv_secret:     _xor(g('cfg-dv-secret'), _OBFUSCATE_SEED),
+    // dv_secret: intentionally NOT saved — lives in Vercel env vars
   };
   try { localStorage.setItem(_STORE_KEY, JSON.stringify(cfg)); } catch(e) {}
 }
@@ -92,7 +92,7 @@ function loadAllCreds() {
   set('cfg-dv-url',      cfg.dv_url);
   set('cfg-dv-tenant',   cfg.dv_tenant);
   set('cfg-dv-clientid', cfg.dv_clientid);
-  if (cfg.dv_secret) set('cfg-dv-secret', _dxor(cfg.dv_secret, _OBFUSCATE_SEED));
+  // dv_secret intentionally not loaded — it lives in Vercel env vars server-side
 
   // Sync into runtime _dvCfg
   if (cfg.dv_url || cfg.dv_tenant || cfg.dv_clientid) {
@@ -132,13 +132,10 @@ function loadAllCreds() {
     setIfEmpty('cfg-dv-url',      hc.dv_url);
     setIfEmpty('cfg-dv-tenant',   hc.dv_tenant);
     setIfEmpty('cfg-dv-clientid', hc.dv_clientid);
-    setIfEmpty('cfg-dv-secret',   hc.dv_secret);
-    // Also populate _dvCfg directly if not already set
+    // dv_secret not set from HARDCODED_CREDS — use Vercel env vars instead
+    // _dvCfg.url will be set from /api/config response at startup
     if (hc.dv_url && !_dvCfg.url) {
-      _dvCfg.url      = hc.dv_url;
-      _dvCfg.tenant   = hc.dv_tenant;
-      _dvCfg.clientId = hc.dv_clientid;
-      _dvCfg.secret   = hc.dv_secret;
+      _dvCfg.url = hc.dv_url;  // URL is not secret, ok to set
     }
   }
 }

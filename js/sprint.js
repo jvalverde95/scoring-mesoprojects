@@ -381,7 +381,7 @@ function renderDashboard() {
 
   // System status
   const adoOk = typeof _adoConnected!=='undefined' && _adoConnected;
-  const dvOk  = typeof _dvCfg!=='undefined' && _dvCfg.url && _dvCfg.tenant;
+  const dvOk  = typeof _dvCfg!=='undefined' && _dvCfg.url;
   const teamN = typeof devTeam!=='undefined' ? devTeam.length : 0;
   const setBadge=(id,ok,text)=>{
     const e=document.getElementById(id); if(!e) return;
