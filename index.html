@@ -1460,6 +1460,139 @@
     </div>
 
   </div>
+
+    <!-- ══ AI EVALUATION CONFIG ══════════════════════════════════ -->
+    <div class="cfg-section" style="margin-top:12px">
+      <div class="cfg-sec-title">⚡ Configuración del evaluador automático</div>
+      <div class="cfg-sec-sub">
+        El evaluador automático puntúa los proyectos analizando el título, descripción y tags del work item de Azure DevOps.
+        Ajusta el peso de cada señal para mejorar la precisión.
+      </div>
+
+      <!-- How it works -->
+      <div style="background:var(--d5t);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:10px;color:var(--ink3);line-height:1.7">
+        <strong style="color:var(--ink)">Cómo funciona:</strong><br>
+        1. Lee el <strong>título</strong> del work item y busca palabras clave por dimensión<br>
+        2. Lee la <strong>descripción</strong> para ampliar el contexto<br>
+        3. Lee los <strong>tags</strong> (etiquetas) para señales de prioridad<br>
+        4. Aplica el <strong>Sigmoid Boost</strong> para amplificar puntuaciones extremas<br>
+        5. El resultado es una puntuación 0-10 por criterio
+      </div>
+
+      <!-- Keyword weights by dimension -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">
+          Palabras clave por dimensión — añade términos que aparecen en tus work items
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+          <div style="border-left:3px solid #CC1F26;padding:8px 10px;background:var(--d1t);border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#CC1F26;margin-bottom:6px">D1 — Compliance · Legal</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican obligación regulatoria:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d1"
+              placeholder="ej: GDPR, normativa, legal, regulatorio, obligatorio, GMP..."
+              style="font-size:9px">
+          </div>
+
+          <div style="border-left:3px solid #C4974A;padding:8px 10px;background:var(--surf);border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#C4974A;margin-bottom:6px">D2 — Estratégico</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican alineación estratégica:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d2"
+              placeholder="ej: expansión, internacional, innovación, consejo, estrategia..."
+              style="font-size:9px">
+          </div>
+
+          <div style="border-left:3px solid #087B50;padding:8px 10px;background:var(--d3t);border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#087B50;margin-bottom:6px">D3 — ROI / Valor</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican impacto económico:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d3"
+              placeholder="ej: ahorro, ingresos, ROI, coste, eficiencia, ventas..."
+              style="font-size:9px">
+          </div>
+
+          <div style="border-left:3px solid #C07800;padding:8px 10px;background:var(--d4t);border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#C07800;margin-bottom:6px">D4 — Técnica</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican complejidad técnica:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d4"
+              placeholder="ej: integración, API, ERP, SAP, migración, infraestructura..."
+              style="font-size:9px">
+          </div>
+
+          <div style="border-left:3px solid #1848A0;padding:8px 10px;background:#EEF3FC;border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#1848A0;margin-bottom:6px">D5 — Implantación</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican facilidad de ejecución:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d5"
+              placeholder="ej: automatización, quick win, configuración, parametrizar..."
+              style="font-size:9px">
+          </div>
+
+          <div style="border-left:3px solid #5C6570;padding:8px 10px;background:var(--surf);border-radius:0 6px 6px 0">
+            <div style="font-size:9px;font-weight:700;color:#5C6570;margin-bottom:6px">D6 — Personas / ESG</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:4px">Palabras que indican impacto en personas:</div>
+            <input type="text" class="cfg-inp" id="ai-kw-d6"
+              placeholder="ej: empleado, formación, sostenibilidad, bienestar, ESG..."
+              style="font-size:9px">
+          </div>
+        </div>
+      </div>
+
+      <!-- Score boost for ADO fields -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">
+          Boost por campos de Azure DevOps
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="background:var(--surf);border-radius:6px;padding:8px 10px;border:1px solid var(--b)">
+            <div style="font-size:9px;font-weight:600;color:var(--ink);margin-bottom:4px">Prioridad ADO = 1</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:6px">Boost en D1 y D2</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="range" id="ai-boost-prio1" min="0" max="3" step="0.5" value="2"
+                style="flex:1" oninput="document.getElementById('ai-boost-prio1-val').textContent=this.value">
+              <span id="ai-boost-prio1-val" style="font-size:10px;font-weight:700;color:var(--d1);width:20px">2</span>
+            </div>
+          </div>
+          <div style="background:var(--surf);border-radius:6px;padding:8px 10px;border:1px solid var(--b)">
+            <div style="font-size:9px;font-weight:600;color:var(--ink);margin-bottom:4px">Tags de compliance</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:6px">Palabras en tags = prioridad</div>
+            <input type="text" class="cfg-inp" id="ai-tags-compliance"
+              placeholder="ej: compliance, legal, regulatorio"
+              style="font-size:9px">
+          </div>
+          <div style="background:var(--surf);border-radius:6px;padding:8px 10px;border:1px solid var(--b)">
+            <div style="font-size:9px;font-weight:600;color:var(--ink);margin-bottom:4px">Score mínimo para AUTO-PRIO</div>
+            <div style="font-size:9px;color:var(--ink3);margin-bottom:6px">Si D1 ≥ este valor → auto-prioritario</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="range" id="ai-autoprio-thr" min="5" max="10" step="0.5" value="8"
+                style="flex:1" oninput="document.getElementById('ai-autoprio-thr-val').textContent=this.value">
+              <span id="ai-autoprio-thr-val" style="font-size:10px;font-weight:700;color:var(--d1);width:24px">8</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test area -->
+      <div style="background:var(--surf);border-radius:8px;padding:10px 12px;border:1px solid var(--b);margin-bottom:10px">
+        <div style="font-size:9px;font-weight:700;color:var(--ink);margin-bottom:6px">🧪 Probar evaluación</div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <textarea id="ai-test-input" rows="2" class="cfg-inp"
+            placeholder="Pega aquí el título y descripción de un work item para ver cómo lo puntuaría..."
+            style="font-size:9px;flex:1;resize:vertical"></textarea>
+          <button class="cfg-apply cfg-reset" style="font-size:9px;padding:6px 12px;flex-shrink:0"
+            onclick="aiTestScore()">Probar</button>
+        </div>
+        <div id="ai-test-result" style="margin-top:8px;font-size:10px;color:var(--ink3);display:none"></div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="cfg-apply" onclick="aiSaveKeywords()" style="font-size:9px">
+          ✓ Guardar configuración
+        </button>
+        <button class="cfg-apply cfg-reset" onclick="aiLoadKeywords()" style="font-size:9px">
+          ↺ Restaurar por defecto
+        </button>
+      </div>
+    </div>
+
 </div>
 
 <div class="step" id="step-wiki">

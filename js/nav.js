@@ -53,6 +53,7 @@ function goStep(t) {
     if (t === 'sprint')     { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
+    if (t === 'config')    { if(typeof aiLoadKeywords==='function') aiLoadKeywords(); }
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');

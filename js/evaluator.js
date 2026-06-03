@@ -129,10 +129,12 @@ async function aiImportAll() {
   try { renderCharts(); } catch(_) {}
   if (typeof renderDashboard === 'function') renderDashboard();
   closeAiModal();
-  goStep('summary');
 
   const scored = _aiScored.filter(s => s.status !== 'pending').length;
   toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados`);
+
+  // Go to pools so user sees their projects immediately
+  goStep('pools');
 
   // ── 2. Sync to Dataverse ──────────────────────────────────
   if (!_dvCfg.url) return;  // no DV configured
@@ -257,4 +259,103 @@ async function saveManualAndSync() {
   } else {
     toast('Dataverse no configurado — proyecto guardado solo en local');
   }
+}
+
+/* ═══ AI KEYWORD CONFIGURATION ═══════════════════════════════════════════
+   Allows users to customise the keywords used by the auto-scorer per
+   dimension, stored in localStorage and used by ruleScoresCriterios().
+   ════════════════════════════════════════════════════════════════════════ */
+
+const AI_KW_DEFAULTS = {
+  d1: 'gdpr,normativa,legal,regulatorio,obligatorio,gmp,compliance,ley,reglamento,iso,auditoria,sancionador,licencia,rgpd',
+  d2: 'expansión,internacional,innovación,consejo,estrategia,transformación,roadmap,competitividad,diferenciación,plan director',
+  d3: 'ahorro,ingresos,roi,coste,eficiencia,ventas,rentabilidad,reducción,optimización,productividad,facturación',
+  d4: 'integración,api,erp,sap,migración,infraestructura,arquitectura,datos,cloud,seguridad,ciberseguridad,deuda técnica',
+  d5: 'automatización,quick win,configuración,parametrizar,formación,implantación,rollout,despliegue,piloto,pruebas',
+  d6: 'empleado,formación,sostenibilidad,bienestar,esg,medioambiente,diversidad,conciliación,cultura,clima laboral',
+};
+
+function aiSaveKeywords() {
+  const cfg = {
+    d1: document.getElementById('ai-kw-d1')?.value || AI_KW_DEFAULTS.d1,
+    d2: document.getElementById('ai-kw-d2')?.value || AI_KW_DEFAULTS.d2,
+    d3: document.getElementById('ai-kw-d3')?.value || AI_KW_DEFAULTS.d3,
+    d4: document.getElementById('ai-kw-d4')?.value || AI_KW_DEFAULTS.d4,
+    d5: document.getElementById('ai-kw-d5')?.value || AI_KW_DEFAULTS.d5,
+    d6: document.getElementById('ai-kw-d6')?.value || AI_KW_DEFAULTS.d6,
+    boostPrio1:     parseFloat(document.getElementById('ai-boost-prio1')?.value     || 2),
+    tagsCompliance: document.getElementById('ai-tags-compliance')?.value || '',
+    autoprioThr:    parseFloat(document.getElementById('ai-autoprio-thr')?.value    || 8),
+  };
+  try {
+    localStorage.setItem('meso_ai_keywords_v1', JSON.stringify(cfg));
+    toast('✓ Configuración del evaluador guardada');
+  } catch(_) { toast('✗ Error guardando configuración'); }
+}
+
+function aiLoadKeywords() {
+  let cfg = AI_KW_DEFAULTS;
+  try {
+    const saved = localStorage.getItem('meso_ai_keywords_v1');
+    if (saved) cfg = { ...AI_KW_DEFAULTS, ...JSON.parse(saved) };
+  } catch(_) {}
+
+  const set = (id, val) => { const e = document.getElementById(id); if (e) e.value = val || ''; };
+  set('ai-kw-d1', cfg.d1); set('ai-kw-d2', cfg.d2);
+  set('ai-kw-d3', cfg.d3); set('ai-kw-d4', cfg.d4);
+  set('ai-kw-d5', cfg.d5); set('ai-kw-d6', cfg.d6);
+  set('ai-tags-compliance', cfg.tagsCompliance || '');
+
+  const setRange = (id, valId, val) => {
+    const e = document.getElementById(id); if (e) e.value = val;
+    const v = document.getElementById(valId); if (v) v.textContent = val;
+  };
+  setRange('ai-boost-prio1',  'ai-boost-prio1-val',  cfg.boostPrio1  ?? 2);
+  setRange('ai-autoprio-thr', 'ai-autoprio-thr-val', cfg.autoprioThr ?? 8);
+}
+
+function aiGetKeywords() {
+  try {
+    const saved = localStorage.getItem('meso_ai_keywords_v1');
+    if (saved) return { ...AI_KW_DEFAULTS, ...JSON.parse(saved) };
+  } catch(_) {}
+  return { ...AI_KW_DEFAULTS };
+}
+
+function aiTestScore() {
+  const input = document.getElementById('ai-test-input')?.value?.trim();
+  const result = document.getElementById('ai-test-result');
+  if (!input || !result) return;
+
+  // Build a fake work item from the text
+  const fakeWi = {
+    id: 0,
+    fields: {
+      'System.Title':       input.split('\n')[0] || input,
+      'System.Description': input,
+      'System.Tags':        '',
+      'System.WorkItemType':'Requirement',
+      'System.State':       'Active',
+      'Microsoft.VSTS.Common.Priority': 3,
+    }
+  };
+
+  // Map to project and score
+  const proj = adoMapToProject(fakeWi);
+  const scored = ruleScoresCriterios(proj);
+  const full = computeProj({ ...proj, scores: scored });
+
+  result.style.display = 'block';
+  result.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px">
+      ${['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'].map((d,i) => `
+        <div style="background:var(--surf);border-radius:5px;padding:6px 8px;text-align:center;border:1px solid var(--b)">
+          <div style="font-size:9px;color:var(--ink3)">${d}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--ink)">${(full.dimScores?.[i]||0).toFixed(1)}</div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--ink)">
+      Score final: <span style="color:${full.sf>=7.5?'var(--d3)':full.sf>=5?'#C07800':'var(--d1)'}">${full.sf.toFixed(2)}</span>
+      → <span style="font-size:10px">${clsf(full.sf).et}</span>
+    </div>`;
 }
