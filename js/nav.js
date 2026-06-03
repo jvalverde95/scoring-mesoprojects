@@ -7,6 +7,15 @@ function goStep(t) {
   // Track where we're coming FROM (needed to detect manual eval → summary)
   previousStep = currentStep;
 
+  // ── Wizard step 0 validation ────────────────────────────────
+  if (typeof t === 'number' && t > 0 && currentStep === 0) {
+    const nom  = document.getElementById('f-name')?.value?.trim();
+    const area = document.getElementById('f-area')?.value?.trim() ||
+                 document.getElementById('f-area')?.options?.[document.getElementById('f-area')?.selectedIndex]?.value?.trim();
+    if (!nom)  { toast('⚠ Escribe un nombre para el proyecto'); document.getElementById('f-name')?.focus();  return; }
+    if (!area) { toast('⚠ Selecciona un área antes de continuar'); document.getElementById('f-area')?.focus(); return; }
+  }
+
   const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);

@@ -112,8 +112,11 @@ async function dvLoadPortfolio() {
       const data = await res.json();
       allRecords.push(...(data.value || []));
       // Follow @odata.nextLink for pagination
-      const next = data['@odata.nextLink'];
-      url = next ? next.replace(/.*\/api\/data\/v9\.2\//, '') : null;
+      const next = data['@odata.nextLink'] || data['@Microsoft.Dynamics.CRM.fetchxmlpagingcookie'];
+      // nextLink is a full URL — extract only the path after /api/data/v9.2/
+      url = next && data['@odata.nextLink'] 
+        ? next.replace(/^https?:\/\/[^/]+\/api\/data\/v9\.2\//, '') 
+        : null;
     }
 
     if (!allRecords.length) {
@@ -124,7 +127,7 @@ async function dvLoadPortfolio() {
     portfolioData = allRecords.map(dvRecordToProject);
     renderPortfolio();
     renderPools();
-    renderCharts();
+    try { renderCharts(); } catch(_) {}
     if (loadingEl) {
       loadingEl.textContent = `✓ ${portfolioData.length} proyectos cargados de Dataverse`;
       loadingEl.style.background='var(--d3t)'; loadingEl.style.color='var(--d3)';
@@ -136,8 +139,7 @@ async function dvLoadPortfolio() {
     const cp = document.getElementById('charts-panel'); if(cp) cp.style.display='block';
     const bc = document.getElementById('btn-clear'); if(bc) bc.style.display='flex';
 
-    // Go to summary if we loaded data
-    goStep('summary');
+    if (typeof renderDashboard === 'function') renderDashboard();
     toast(`✓ ${portfolioData.length} proyectos cargados de Dataverse`);
 
   } catch(e) {
@@ -301,19 +303,43 @@ async function dvGetToken() {
 
 /* ── Sync full portfolio ─────────────────────────────────────── */
 async function dvSyncAll() {
-  if (!portfolioData.length) { toast('Sin proyectos para sincronizar'); return; }
-  dvStatusShow('loading', `Sincronizando ${portfolioData.length} proyectos…`);
+  if (!portfolioData.length) { toast('Sin proyectos en cartera. Carga proyectos primero.'); return; }
+
+  // Use the banner that exists in the current screen
+  const banner = document.getElementById('dv-loading-banner') || 
+                 document.getElementById('dv-loading-banner-proj');
+  const msg    = document.getElementById('dv-loading-msg') ||
+                 document.getElementById('dv-loading-msg-proj');
+  const total  = portfolioData.length;
+
+  if (banner) { banner.style.display='flex'; banner.style.background='var(--d5t)'; banner.style.color='var(--d5)'; }
+  if (msg)    msg.textContent = `⟳ Sincronizando ${total} proyectos con Dataverse…`;
+  dvStatusShow('loading', `⟳ Sincronizando ${total} proyectos…`);
+
   try {
     const token = await dvGetToken();
     let ok=0, err=0;
-    for (const p of portfolioData) {
-      try { await dvUpsertProject(p, token); ok++; }
-      catch(e) { err++; console.warn('DV:', p.nom, e.message); }
+    for (let i=0; i<total; i++) {
+      if (msg) msg.textContent = `⟳ Dataverse ${i+1} / ${total} — ${portfolioData[i].nom.substring(0,30)}`;
+      try { await dvUpsertProject(portfolioData[i], token); ok++; }
+      catch(e) { err++; console.warn('DV sync error:', portfolioData[i].nom, e.message); }
     }
-    dvStatusShow(err?'error':'ok', `✓ ${ok} sincronizados${err?' · '+err+' errores (consola)':''}`);
-    toast(`↑ Dataverse: ${ok} proyectos`);
+    const okMsg = err
+      ? `⚠ ${ok} guardados · ${err} con error`
+      : `✓ ${ok} proyectos guardados en Dataverse`;
+    if (banner) { banner.style.background=err?'var(--d1t)':'var(--d3t)'; banner.style.color=err?'var(--d1)':'var(--d3)'; }
+    if (msg)    msg.textContent = okMsg;
+    dvStatusShow(err?'error':'ok', okMsg);
+    toast(okMsg);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 5000);
+    renderPortfolio();
   } catch(e) {
-    dvStatusShow('error', '✗ ' + e.message);
+    const errMsg = '✗ Error: ' + e.message;
+    if (banner) { banner.style.background='var(--d1t)'; banner.style.color='var(--d1)'; }
+    if (msg)    msg.textContent = errMsg;
+    dvStatusShow('error', errMsg);
+    toast(errMsg);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 8000);
   }
 }
 
@@ -347,6 +373,9 @@ function dvStatusShow(type, msg) {
   if (el)  { el.style.display='flex'; el.style.background=clr.bg; el.style.color=clr.c; }
   if (spin)  spin.style.display = type==='loading' ? 'block' : 'none';
   if (msgEl) msgEl.textContent = msg;
+  // Enable sync button when DV is connected
+  const syncBtn = document.getElementById('cfg-dv-sync-btn');
+  if (syncBtn) syncBtn.disabled = (type !== 'ok');
 }
 
 /* ── Helper: DV API call ────────────────────────────────────── */
@@ -426,6 +455,19 @@ function dvBuildBody(p) {
 }
 
 /* ── Upsert single project ──────────────────────────────────── */
+
+// Retry helper — exponential backoff for transient DV errors
+async function _dvRetry(fn, retries=3, delayMs=400) {
+  for (let i=0; i<retries; i++) {
+    try { return await fn(); }
+    catch(e) {
+      const transient = e.message.includes('429') || e.message.includes('503') || e.message.includes('network');
+      if (!transient || i === retries-1) throw e;
+      await new Promise(r => setTimeout(r, delayMs * Math.pow(2, i)));
+    }
+  }
+}
+
 async function dvUpsertProject(p, token) {
   const body = dvBuildBody(p);
   let existingId = p._dvId || null;
@@ -443,7 +485,7 @@ async function dvUpsertProject(p, token) {
   const path   = existingId
     ? `meso_projectscorings(${existingId})`
     : 'meso_projectscorings';
-  const res = await dvApi(method, path, token, body);
+  const res = await _dvRetry(() => dvApi(method, path, token, body));
   if (!res.ok && res.status !== 204) {
     const t = await res.text().catch(()=>'');
     throw new Error(`${res.status}: ${t.substring(0,120)}`);

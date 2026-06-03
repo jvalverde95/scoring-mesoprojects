@@ -648,6 +648,27 @@ function filterPort(f,btn) {
   renderPortfolio();
 }
 
+
+function filterPortfolio(query) {
+  const q = (query || '').toLowerCase().trim();
+  const rows = document.querySelectorAll('#port-tbl tbody tr');
+  let visible = 0;
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    const show = !q || text.includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  // Update count
+  const countEl = document.getElementById('port-count');
+  if (countEl) {
+    const total = rows.length;
+    countEl.textContent = q
+      ? `${visible} de ${total} proyectos · filtrando "${query}"`
+      : `${total} proyecto${total !== 1 ? 's' : ''}`;
+  }
+}
+
 function renderPortfolio() {
   portfolioData=portfolioData.map(p=>computeProj(p));
   const sorted=[...portfolioData].sort((a,b)=>{
@@ -1832,3 +1853,73 @@ const HARDCODED_CREDS = {
   dv_clientid: '',
   dv_secret:   '',    // NOT used — secret lives in DV_CLIENT_SECRET env var
 };
+
+
+function exportPortfolioExcel() {
+  if (!portfolioData.length) { toast('Sin proyectos para exportar'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Main sheet: one row per project
+  const headers = [
+    'ID ADO', 'Nombre', 'Área', 'Sponsor', 'Fecha solicitud', 'Horas estimadas',
+    'Score final', 'Score base', 'Aging factor',
+    'D1 Compliance', 'D2 Estratégico', 'D3 ROI', 'D4 Técnica', 'D5 Implantación', 'D6 Personas',
+    'Clasificación', 'Pool', 'Auto-prioritario',
+    ...CRIT_IDS.map(id => {
+      const dim = DIMS.find(d => d.criterios.some(c => c.id === id));
+      const crit = dim?.criterios.find(c => c.id === id);
+      return crit?.nom || id;
+    })
+  ];
+
+  const rows = portfolioData.map(p => [
+    p.adoId || '',
+    p.nom   || '',
+    p.area  || '',
+    p.sponsor || '',
+    p.reqDate || '',
+    p.horas   ?? '',
+    +(p.sf  || 0).toFixed(3),
+    +(p.sb  || 0).toFixed(3),
+    +(p.af  || 1).toFixed(4),
+    ...((p.dimScores || [0,0,0,0,0,0]).map(d => +d.toFixed(3))),
+    clsf(p.sf || 0).et || '',
+    getPoolCode(p) || '',
+    p.autoP ? 'Sí' : 'No',
+    ...CRIT_IDS.map(id => Math.round(p.scores?.[id] ?? 5))
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Column widths
+  ws['!cols'] = headers.map((h, i) => ({
+    wch: i < 6 ? 18 : i < 9 ? 10 : i < 15 ? 12 : 14
+  }));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Cartera');
+
+  // Summary sheet
+  const cls_counts = {};
+  portfolioData.forEach(p => {
+    const k = clsf(p.sf || 0).et;
+    cls_counts[k] = (cls_counts[k] || 0) + 1;
+  });
+  const summary = [
+    ['Resumen de cartera', ''],
+    ['Fecha exportación', new Date().toLocaleString('es-ES')],
+    ['Total proyectos', portfolioData.length],
+    ['Puntuados', portfolioData.filter(p => (p.sf||0) > 0).length],
+    ['Con horas estimadas', portfolioData.filter(p => p.horas != null).length],
+    ['Score medio', +(portfolioData.reduce((s,p)=>s+(p.sf||0),0)/portfolioData.length).toFixed(2)],
+    ['', ''],
+    ['Clasificación', 'Proyectos'],
+    ...Object.entries(cls_counts).sort((a,b)=>b[1]-a[1])
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols'] = [{wch:28},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, `mesoestetic_scoring_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast(`✓ ${portfolioData.length} proyectos exportados`);
+}

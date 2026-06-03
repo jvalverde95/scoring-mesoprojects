@@ -979,7 +979,7 @@
             <!-- Actions -->
             <div style="display:flex;gap:7px;margin-top:14px;flex-wrap:wrap">
               <button class="cfg-apply" onclick="dvTest()" style="background:#742774">⚡ Probar conexión</button>
-              <button class="cfg-apply" onclick="dvSyncAll()" style="background:#065438" id="cfg-dv-sync-btn" disabled>↑ Sincronizar cartera</button>
+              <button class="cfg-apply" onclick="dvSyncAll()" style="background:#065438" id="cfg-dv-sync-btn">↑ Sincronizar cartera</button>
               <button class="cfg-apply cfg-reset" onclick="dvSaveCfg()">✓ Guardar</button>
               <button class="cfg-apply cfg-reset" onclick="clearAllCreds()"
                 style="background:var(--d1t);color:var(--d1);border-color:rgba(204,31,38,.2)">
@@ -1933,10 +1933,31 @@
           style="background:#742774;font-size:9px;padding:5px 14px">
           ↑ Guardar en Dataverse
         </button>
+        <button class="cfg-apply cfg-reset" onclick="exportPortfolioExcel()"
+          style="font-size:9px;padding:5px 14px">
+          ↓ Exportar Excel
+        </button>
         <span id="bulk-count" style="font-size:9px;color:var(--ink4);margin-left:auto"></span>
       </div>
 
       <div class="port-wrap" id="portfolio" style="display:none">
+        <!-- Search bar -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="flex:1;position:relative">
+            <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink4)" width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="text" id="port-search" placeholder="Buscar por nombre, área o sponsor…"
+              class="cfg-inp" oninput="filterPortfolio(this.value)"
+              style="padding-left:28px;font-size:10px;height:30px;width:100%">
+          </div>
+          <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 10px;height:30px;flex-shrink:0"
+            onclick="filterPortfolio('');document.getElementById('port-search').value=''">
+            ✕ limpiar
+          </button>
+        </div>
+
         <div class="port-head">
           <div><div class="port-h1">cartera de proyectos</div><div class="port-h2" id="port-count"></div></div>
           <div class="port-sorts">
