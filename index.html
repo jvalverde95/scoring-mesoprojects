@@ -819,7 +819,9 @@
             <input type="password" class="cfg-inp" id="cfg-ado-pat"
               placeholder="Solo para testing local (no se guarda)"
               autocomplete="off" style="opacity:.5">
-            <div class="cfg-note">El token no se guarda ni sale del navegador — solo en memoria de esta sesión.</div>
+            <div style="padding:6px 10px;background:#EEF3FC;border-radius:6px;font-size:10px;color:#1848A0;margin-top:4px">
+              ✓ PAT gestionado por el servidor (ADO_PAT env var). El campo de arriba es opcional y solo para testing local.
+            </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
             <button class="cfg-apply" onclick="cfgAdoTest()" style="background:#0078D4"

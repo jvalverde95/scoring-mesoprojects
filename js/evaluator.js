@@ -98,10 +98,10 @@ function aiBulkHoras(){
   _aiScored.forEach(item=>{if(item.selected){item.proj.horas=val;if(item.status!=='pending')item.status='complete';count++;}});
   renderAiColumns(); toast(`✓ ${count} proyectos: ${val}h asignadas`);
 }
-function aiImportAll() {
+async function aiImportAll() {
   if (!_aiScored.length) { toast('Sin proyectos para cargar'); return; }
 
-  // Build local portfolio
+  // ── 1. Build local portfolio ──────────────────────────────
   portfolioData = _aiScored.map(item => {
     const p = item.proj;
     const proj = computeProj({
@@ -126,12 +126,46 @@ function aiImportAll() {
   ['btn-clear','bulk-toolbar'].forEach(id => {
     const e = document.getElementById(id); if (e) e.style.display = 'flex';
   });
-  try { renderCharts(); } catch(_) {}  // guard for non-browser envs
+  try { renderCharts(); } catch(_) {}
+  if (typeof renderDashboard === 'function') renderDashboard();
   closeAiModal();
   goStep('summary');
 
   const scored = _aiScored.filter(s => s.status !== 'pending').length;
-  toast(`✓ ${portfolioData.length} proyectos cargados en la app · ${scored} evaluados`);
+  toast(`✓ ${portfolioData.length} proyectos cargados · ${scored} evaluados`);
+
+  // ── 2. Sync to Dataverse ──────────────────────────────────
+  if (!_dvCfg.url) return;  // no DV configured
+
+  const banner = document.getElementById('dv-loading-banner');
+  const msg    = document.getElementById('dv-loading-msg');
+  if (banner) { banner.style.display='flex'; banner.style.background='var(--d5t)'; banner.style.color='var(--d5)'; }
+  if (msg)    msg.textContent = `⟳ Guardando ${portfolioData.length} proyectos en Dataverse…`;
+
+  try {
+    const token = await dvGetToken();
+    let ok=0, err=0;
+    for (let i=0; i<portfolioData.length; i++) {
+      if (msg) msg.textContent = `⟳ Guardando en Dataverse… ${i+1} / ${portfolioData.length}`;
+      try { await dvUpsertProject(portfolioData[i], token); ok++; }
+      catch(e) { err++; console.warn('DV upsert:', portfolioData[i].nom, e.message); }
+    }
+    if (banner) {
+      banner.style.background = err ? 'var(--d1t)' : 'var(--d3t)';
+      banner.style.color      = err ? 'var(--d1)'  : 'var(--d3)';
+    }
+    if (msg) msg.textContent = err
+      ? `⚠ ${ok} guardados · ${err} errores`
+      : `✓ ${ok} proyectos guardados en Dataverse`;
+    toast(err ? `⚠ DV: ${ok} ok · ${err} errores` : `✓ ${ok} guardados en Dataverse`);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 4000);
+    renderPortfolio();
+  } catch(e) {
+    if (banner) { banner.style.background='var(--d1t)'; banner.style.color='var(--d1)'; }
+    if (msg)    msg.textContent = '✗ Error Dataverse: ' + e.message;
+    toast('✗ ' + e.message);
+    setTimeout(() => { if (banner) banner.style.display='none'; }, 6000);
+  }
 }
 
 /* ── Add completed manual wizard eval to evaluator pool ─────── */
@@ -210,7 +244,7 @@ async function saveManualAndSync() {
   saveManualToPortfolio();
 
   // Sync to Dataverse if configured
-  if (_dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret) {
+  if (_dvCfg.url) {
     const lastProj = portfolioData[portfolioData.length - 1];
     if (!lastProj) return;
     try {
