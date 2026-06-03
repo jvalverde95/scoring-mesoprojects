@@ -18,13 +18,15 @@ function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }
 
 // Proxy helper — routes ADO calls through /api/ado to avoid CORS
 async function adoProxy(org, project, path, pat, method='GET', body=null) {
+  // PAT is now read server-side from ADO_PAT env var — not sent from browser
   const headers = {
-    'Content-Type':    'application/json',
-    'X-ADO-Org':       org,
-    'X-ADO-Pat':       pat,
-    'X-ADO-Path':      path,
+    'Content-Type':  'application/json',
+    'X-ADO-Path':    path,
   };
+  // Only send org/project if they differ from env var defaults
+  if (org)     headers['X-ADO-Org']     = org;
   if (project) headers['X-ADO-Project'] = project;
+  // pat param kept for backwards compat but ignored (env var takes precedence)
 
   const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
@@ -39,7 +41,7 @@ async function adoConnect() {
   const org=document.getElementById('ado-org')?.value?.trim();
   const project=document.getElementById('ado-project')?.value?.trim();
   const pat=document.getElementById('ado-pat')?.value?.trim();
-  if(!org||!project||!pat){adoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
+  if(!org||!project){adoStatusShow('error','Rellena organización y proyecto.');return;}
   const btn=document.getElementById('ado-connect-btn'); if(btn) btn.disabled=true;
   adoStatusShow('loading','Guardando credenciales...');
   try {
@@ -101,9 +103,10 @@ let _adoCreds=null, _adoConnected=false;
 
 function _cfgAdoCreds(){
   return {
-    org:(document.getElementById('cfg-ado-org')?.value||'').trim(),
-    project:(document.getElementById('cfg-ado-project')?.value||'').trim(),
-    pat:(document.getElementById('cfg-ado-pat')?.value||'').trim(),
+    org:     (document.getElementById('cfg-ado-org')?.value     || '').trim(),
+    project: (document.getElementById('cfg-ado-project')?.value || '').trim(),
+    // PAT is optional — if empty, server uses ADO_PAT env var
+    pat:     (document.getElementById('cfg-ado-pat')?.value     || '').trim(),
   };
 }
 
@@ -142,30 +145,54 @@ function cfgAdoQuerySelected(queryId){
 
 async function cfgAdoTest(){
   const {org,project,pat}=_cfgAdoCreds();
-  if(!org||!project||!pat){cfgAdoStatusShow('error','Rellena organización, proyecto y PAT.');return;}
+  // org and project required; PAT optional (server uses ADO_PAT env var if not provided)
+  if(!org||!project){cfgAdoStatusShow('error','Rellena organización y proyecto.');return;}
   cfgAdoStatusShow('loading','Verificando credenciales...');
   try{
-    let projRes;
+    // Step 1: List all projects to find the correct name (avoids 404 from case/space issues)
+    cfgAdoStatusShow('loading', 'Conectando con Azure DevOps…');
+    let allProjects = [];
     try {
-      projRes = await adoProxy(org, null,
-        `_apis/projects/${encodeURIComponent(project)}?api-version=7.1`, pat);
+      const listRes = await adoProxy(org, null, '_apis/projects?api-version=7.1', pat);
+      if (listRes.status === 401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
+      if (listRes.status === 403) throw new Error('Sin permisos (403). El PAT necesita scope "Project and Team (Read)".');
+      if (!listRes.ok) throw new Error(`Error HTTP ${listRes.status} conectando con Azure DevOps.`);
+      const listData = await listRes.json();
+      allProjects = listData.value || [];
     } catch(fetchErr) {
-      throw new Error('Error de red con Azure DevOps: ' + fetchErr.message);
+      if (fetchErr.message.includes('PAT') || fetchErr.message.includes('permisos') || fetchErr.message.includes('HTTP')) throw fetchErr;
+      throw new Error('No se puede conectar con Azure DevOps: ' + fetchErr.message);
     }
-    if(projRes.status===401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
-    if(projRes.status===403) throw new Error('Sin permisos (403). Asegúrate de que el PAT tiene scope "Work Items (Read)".');
-    if(projRes.status===404) throw new Error(`Proyecto "${project}" no encontrado (404). Comprueba el nombre exacto del proyecto en ADO.`);
-    if(!projRes.ok) throw new Error(`Error HTTP ${projRes.status} de Azure DevOps.`);
-    const projData=await projRes.json();
-    cfgAdoStatusShow('loading',`Proyecto "${projData.name}" OK. Cargando queries...`);
+
+    // Find project by name (case-insensitive)
+    const projMatch = allProjects.find(p =>
+      p.name.toLowerCase() === project.toLowerCase() ||
+      p.name.toLowerCase().includes(project.toLowerCase()) ||
+      project.toLowerCase().includes(p.name.toLowerCase())
+    );
+    const projName = projMatch ? projMatch.name : project;
+    const projId   = projMatch ? projMatch.id   : project;
+
+    if (!projMatch && allProjects.length > 0) {
+      // Show available projects in the error to help user
+      const names = allProjects.map(p => p.name).join(', ');
+      throw new Error(`Proyecto "${project}" no encontrado. Proyectos disponibles: ${names}`);
+    }
+
+    cfgAdoStatusShow('loading', `✓ Conectado · "${projName}" · Cargando queries…`);
+
+    // Step 2: Load queries using the exact project name from ADO
     let qRes;
     try {
-      qRes = await adoProxy(org, project,
+      qRes = await adoProxy(org, projName,
         `_apis/wit/queries?$depth=2&$expand=all&api-version=7.1`, pat);
     } catch(fetchErr) {
       throw new Error('Error de red cargando queries: ' + fetchErr.message);
     }
     if(!qRes.ok) throw new Error(`No se pudieron cargar las queries (${qRes.status}).`);
+    // Update project field with exact name for future use
+    const projField = document.getElementById('cfg-ado-project');
+    if (projField && projMatch) projField.value = projName;
     const qData=await qRes.json();
     const allQueries=[];
     function walkQueries(node,path=''){
@@ -212,13 +239,15 @@ async function cfgAdoLoad(){
   const manualId=document.getElementById('cfg-ado-query-id')?.value?.trim();
   const queryId=selVal||manualId;
   if(!queryId){cfgAdoStatusShow('error','Selecciona una query.');return;}
-  if(!org||!project||!pat){cfgAdoStatusShow('error','Rellena credenciales.');return;}
+  if(!org||!project){cfgAdoStatusShow('error','Rellena organización y proyecto.');return;}
   const types=cfgAdoGetTypes();
   const opt=document.getElementById('cfg-ado-query-select')?.querySelector(`option[value="${queryId}"]`);
   const qname=opt?.dataset?.name||queryId;
   cfgAdoStatusShow('loading',`Ejecutando query "${qname}"...`);
   try{
-    const allItems=await adoFetchRequirements(org,project,pat,queryId);
+    // Use exact project name from field (may have been corrected by cfgAdoTest)
+    const exactProject = document.getElementById('cfg-ado-project')?.value?.trim() || project;
+    const allItems=await adoFetchRequirements(org,exactProject,pat,queryId);
     const filtered=types.length?allItems.filter(wi=>types.includes(wi.fields?.['System.WorkItemType'])):allItems;
     if(!filtered.length) throw new Error(`Sin work items${types.length?' del tipo ('+types.join(', ')+')':''} en esta query.`);
     _adoCreds={org,project,pat,queryId}; _adoConnected=true;
