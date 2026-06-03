@@ -150,13 +150,28 @@ async function cfgAdoTest(){
   cfgAdoStatusShow('loading','Verificando credenciales...');
   try{
     // Step 1: List all projects to find the correct name (avoids 404 from case/space issues)
-    cfgAdoStatusShow('loading', 'Conectando con Azure DevOps…');
+    const orgDisplay = org || '(desde env var ADO_ORG)';
+    const projDisplay = project || '(desde env var ADO_PROJECT)';
+    cfgAdoStatusShow('loading', `Conectando… org: ${orgDisplay} · proyecto: ${projDisplay}`);
     let allProjects = [];
     try {
       const listRes = await adoProxy(org, null, '_apis/projects?api-version=7.1', pat);
       if (listRes.status === 401) throw new Error('PAT inválido o sin permisos (401). Comprueba el token en Azure DevOps → User Settings → Personal Access Tokens.');
       if (listRes.status === 403) throw new Error('Sin permisos (403). El PAT necesita scope "Project and Team (Read)".');
-      if (!listRes.ok) throw new Error(`Error HTTP ${listRes.status} conectando con Azure DevOps.`);
+      // Try to get diagnostic info from error response
+      let errDetail = '';
+      try { const e = await listRes.clone().json(); errDetail = e.url || e.message || ''; } catch(_) {}
+
+      if (listRes.status === 404) {
+        throw new Error(
+          `Organización no encontrada (404). ` +
+          `URL intentada: ${errDetail || 'ver Vercel → Functions logs'}. ` +
+          `Comprueba que ADO_ORG en Vercel coincide exactamente con la URL: https://dev.azure.com/[AQUÍ]/`
+        );
+      }
+      if (!listRes.ok) {
+        throw new Error(`Error HTTP ${listRes.status}. Detalle: ${errDetail || 'ver Vercel → Functions logs'}`);
+      }
       const listData = await listRes.json();
       allProjects = listData.value || [];
     } catch(fetchErr) {
