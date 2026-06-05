@@ -45,7 +45,6 @@ html{scroll-behavior:smooth}
 /* 4. White backgrounds everywhere */
 body{background:#FFFFFF!important}
 #shell{background:#FFFFFF}
-.step{background:#FFFFFF}
 .cfg-section{background:#FFFFFF;border:1px solid #EBEBEB!important}
 .sum-radar{background:#FFFFFF}
 .port-wrap{background:#FFFFFF}
@@ -185,8 +184,6 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .wb.fin:hover{background:var(--gd)}
 
 /* STEPS */
-.step{display:none;padding:20px 28px 40px;width:100%}
-.step.on{display:block}
 
 /* STEP 0 */
 .s-title{font-family:'Inter',sans-serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-.01em}
@@ -1116,3 +1113,91 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 /* .wh wizard header — hidden by default, shown via JS only during wizard/summary/charts */
 .wh { display: none; }
 .wh-visible { display: flex !important; }
+
+
+/* ══ NEXUS Design System ════════════════════════════════════
+   Clean, professional, Inter-first, mesoestetic gold accents
+   ══════════════════════════════════════════════════════════ */
+
+/* Scrollbar */
+#main::-webkit-scrollbar { width: 4px; }
+#main::-webkit-scrollbar-track { background: transparent; }
+#main::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
+#main::-webkit-scrollbar-thumb:hover { background: #C4974A; }
+
+/* Focus ring */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #C4974A;
+  outline-offset: 2px;
+}
+
+/* lnav-logo hover */
+.lnav-logo:hover > div { background: #C4974A !important; transition: background .2s; }
+
+/* Step transitions */
+.step.on {
+  animation: stepFadeIn .18s ease;
+}
+@keyframes stepFadeIn {
+  from { opacity: .6; transform: translateY(4px); }
+  to   { opacity: 1;  transform: translateY(0); }
+}
+
+/* Cleaner cfg-section */
+.cfg-section {
+  border: 1px solid #EBEBEB !important;
+  box-shadow: none !important;
+  border-radius: 10px !important;
+}
+
+/* KPI cards consistent hover */
+[onclick]:not(button):not(a) {
+  transition: box-shadow .15s, transform .15s;
+}
+[onclick]:not(button):not(a):hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.06) !important;
+}
+
+/* Toast */
+.toast-msg {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+/* ctab (chart tabs) */
+.ctab {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .01em;
+}
+.ctab:hover { border-color: #111; color: #111; background: #FAFAFA; }
+.ctab.on    { background: #111; color: #C4974A; border-color: #111; font-weight: 600; }
+
+/* Port table rows */
+#port-tbl tbody tr:hover { background: #FAFAF8 !important; }
+
+/* Wizard progress bar */
+.prog-f { background: linear-gradient(90deg, #111, #C4974A) !important; }
+
+/* s-title and s-sub */
+.s-title { font-weight: 700 !important; letter-spacing: -.01em !important; }
+
+/* cfg-apply button refinement */
+.cfg-apply {
+  font-family: 'Inter', sans-serif !important;
+  letter-spacing: .02em !important;
+  border-radius: 7px !important;
+}
+
+/* lnav-item active = gold text on dark */
+.lnav-item.active .lnav-label { color: #C4974A !important; }
+.lnav-item.active .lnav-icon  { color: #C4974A !important; }

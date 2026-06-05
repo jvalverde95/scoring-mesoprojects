@@ -471,7 +471,7 @@ function parseExcelBuffer(buffer) {
 }
 
 /* Apply projects to app, preserving horas */
-async function applyProjects(projects, filename) {
+function applyProjects(projects, filename) {
   const prevHoras = {};
   portfolioData.forEach(p => { if (p.horas!=null) prevHoras[p.nom]=p.horas; });
   Object.assign(prevHoras, _savedHoras);
@@ -494,37 +494,7 @@ async function applyProjects(projects, filename) {
   try { renderCharts(); } catch(_) {}
   if (typeof renderDashboard === 'function') renderDashboard();
 
-  // ── Auto-sync to Dataverse ──────────────────────────────────
-  // Show progress banner
-  const banner = document.getElementById('dv-loading-banner');
-  const msg    = document.getElementById('dv-loading-msg');
-  if (banner) { banner.style.display='flex'; banner.style.background='var(--d5t)'; banner.style.color='var(--d5)'; }
-  if (msg)    msg.textContent = `⟳ Guardando ${portfolioData.length} proyectos en Dataverse…`;
-
-  try {
-    const token = await dvGetToken();
-    let ok=0, err=0;
-    for (let i=0; i<portfolioData.length; i++) {
-      if (msg) msg.textContent = `⟳ Guardando en Dataverse… ${i+1} / ${portfolioData.length}`;
-      try { await dvUpsertProject(portfolioData[i], token); ok++; }
-      catch(e) { err++; console.warn('DV upsert:', portfolioData[i].nom, e.message); }
-    }
-    if (banner) {
-      banner.style.background = err ? 'var(--d1t)' : 'var(--d3t)';
-      banner.style.color      = err ? 'var(--d1)'  : 'var(--d3)';
-    }
-    if (msg) msg.textContent = err
-      ? `⚠ ${ok} guardados · ${err} errores`
-      : `✓ ${ok} proyectos guardados en Dataverse`;
-    toast(err ? `⚠ Dataverse: ${ok} ok · ${err} errores` : `✓ ${ok} proyectos guardados en Dataverse`);
-    setTimeout(() => { if (banner) banner.style.display='none'; }, 4000);
-  } catch(e) {
-    if (banner) { banner.style.background='var(--d1t)'; banner.style.color='var(--d1)'; }
-    if (msg)    msg.textContent = '✗ Error Dataverse: ' + e.message;
-    toast('✗ ' + e.message);
-    console.error('applyProjects DV sync:', e);
-    setTimeout(() => { if (banner) banner.style.display='none'; }, 6000);
-  }
+  toast(`✓ ${portfolioData.length} proyectos cargados · exporta a Excel cuando quieras`);
 }
 
 /* One-time file input load */
@@ -1481,10 +1451,7 @@ function renderChartsStep() {
 }
 
 /* ── POOLS STEP ───────────────────────────────────── */
-function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); 
-  // Save to Dataverse when changed
-  if (typeof dvSaveGlobalParams === 'function') dvSaveGlobalParams();
-}
+function updThresholds() { syncThresholds('s', document.getElementById('thr-s')?.value||30); }
 
 function renderPoolsStep() {
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;

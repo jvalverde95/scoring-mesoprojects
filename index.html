@@ -6,7 +6,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta name="version" content="20260526-1638">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>mesoestetic · project scoring</title>
+<title>Nexus · Project Intelligence Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -28,247 +28,154 @@
   </div>
 </div>
 
-<div id="landing" style="position:relative;min-height:100vh;background:#FAFAF8;overflow:hidden;font-family:'Cormorant Garamond','Playfair Display',Georgia,serif">
+<div id="landing" style="position:relative;min-height:100vh;background:#FAFAF8;overflow:hidden;font-family:'Inter','Helvetica Neue',Arial,sans-serif">
 
-  <!-- Subtle grid texture -->
-  <div style="position:absolute;inset:0;
-    background-image:linear-gradient(rgba(180,160,120,.06) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(180,160,120,.06) 1px,transparent 1px);
-    background-size:60px 60px;pointer-events:none;z-index:0"></div>
+  <!-- Grid texture -->
+  <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0"></div>
+  <!-- Gold glow -->
+  <div style="position:absolute;top:10%;right:10%;width:500px;height:500px;border-radius:50%;background:radial-gradient(ellipse,rgba(196,151,74,.07) 0%,transparent 65%);pointer-events:none;z-index:0"></div>
 
-  <!-- Top right accent blob -->
-  <div style="position:absolute;top:-120px;right:-120px;width:500px;height:500px;
-    border-radius:50%;background:radial-gradient(circle,rgba(196,151,74,.08) 0%,transparent 70%);
-    pointer-events:none;z-index:0"></div>
-
-  <!-- Bottom left accent blob -->
-  <div style="position:absolute;bottom:-80px;left:-80px;width:400px;height:400px;
-    border-radius:50%;background:radial-gradient(circle,rgba(196,151,74,.05) 0%,transparent 70%);
-    pointer-events:none;z-index:0"></div>
-
-  <!-- Header bar -->
-  <div style="position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;
-    padding:28px 48px;border-bottom:1px solid rgba(180,160,120,.15)">
-    <div style="display:flex;align-items:center;gap:14px">
-      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAdUAAABqCAYAAADqUsvjAAAFo0lEQVR42u3dyZLbOBAFQGvC///L9GUcQXeo1RKx8BWQeZylWSwsBVBcfv0CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOA9DykA2MtxHMfTgvB4qAmKKgCtBTW1sD6LN7n4K6oACmpk0fob7zme8zkkFtf/dDMABfXqfzujoB4n6ZeoFVUAIj0roOfCmlD8FVUAyu6q7VQBoHGHWoWiCkDJXWxi8XX3LxA7aa66m2k996vnXym3z+78feff3e23IQxA3I7vdNdvpUWVy78AGxWqSlcAHv/76Z/ZqQIQW1jFbKcKAIoqACiqAMA/lv5NddTXGJK+8pB4i3zqbftVHidIi3P0Yx5V548Vz1ku2z0qN8CzRrjyLsh3GnLU3x2dn1lxJcaUHFd6nD3eqTpqXI3Myex2mH3+s4rbrP6jqA4uqi0N+V0DJnWO3gOwR1yJMSXHlR7n7HhSiupd7bBaUR1xPtWK6xJFtVdD9tj1Vpns7l7Rj8rV6K9WpBb91AlxxqK1WmFbtahWGXujlb9RqWdDnv9W7w5y9e+9eqPIXbGlxTMrrl7HSMxfapuOjmnH8656nlVy6e7fGwZaYidK67Bphb7XsWbFWe2D1MaWXK6SS0U1tPPd0XneOWbqjqPCMWfHWX2htHt/UVBrUlQZbuRvfHcO6gq7wZ+OezWuxN9t2aOgpvch7/5doLP2vBniOI6jx00lz16CnTQoet2U9ipfIxcid+QwvU0rj62UheyswtbzBtO4TcRqK6CWO96udNLez6/2HvQ9CuKnf6P384mzcp8w8e7Qpr3yNfqZ0BGP5PTsK3d+T3XE2BvZPjMtc/n31eeAWpP/6v+/s2E/Ofadz+yNyNuVAfjuMXtO1iMnilk53PGNQVWeS66y26/2ybnti+rIBpvZGUavUr1OLTtXI49ZYaFUue2NrT55WSGPv3ccAAbKXoVrxnFm/l729dxmPGs5apefurtasa/Io52qIll08Ix+1nfWwJ55iTp9Z5z0/Lb5RT7sVDfpQBUm+5lxfj3OapdULbbWy6/+stdcqqguPLh2eAPOd3GbyOa95m3G12zS2tPbpcy/M3n5A7d39OPE4F5jgeByMbtSVImckGVijUWD9tSvFFUIGCwVJ2LFQ260IYoqCqv21J6gqGIi3jMno2Kf9Tyv0YOiCjdOxKzVpgqrhfTKPFKjc3eNZ7UJs8qLJrSpwpE2brz8AQZOSq1vaDLZZbWp3SYJC1qvKWTbFfLjRGuv1Z7pbZr2hSbWbgdFVYe7bUKWq/WKrEywO5d/FeW3VvhJ396c9W7Q1hfifxJnyyXuq3H6nmrG2Fo5Fzv2HTvVzXarMz4T1lKIUnK14g53tQluVF9LHVu79KHqeVRUC3fY6p2vJf6Ruborr4r/Gn1TjNdjTP9coqJq8HfrsCvc7PFOXFdif5WbFYr/J5ew72jTr8ft9b7hWWOrd38Z/b7lKzGOGnuJ/KYauFu9urpLevShZ0zfDeKWXM2cYD6N8/zf9mrTHr/5vjrfuyfEdx+/aOkvX889pQhUKUY940z+KUNRXaSw9uy0PTusy5Nr5a9HPHdOiC03uVU/95Q8rs7lX6InhJ+OefcEXaWQVJrkR8fkbubaeUxvP0VVhy1TxCoV+8px7hBPcltUKvqzY62QG0U1vMPO7ERpgz51J9hyLO2Zk6fkPqOw1s2JoqrTXireiZfoRi9Cev39GYulVdpzx7Fljqq9yFBUN9+1pu26epzniFyl5X7Eue/Sxyqcd8WCPGrcVVuURAY78lVfVf/21WPNnKgSY2qJa/ZgTstf692dvWPq9SjWLmOr5XGsVecoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAX9AWZx9UYJiz98AAAAAElFTkSuQmCC" alt="mesoestetic"
-        style="width:36px;height:36px;object-fit:contain">
+  <!-- Top bar -->
+  <div style="position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:22px 48px;border-bottom:1px solid rgba(0,0,0,.06)">
+    <div style="display:flex;align-items:center;gap:12px">
+      <!-- Nexus logomark -->
+      <div style="width:32px;height:32px;border-radius:8px;background:#111;display:flex;align-items:center;justify-content:center">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9" r="3.5" fill="#C4974A"/>
+          <circle cx="9" cy="3" r="1.8" fill="white" opacity=".9"/>
+          <circle cx="15" cy="12" r="1.8" fill="white" opacity=".9"/>
+          <circle cx="3" cy="12" r="1.8" fill="white" opacity=".9"/>
+          <line x1="9" y1="4.8" x2="9" y2="5.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+          <line x1="13.5" y1="11" x2="12.5" y2="10.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+          <line x1="4.5" y1="11" x2="5.5" y2="10.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+        </svg>
+      </div>
       <div>
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-weight:600;
-          color:#1a1a1a;letter-spacing:.04em">mesoestetic<span style="color:#C4974A">®</span></div>
-        <div style="font-size:8px;color:#999;letter-spacing:.2em;text-transform:uppercase;
-          margin-top:1px">the element for skincare experts</div>
+        <div style="font-size:15px;font-weight:700;color:#111;letter-spacing:-.01em">Nexus</div>
+        <div style="font-size:9px;color:#AAA;letter-spacing:.12em;text-transform:uppercase">Project Intelligence Platform</div>
       </div>
     </div>
-    <div style="font-size:9px;color:#999;letter-spacing:.18em;text-transform:uppercase">
-      project scoring system
-    </div>
+    <div style="font-size:10px;color:#BBB;letter-spacing:.1em;text-transform:uppercase">v3.0 · Sigmoid Boost</div>
   </div>
 
-  <!-- Main content -->
-  <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;
-    min-height:calc(100vh - 89px);max-width:1200px;margin:0 auto;padding:0 48px">
+  <!-- Hero -->
+  <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 73px);max-width:1140px;margin:0 auto;padding:0 48px">
 
-    <!-- LEFT: Text content -->
-    <div style="display:flex;flex-direction:column;justify-content:center;
-      padding:60px 48px 60px 0;border-right:1px solid rgba(180,160,120,.12)">
+    <!-- Left -->
+    <div style="display:flex;flex-direction:column;justify-content:center;padding:60px 56px 60px 0;border-right:1px solid rgba(0,0,0,.07)">
 
-      <!-- Kicker -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
-        <div style="width:32px;height:1px;background:#C4974A"></div>
-        <span style="font-size:9px;letter-spacing:.25em;text-transform:uppercase;
-          color:#C4974A;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:500">
-          Plataforma de Gestión Digital
-        </span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">
+        <div style="width:28px;height:1px;background:#C4974A"></div>
+        <span style="font-size:9px;font-weight:600;color:#C4974A;letter-spacing:.2em;text-transform:uppercase">Project Intelligence &amp; Planning</span>
       </div>
 
-      <!-- Main heading -->
-      <h1 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(42px,5vw,68px);
-        font-weight:300;color:#111;line-height:1.1;margin:0 0 12px;letter-spacing:-.01em">
-        Prioriza con<br>
-        <span style="font-weight:700;font-style:italic;color:#1a1a1a">precisión</span><br>
-        <span style="color:#C4974A;font-weight:300">científica</span>
+      <h1 style="font-size:clamp(38px,5vw,64px);font-weight:800;color:#111;line-height:1.08;margin:0 0 10px;letter-spacing:-.03em">
+        Prioritize<br>with<br><span style="color:#C4974A">purpose.</span>
       </h1>
 
-      <!-- Description -->
-      <p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;
-        color:#666;line-height:1.8;margin:0 0 40px;max-width:380px;font-weight:300">
-        Sistema de evaluación multidimensional para proyectos tecnológicos.
-        Algoritmo Sigmoid Boost v3 · 6 dimensiones · 22 criterios · Aging Factor.
+      <p style="font-size:14px;color:#666;line-height:1.75;margin:0 0 36px;max-width:400px;font-weight:400">
+        A scoring and planning engine that helps business and IT teams decide which technology initiatives deserve investment — based on compliance, ROI, strategic fit and real capacity.
       </p>
 
-      <!-- CTA button -->
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <button onclick="enterApp()"
-          style="display:inline-flex;align-items:center;gap:14px;
-                 padding:16px 36px;background:#111;color:#fff;
-                 border:none;border-radius:0;font-size:11px;font-weight:500;
-                 letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
-                 font-family:'Helvetica Neue',Arial,sans-serif;
-                 transition:all .25s ease;position:relative;overflow:hidden"
-          onmouseover="this.style.background='#C4974A';this.style.letterSpacing='.22em'"
-          onmouseout="this.style.background='#111';this.style.letterSpacing='.18em'">
-          <span>Entrar al sistema</span>
-          <svg width="18" height="10" viewBox="0 0 18 10" fill="none">
-            <path d="M1 5h16M12 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"
-              stroke-linecap="round" stroke-linejoin="round"/>
+          style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;
+                 background:#111;color:#fff;border:none;border-radius:8px;
+                 font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;
+                 transition:all .2s"
+          onmouseover="this.style.background='#C4974A'"
+          onmouseout="this.style.background='#111'">
+          Enter Nexus
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 7h12M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
+        <span style="font-size:11px;color:#AAA">No setup required · Excel-first</span>
       </div>
 
-      <!-- Stat row -->
-      <div style="display:flex;gap:0;margin-top:56px;padding-top:32px;
-        border-top:1px solid rgba(180,160,120,.15)">
-        <div style="flex:1;padding-right:24px;border-right:1px solid rgba(180,160,120,.15)">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;
-            font-weight:600;color:#1a1a1a;line-height:1">6</div>
-          <div style="font-size:8px;color:#999;letter-spacing:.18em;text-transform:uppercase;
-            margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif">dimensiones</div>
+      <!-- Stats -->
+      <div style="display:flex;gap:0;margin-top:52px;padding-top:32px;border-top:1px solid rgba(0,0,0,.07)">
+        <div style="flex:1;padding-right:24px;border-right:1px solid rgba(0,0,0,.07)">
+          <div style="font-size:32px;font-weight:800;color:#111;line-height:1;letter-spacing:-.02em">6</div>
+          <div style="font-size:8px;color:#AAA;letter-spacing:.15em;text-transform:uppercase;margin-top:4px">Dimensions</div>
         </div>
-        <div style="flex:1;padding:0 24px;border-right:1px solid rgba(180,160,120,.15)">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;
-            font-weight:600;color:#1a1a1a;line-height:1">22</div>
-          <div style="font-size:8px;color:#999;letter-spacing:.18em;text-transform:uppercase;
-            margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif">criterios</div>
+        <div style="flex:1;padding:0 24px;border-right:1px solid rgba(0,0,0,.07)">
+          <div style="font-size:32px;font-weight:800;color:#111;line-height:1;letter-spacing:-.02em">22</div>
+          <div style="font-size:8px;color:#AAA;letter-spacing:.15em;text-transform:uppercase;margin-top:4px">Criteria</div>
         </div>
-        <div style="flex:1;padding:0 24px;border-right:1px solid rgba(180,160,120,.15)">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;
-            font-weight:600;color:#C4974A;line-height:1">v3</div>
-          <div style="font-size:8px;color:#999;letter-spacing:.18em;text-transform:uppercase;
-            margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif">sigmoid boost</div>
+        <div style="flex:1;padding:0 24px;border-right:1px solid rgba(0,0,0,.07)">
+          <div style="font-size:32px;font-weight:800;color:#C4974A;line-height:1;letter-spacing:-.02em">AI</div>
+          <div style="font-size:8px;color:#AAA;letter-spacing:.15em;text-transform:uppercase;margin-top:4px">Auto-score</div>
         </div>
         <div style="flex:1;padding-left:24px">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:36px;
-            font-weight:600;color:#1a1a1a;line-height:1">∞</div>
-          <div style="font-size:8px;color:#999;letter-spacing:.18em;text-transform:uppercase;
-            margin-top:4px;font-family:'Helvetica Neue',Arial,sans-serif">proyectos</div>
+          <div style="font-size:32px;font-weight:800;color:#111;line-height:1;letter-spacing:-.02em">∞</div>
+          <div style="font-size:8px;color:#AAA;letter-spacing:.15em;text-transform:uppercase;margin-top:4px">Projects</div>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT: Visual panel -->
-    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;
-      padding:60px 0 60px 60px;position:relative">
+    <!-- Right: feature cards -->
+    <div style="display:flex;flex-direction:column;justify-content:center;padding:60px 0 60px 56px;gap:12px">
 
-      <!-- Central molecule/score visual -->
-      <div style="position:relative;width:320px;height:320px">
-
-        <!-- Outer ring -->
-        <div style="position:absolute;inset:0;border-radius:50%;
-          border:1px solid rgba(196,151,74,.2);animation:rotateRing 20s linear infinite">
-          <!-- 6 dimension dots -->
-          <div style="position:absolute;top:0;left:50%;transform:translate(-50%,-50%);
-            width:8px;height:8px;border-radius:50%;background:#CC1F26"></div>
-          <div style="position:absolute;top:25%;right:0;transform:translate(50%,-50%);
-            width:8px;height:8px;border-radius:50%;background:#C4974A"></div>
-          <div style="position:absolute;bottom:25%;right:0;transform:translate(50%,50%);
-            width:8px;height:8px;border-radius:50%;background:#087B50"></div>
-          <div style="position:absolute;bottom:0;left:50%;transform:translate(-50%,50%);
-            width:8px;height:8px;border-radius:50%;background:#C07800"></div>
-          <div style="position:absolute;bottom:25%;left:0;transform:translate(-50%,50%);
-            width:8px;height:8px;border-radius:50%;background:#1848A0"></div>
-          <div style="position:absolute;top:25%;left:0;transform:translate(-50%,-50%);
-            width:8px;height:8px;border-radius:50%;background:#5C6570"></div>
-        </div>
-
-        <!-- Middle ring -->
-        <div style="position:absolute;inset:30px;border-radius:50%;
-          border:1px dashed rgba(196,151,74,.15);animation:rotateRing 14s linear infinite reverse">
-        </div>
-
-        <!-- Inner ring -->
-        <div style="position:absolute;inset:65px;border-radius:50%;
-          border:1px solid rgba(196,151,74,.25)">
-        </div>
-
-        <!-- Center card -->
-        <div style="position:absolute;inset:90px;border-radius:50%;
-          background:#fff;display:flex;flex-direction:column;align-items:center;
-          justify-content:center;box-shadow:0 4px 40px rgba(196,151,74,.12);
-          border:1px solid rgba(196,151,74,.2)">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;
-            font-weight:700;color:#C4974A;line-height:1">8.5</div>
-          <div style="font-size:7px;color:#999;letter-spacing:.15em;text-transform:uppercase;
-            font-family:'Helvetica Neue',Arial,sans-serif;margin-top:3px">score</div>
-        </div>
-
-        <!-- Dimension labels around ring -->
-        <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);
-          font-size:8px;color:#CC1F26;letter-spacing:.12em;text-transform:uppercase;
-          font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap">D1 · Compliance</div>
-        <div style="position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);
-          font-size:8px;color:#C07800;letter-spacing:.12em;text-transform:uppercase;
-          font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap">D4 · Técnica</div>
-        <div style="position:absolute;top:50%;right:-76px;transform:translateY(-50%);
-          font-size:8px;color:#C4974A;letter-spacing:.12em;text-transform:uppercase;
-          font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap">D2 · Estrategia</div>
-        <div style="position:absolute;top:50%;left:-76px;transform:translateY(-50%);
-          font-size:8px;color:#1848A0;letter-spacing:.12em;text-transform:uppercase;
-          font-family:'Helvetica Neue',Arial,sans-serif;white-space:nowrap">D5 · Implant.</div>
-      </div>
-
-      <!-- Subtitle below visual -->
-      <div style="margin-top:40px;text-align:center;max-width:260px">
-        <div style="font-size:11px;color:#888;line-height:1.7;
-          font-family:'Helvetica Neue',Arial,sans-serif;font-weight:300">
-          Evaluación científica basada en<br>
-          <span style="color:#C4974A">Sigmoid Boost</span> con aging factor
+      <div style="background:#fff;border:1px solid #EBEBEB;border-radius:10px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:8px;background:#FEF0F1;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">⚖</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:3px">Objective scoring</div>
+          <div style="font-size:11px;color:#888;line-height:1.5">Sigmoid Boost algorithm across 6 weighted dimensions. Remove politics from prioritization.</div>
         </div>
       </div>
 
-      <!-- Feature pills -->
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:28px;width:100%;max-width:280px">
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
-          background:#fff;border:1px solid rgba(180,160,120,.15);border-radius:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:#087B50;flex-shrink:0"></div>
-          <span style="font-size:10px;color:#555;font-family:'Helvetica Neue',Arial,sans-serif">
-            Azure DevOps · importación directa
-          </span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
-          background:#fff;border:1px solid rgba(180,160,120,.15);border-radius:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:#742774;flex-shrink:0"></div>
-          <span style="font-size:10px;color:#555;font-family:'Helvetica Neue',Arial,sans-serif">
-            Microsoft Dataverse · persistencia
-          </span>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;
-          background:#fff;border:1px solid rgba(180,160,120,.15);border-radius:4px">
-          <div style="width:6px;height:6px;border-radius:50%;background:#C4974A;flex-shrink:0"></div>
-          <span style="font-size:10px;color:#555;font-family:'Helvetica Neue',Arial,sans-serif">
-            Scoring automático por reglas IA
-          </span>
+      <div style="background:#fff;border:1px solid #EBEBEB;border-radius:10px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:8px;background:#ECF8F3;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">📊</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:3px">Excel-native workflow</div>
+          <div style="font-size:11px;color:#888;line-height:1.5">Import your project list, score and plan, export back to the same format. No database required.</div>
         </div>
       </div>
+
+      <div style="background:#fff;border:1px solid #EBEBEB;border-radius:10px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:8px;background:#EEF3FC;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">🔗</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:3px">Azure DevOps connected</div>
+          <div style="font-size:11px;color:#888;line-height:1.5">Pull work items directly from ADO queries. Auto-score with AI rules. Push back to planning.</div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #EBEBEB;border-radius:10px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:8px;background:#FAF6EC;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">🚀</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#111;margin-bottom:3px">Capacity-aware planning</div>
+          <div style="font-size:11px;color:#888;line-height:1.5">Assign projects to short/medium/long pools based on hours. Match demand to real team capacity.</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- Bottom bar -->
-  <div style="position:relative;z-index:10;padding:16px 48px;
-    border-top:1px solid rgba(180,160,120,.12);
-    display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:8px;color:#bbb;letter-spacing:.15em;font-family:'Helvetica Neue',Arial,sans-serif">
-      © 2025 mesoestetic Pharma Group S.L. · Viladecans, Barcelona
-    </div>
-    <div style="font-size:8px;color:#bbb;letter-spacing:.15em;font-family:'Helvetica Neue',Arial,sans-serif">
-      Project Scoring System v3.0
-    </div>
+  <!-- Footer -->
+  <div style="position:relative;z-index:10;padding:14px 48px;border-top:1px solid rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:9px;color:#CCC;letter-spacing:.1em">NEXUS · Project Intelligence Platform</div>
+    <div style="font-size:9px;color:#CCC">mesoestetic® Pharma Group · Digital Transformation</div>
   </div>
 
-  <style>
-    @keyframes rotateRing {
-      from { transform: rotate(0deg); }
-      to   { transform: rotate(360deg); }
-    }
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,700&display=swap');
-  </style>
 </div>
 
 <div id="shell" style="display:none">
   <div id="lnav">
 
-  <!-- Logo mark -->
-  <div class="lnav-logo">
-    <div class="lnav-dot"></div>
+  <!-- Nexus logo mark -->
+  <div class="lnav-logo" onclick="goLanding()" title="Nexus · Home" style="cursor:pointer">
+    <div style="width:32px;height:32px;border-radius:8px;background:#111;display:flex;align-items:center;justify-content:center">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="3.5" fill="#C4974A"/>
+        <circle cx="9" cy="3" r="1.8" fill="white" opacity=".9"/>
+        <circle cx="15" cy="12" r="1.8" fill="white" opacity=".9"/>
+        <circle cx="3" cy="12" r="1.8" fill="white" opacity=".9"/>
+        <line x1="9" y1="4.8" x2="9" y2="5.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+        <line x1="13.5" y1="11" x2="12.5" y2="10.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+        <line x1="4.5" y1="11" x2="5.5" y2="10.5" stroke="white" stroke-width="1.2" opacity=".5"/>
+      </svg>
+    </div>
   </div>
 
   <!-- Wizard steps — only shown during manual eval -->
@@ -354,7 +261,7 @@
 
     <div class="wh">
       <div class="wh-l">
-        <button class="wb-back" onclick="goLanding()" title="Volver al inicio">
+        <button class="wb-back" onclick="goLanding()" title="Nexus · volver al inicio">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8.5 3L5 7L8.5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -441,7 +348,7 @@
   <!-- Header + KPI strip -->
   <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;min-width:0">
     <div>
-      <div class="s-title" style="margin:0">📊 Análisis de cartera</div>
+      <div class="s-title" style="margin:0">Análisis de cartera</div>
       <div class="s-sub" style="margin:4px 0 0" id="charts-subtitle">Carga proyectos para ver el análisis</div>
     </div>
     <div id="charts-kpi-row" style="display:none;gap:6px;flex-wrap:wrap">
@@ -663,7 +570,7 @@
 
     <!-- STEP: CONFIG -->
     <div class="step" id="step-config">
-      <div class="s-title">⚙ Configuración</div>
+      <div class="s-title">Configuración</div>
       <div class="s-sub">Pesos del modelo · Umbrales de pools · Capacidad del equipo · Azure DevOps · Dataverse</div>
 
       <!-- Pesos dimensiones -->
@@ -905,7 +812,7 @@
       </div>
 
       <!-- Dataverse / Power Platform connection -->
-      <div class="cfg-section" id="cfg-dv-section" style="padding:0;overflow:hidden">
+      <div class="cfg-section" id="cfg-dv-section" style="display:none">
 
         <!-- Header -->
         <div style="padding:16px 22px 12px;border-bottom:1px solid #F0F0F0">
@@ -1100,7 +1007,7 @@
   <!-- Header row -->
   <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <div>
-      <div class="s-title" style="margin:0;font-size:20px">Inicio</div>
+      <div class="s-title" style="margin:0;font-size:20px">Nexus · Dashboard</div>
       <div class="s-sub" style="margin:3px 0 0" id="dash-last-sync">Portfolio · actualizado ahora</div>
     </div>
     <div style="display:flex;gap:8px">
@@ -1268,7 +1175,7 @@
 </div>
 
 <div class="step" id="step-projects">
-  <div class="s-title">📂 Proyectos</div>
+  <div class="s-title">Proyectos</div>
   <div class="s-sub">Carga proyectos desde distintas fuentes para evaluarlos y gestionarlos</div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:24px 0">
@@ -1337,7 +1244,7 @@
 
 <!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->
 <div class="step" id="step-eval">
-  <div class="s-title">⚡ Evaluación</div>
+  <div class="s-title">Evaluación</div>
   <div class="s-sub">Puntúa proyectos automáticamente o de forma manual · El resultado va directo a los pools</div>
 
   <!-- Evaluación masiva -->
@@ -1394,7 +1301,7 @@
 
 <!-- ═══ SPRINT / EN MARCHA ══════════════════════════════════════ -->
 <div class="step" id="step-sprint">
-  <div class="s-title">🚀 En marcha</div>
+  <div class="s-title">En marcha</div>
   <div class="s-sub">Proyectos asignados al equipo · separados por tamaño · capacidad total del equipo</div>
 
   <!-- Team capacity summary -->
@@ -1597,7 +1504,7 @@
 
 <div class="step" id="step-wiki">
 
-  <div class="s-title" style="margin:0 0 4px">📖 Cómo funciona</div>
+  <div class="s-title" style="margin:0 0 4px">Documentación</div>
   <div class="s-sub" style="margin:0 0 20px">Documentación del sistema de evaluación · algoritmo · pools · carga de trabajo</div>
 
   <!-- Algorithm section -->
@@ -1840,10 +1747,7 @@
                 style="background:var(--d3);font-size:10px;padding:8px 18px">
                 ↓ Guardar en cartera
               </button>
-              <button class="cfg-apply cfg-reset" onclick="saveManualAndSync()"
-                style="font-size:10px;padding:8px 18px">
-                ↓ Guardar + Sync Dataverse
-              </button>
+
             </div>
           </div>
 
@@ -1928,10 +1832,6 @@
         <button id="btn-bulk-delete" class="cfg-apply" onclick="dvDeleteSelected()" disabled
           style="background:var(--d1t);color:var(--d1);border:1px solid rgba(204,31,38,.25);font-size:9px;padding:5px 12px">
           🗑 Eliminar selección (0)
-        </button>
-        <button id="btn-dv-sync" class="cfg-apply" onclick="dvSyncAll()"
-          style="background:#742774;font-size:9px;padding:5px 14px">
-          ↑ Guardar en Dataverse
         </button>
         <button class="cfg-apply cfg-reset" onclick="exportPortfolioExcel()"
           style="font-size:9px;padding:5px 14px">
@@ -2227,8 +2127,8 @@
         <button onclick="pemNext()" style="padding:6px 12px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#666">Siguiente →</button>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="pemSaveDataverse()" id="pem-dv-btn"
-          style="padding:8px 16px;background:#0078D4;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:none">
+        <button onclick="saveManualToPortfolio()" id="pem-dv-btn"
+          style="padding:8px 16px;background:var(--d3);color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:none">
           ↑ Guardar en Dataverse
         </button>
         <button onclick="pemSave()"

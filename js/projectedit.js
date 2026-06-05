@@ -109,9 +109,9 @@ function dvLoadCfg() {
 /* ── Save single project from edit modal ────────────────────── */
 
 /* ═══ INIT — runs after all modules loaded ══════════════════ */
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
 
-  // ── 1. UI setup ──────────────────────────────────────────
+  // ── UI setup ─────────────────────────────────────────────────
   const fReq = document.getElementById('f-req');
   if (fReq) fReq.value = new Date().toISOString().split('T')[0];
 
@@ -126,86 +126,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   upd();
   goStep('dashboard');
 
-  // ── 2. Load team capacity from localStorage ───────────────
-  if (typeof loadDevTeam === 'function') loadDevTeam();
+  // ── Load team capacity & AI keywords from localStorage ───────
+  if (typeof loadDevTeam  === 'function') loadDevTeam();
+  if (typeof aiLoadKeywords === 'function') aiLoadKeywords();
 
-  // ── 3. Auto-configure from Vercel env vars (/api/config) ─
-  //    This gives the app the DV URL and ADO org/project
-  //    WITHOUT exposing any secrets to the frontend.
-  try {
-    const cfgRes = await fetch('/api/config');
-    if (cfgRes.ok) {
-      const cfg = await cfgRes.json();
-
-      // Populate _dvCfg URL (token and secret stay server-side)
-      if (cfg.dv_url) {
-        _dvCfg.url = cfg.dv_url;
-        // Mark DV as server-managed so UI shows correct status
-        _dvCfg._serverManaged = true;
-      }
-
-      // Populate ADO config fields in the UI
-      const setField = (id, val) => {
-        if (!val) return;
-        const e = document.getElementById(id);
-        if (e && !e.value) e.value = val;
-      };
-      setField('cfg-ado-org',     cfg.ado_org);
-      setField('cfg-ado-project', cfg.ado_project);
-      setField('ado-org',         cfg.ado_org);
-      setField('ado-project',     cfg.ado_project);
-
-      // Update Config screen status badges
-      if (cfg.has_dataverse) {
-        dvStatusShow('ok', '✓ Dataverse configurado desde el servidor');
-        const badge = document.getElementById('cfg-dv-badge');
-        if (badge) {
-          badge.style.display = 'inline-block';
-          badge.textContent   = '✓ env vars';
-          badge.style.background = 'var(--d3t)';
-          badge.style.color      = 'var(--d3)';
-        }
-      }
-      if (cfg.has_ado) {
-        const adoBadge = document.getElementById('cfg-ado-conn-badge');
-        if (adoBadge) {
-          adoBadge.style.display = 'inline-block';
-          adoBadge.textContent   = '✓ env vars';
-          adoBadge.style.background = '#EEF3FC';
-          adoBadge.style.color      = '#1848A0';
-        }
-      }
-
-      console.log('[init] Server config loaded:',
-        cfg.has_dataverse ? 'DV ✓' : 'DV ✗',
-        cfg.has_ado        ? 'ADO ✓' : 'ADO ✗');
-    }
-  } catch(e) {
-    // /api/config not available (local dev without Vercel) — fallback to localStorage
-    console.warn('[init] /api/config not available, falling back to localStorage');
-  }
-
-  // ── 4. Override with localStorage saved values if they exist ─
-  //    Allows user to test with different credentials from Config screen
+  // ── Load ADO config from localStorage ────────────────────────
   try { loadAllCreds(); } catch(e) { console.warn('loadAllCreds:', e.message); }
 
-  // ── 5. Auto-load portfolio from Dataverse ────────────────
-  //    Silent background load — no spinner, just populates when ready
-  if (_dvCfg.url) {
-    try {
-      // Load global params (pool thresholds) first
-      await dvLoadGlobalParams();
-    } catch(e) {
-      console.warn('[init] dvLoadGlobalParams:', e.message);
-    }
-    try {
-      await dvLoadPortfolio();
-    } catch(e) {
-      console.warn('[init] dvLoadPortfolio:', e.message);
-      if (typeof renderDashboard === 'function') renderDashboard();
-    }
-  } else {
-    if (typeof renderDashboard === 'function') renderDashboard();
-  }
+  // ── Render empty dashboard ────────────────────────────────────
+  if (typeof renderDashboard === 'function') renderDashboard();
 
 });

@@ -60,7 +60,7 @@ function openNewProjectModal() {
   document.getElementById('new-project-overlay').classList.add('open');
 }
 
-async function createNewProject() {
+function createNewProject() {
   const g = id => (document.getElementById(id)?.value || '').trim();
   const nom    = g('np-nombre');
   const area   = g('np-area');
@@ -85,21 +85,8 @@ async function createNewProject() {
   ['portfolio','charts-panel'].forEach(id => { const e=document.getElementById(id); if(e) e.style.display='block'; });
   ['btn-clear','bulk-toolbar'].forEach(id => { const e=document.getElementById(id); if(e) e.style.display='flex'; });
 
-  if (_dvCfg.url && _dvCfg.tenant && _dvCfg.clientId && _dvCfg.secret) {
-    if(savEl) { savEl.style.display='block'; savEl.textContent='⟳ Guardando en Dataverse…'; savEl.style.background='var(--d5t)'; savEl.style.color='var(--d5)'; }
-    try {
-      const token = await dvGetToken();
-      await dvUpsertProject(proj, token);
-      if(savEl) { savEl.textContent='✓ Guardado en Dataverse'; savEl.style.background='var(--d3t)'; savEl.style.color='var(--d3)'; }
-      toast(`✓ "${nom}" creado`);
-      setTimeout(() => document.getElementById('new-project-overlay').classList.remove('open'), 1000);
-    } catch(e) {
-      if(savEl) savEl.style.display='none';
-      if(errEl) { errEl.textContent='✗ Dataverse: '+e.message; errEl.style.display='block'; }
-    }
-  } else {
-    toast(`✓ "${nom}" creado localmente`);
-    document.getElementById('new-project-overlay').classList.remove('open');
-  }
+  toast(`✓ "${nom}" añadido a la cartera`);
+  if (typeof renderDashboard === 'function') renderDashboard();
+  document.getElementById('new-project-overlay').classList.remove('open');
   renderPortfolio();
 }
