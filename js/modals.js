@@ -13,8 +13,6 @@ function openProjectEdit(idx) {
   renderPemBody();
   const el = document.getElementById('proj-edit-overlay');
   if (el) el.classList.add('open');
-  const dvBtn = document.getElementById('pem-dv-btn');
-  if (dvBtn) dvBtn.style.display = _dvCfg.url ? 'flex' : 'none';
 }
 
 /* ═══ MODAL HELPERS ═══════════════════════════════════════ */

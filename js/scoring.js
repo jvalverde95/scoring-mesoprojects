@@ -1545,13 +1545,23 @@ function renderPoolsStep() {
                            background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et.split(' ').slice(0,2).join(' ')}</span>
             </div>
           </div>
-          <button onclick="event.stopPropagation();dvDeleteOne(${idx})"
-            title="Eliminar proyecto"
-            style="opacity:0;padding:4px 8px;background:none;border:1px solid var(--d1);
-                   border-radius:4px;color:var(--d1);font-size:9px;cursor:pointer;
-                   transition:opacity .15s;flex-shrink:0;margin-left:4px"
-            onmouseover="this.style.opacity='1'"
-            onmouseout="this.style.opacity='0'">✕</button>`;
+          <div style="display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0"
+            onmouseenter="this.style.opacity='1'"
+            onmouseleave="this.style.opacity='0'"
+            onclick="event.stopPropagation()">
+            <button onclick="event.stopPropagation();openProjectEdit(${idx})"
+              title="Reevaluar proyecto"
+              style="padding:4px 8px;background:var(--d5t);border:1px solid var(--d5);
+                     border-radius:4px;color:var(--d5);font-size:9px;cursor:pointer">
+              ✎ Eval
+            </button>
+            <button onclick="event.stopPropagation();dvDeleteOne(${idx})"
+              title="Eliminar proyecto"
+              style="padding:4px 8px;background:none;border:1px solid var(--d1);
+                     border-radius:4px;color:var(--d1);font-size:9px;cursor:pointer">
+              ✕
+            </button>
+          </div>`;
         }).join('');
 
     col.innerHTML = header + `<div style="overflow-y:auto;max-height:500px">${rows}</div>`;

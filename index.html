@@ -1244,8 +1244,13 @@
 
 <!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->
 <div class="step" id="step-eval">
-  <div class="s-title">Evaluación</div>
-  <div class="s-sub">Puntúa proyectos automáticamente o de forma manual · El resultado va directo a los pools</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="s-title" style="margin:0">Evaluación</div>
+    <button onclick="exportPortfolioExcel()" class="export-excel-btn" style="font-size:9px;padding:7px 14px">
+      ↓ Exportar Excel
+    </button>
+  </div>
+  <div class="s-sub">Puntúa proyectos automáticamente o de forma manual · el resultado va directo a los pools</div>
 
   <!-- Evaluación masiva -->
   <div class="cfg-section" style="margin-bottom:16px">
@@ -1726,10 +1731,12 @@
 
           <!-- Actions -->
           <div class="sum-acts" style="margin-bottom:0">
-            <button class="sa p" onclick="window.print()">↓ exportar pdf</button>
-            <button class="sa p" onclick="guardar()">↓ guardar json</button>
-            <button class="sa g" onclick="resetAll()">↺ nueva evaluación</button>
-            <button class="sa g" onclick="goStep(0)">← editar datos</button>
+            <button class="sa export" onclick="exportPortfolioExcel()" title="Exportar toda la cartera a Excel">
+              ↓ Exportar cartera Excel
+            </button>
+            <button class="sa g" onclick="guardar()">↓ Guardar JSON</button>
+            <button class="sa g" onclick="resetAll()">↺ Nueva evaluación</button>
+            <button class="sa g" onclick="goStep(0)">← Editar datos</button>
           </div>
 
           <!-- Save to portfolio banner (shown after manual eval) -->
@@ -1833,9 +1840,12 @@
           style="background:var(--d1t);color:var(--d1);border:1px solid rgba(204,31,38,.25);font-size:9px;padding:5px 12px">
           🗑 Eliminar selección (0)
         </button>
-        <button class="cfg-apply cfg-reset" onclick="exportPortfolioExcel()"
-          style="font-size:9px;padding:5px 14px">
-          ↓ Exportar Excel
+        <button onclick="exportPortfolioExcel()" class="export-excel-btn">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <path d="M14 10v2.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Exportar Excel
         </button>
         <span id="bulk-count" style="font-size:9px;color:var(--ink4);margin-left:auto"></span>
       </div>
