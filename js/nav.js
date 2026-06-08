@@ -36,7 +36,9 @@ function goStep(t) {
   const showWh = isWizardStep || ['summary','charts','pools'].includes(t);
 
   if (wizardPanel) wizardPanel.style.display = isWizardStep ? 'flex' : 'none';
-  if (whHeader) whHeader.style.display = showWh ? 'flex' : 'none';
+  if (whHeader) {
+    whHeader.style.display = showWh ? 'flex' : 'none';
+  }
 
   // 2. Show the correct panel and activate nav
   if (t === 'summary') {

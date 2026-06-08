@@ -44,7 +44,7 @@ html{scroll-behavior:smooth}
 }
 /* 4. White backgrounds everywhere */
 body{background:#FFFFFF!important}
-#shell{background:#FFFFFF}
+#shell{background:#FFFFFF;display:flex;height:100vh;overflow:hidden}
 .cfg-section{background:#FFFFFF;border:1px solid #EBEBEB!important}
 .sum-radar{background:#FFFFFF}
 .port-wrap{background:#FFFFFF}
@@ -58,8 +58,7 @@ body{background:#FFFFFF!important}
 .land-right{background:#FFFFFF!important}
 /* 5. Surfaces → very light gray */
 :root{--surf:#F8F8F8!important}
-.cfg-section .cfg-row .cfg-field,.wh{background:#FFFFFF}
-/* 6. Card shadows sharper on white */
+.cfg-section .cfg-row .cfg-field,/* 6. Card shadows sharper on white */
 .c-card,.cfg-section,.sd-box,.sum-radar,.port-wrap,.chart-panel,.pool-panel,.ib,.dim-mini-list{
   box-shadow:0 1px 3px rgba(0,0,0,.06),0 1px 8px rgba(0,0,0,.04)!important
 }
@@ -69,7 +68,6 @@ body{background:#FFFFFF!important}
 .s-title{font-size:20px!important;font-weight:700!important;letter-spacing:-.01em}
 .s-sub{color:#888!important}
 /* 9. Wizard header — cleaner */
-.wh{border-bottom:1px solid #EBEBEB!important;box-shadow:0 1px 0 #EBEBEB!important}
 .wh-name{font-size:15px!important;font-weight:700!important;letter-spacing:-.01em}
 /* 10. Summary hero — keep black bg but no italic text */
 .sh-name{font-size:18px!important;font-weight:700!important}
@@ -149,7 +147,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
 
 /* MAIN */
-#main{flex:1;min-width:0;display:flex;flex-direction:column}
+#main{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* BACK BUTTON */
 .wb-back{
@@ -166,7 +164,6 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .prog-f{height:2px;background:var(--g);transition:width .4s ease}
 
 /* WIZARD HEADER */
-.wh{background:var(--w);border-bottom:1px solid var(--b);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
 .wh-l{display:flex;align-items:center;gap:11px}
 .wh-badge{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
 .wh-name{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
@@ -1067,7 +1064,6 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
   box-sizing: border-box;
 }
 
-/* .wh — no sticky, static at top of flex column */
 
 /* ── Shell fills viewport cleanly ── */
 #shell {
@@ -1105,8 +1101,6 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 }
 
 
-/* .wh wizard header — hidden by default, shown via JS only during wizard/summary/charts */
-/* .wh display controlled by JS */
 .wh-visible { display: flex !important; }
 
 
@@ -1233,12 +1227,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sum-acts .sa.export:hover { background: #065a3a; }
 
 
-/* Ensure .wh has consistent height */
-.wh {
-  min-height: 56px;
-}
 
-/* When .wh is visible (wizard/summary/charts), 
    the first visible .step.on should not be hidden under it */
 #main {
   scroll-padding-top: 56px;
@@ -1359,7 +1348,6 @@ tr:hover .port-row-reeval,
 
 
 /* ══ DEFINITIVE LAYOUT FIX ══════════════════════════════════════
-   .wh is static at top of #main (flex column).
    Only #steps-scroll scrolls. No sticky needed.
    ═══════════════════════════════════════════════════════════════ */
 #shell {
@@ -1383,13 +1371,6 @@ tr:hover .port-row-reeval,
   height: 100vh !important;
 }
 
-/* .wh sits at top — no scrolling, no sticky needed */
-.wh {
-  position: relative !important;
-  top: auto !important;
-  z-index: 50 !important;
-  flex-shrink: 0 !important;
-}
 
 /* Only steps-scroll scrolls */
 #steps-scroll {
@@ -1403,3 +1384,49 @@ tr:hover .port-row-reeval,
 .prog {
   flex-shrink: 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   LAYOUT — single source of truth
+   ══════════════════════════════════════════════════════════════ */
+#shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+#lnav {
+  flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+#main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.prog { flex-shrink: 0; }
+.wh {
+  flex-shrink: 0;
+  display: none;
+  position: relative;
+  background: #fff;
+  border-bottom: 1px solid #EBEBEB;
+  padding: 12px 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 1px 0 #EBEBEB;
+  z-index: 10;
+}
+.wh.visible { display: flex; }
+#steps-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+#steps-scroll::-webkit-scrollbar { width: 4px; }
+#steps-scroll::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
+#steps-scroll::-webkit-scrollbar-thumb:hover { background: #C4974A; }
