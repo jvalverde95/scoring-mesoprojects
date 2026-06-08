@@ -354,7 +354,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .chart-note{font-size:9px;color:var(--ink4);margin-bottom:9px}
 
 /* BENCH */
-.bench-panel{background:var(--k);border-radius:var(--rl);padding:14px 16px 16px;margin-bottom:12px;border:1px solid #1A1A1A}
+.bench-panel{background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:12px;border:1px solid #EBEBEB;box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .bench-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .bench-title{font-size:8px;font-weight:700;color:var(--g);letter-spacing:.14em;text-transform:uppercase}
 .bench-proj{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--w);max-width:195px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1280,4 +1280,72 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 tr:hover .port-row-reeval,
 .port-row:hover .port-row-reeval {
   opacity: 1;
+}
+
+
+/* ── bench-panel sub-elements ── */
+.bench-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 36px 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #F5F5F5;
+}
+.bench-row:last-child { border-bottom: none; }
+
+.bench-id {
+  font-size: 9px;
+  font-weight: 700;
+  color: #AAA;
+  text-align: center;
+}
+
+.bench-track {
+  position: relative;
+  height: 8px;
+  background: #F0F0F0;
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.bench-fill-avg {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #DEDEDE;
+  border-radius: 4px;
+}
+
+.bench-fill-proj {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #C4974A;
+  border-radius: 4px;
+}
+
+.bench-avg-line {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  background: #999;
+  border-radius: 1px;
+  transform: translateX(-1px);
+}
+
+.bench-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #111;
+  text-align: right;
+}
+
+/* Dimension overview bar at top of each wizard step */
+.dim-overview-bar {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }

@@ -286,6 +286,11 @@
 
     <!-- STEP 0: datos del proyecto -->
     <div class="step on" id="step-0">
+      <!-- Re-evaluation notice banner (shown when re-evaluating existing project) -->
+      <div id="reeval-notice" style="display:none;align-items:center;gap:10px;
+        background:#EEF3FC;border:1px solid rgba(26,72,160,.2);border-radius:8px;
+        padding:10px 14px;margin-bottom:16px;font-size:11px;color:#1848A0;flex-wrap:wrap">
+      </div>
       <div class="s-title">datos del proyecto</div>
       <div class="s-sub">Completa la información básica antes de evaluar las 6 dimensiones</div>
       <div class="fg">
@@ -1732,11 +1737,13 @@
           <!-- Actions -->
           <div class="sum-acts" style="margin-bottom:0">
             <button class="sa export" onclick="exportPortfolioExcel()" title="Exportar toda la cartera a Excel">
-              ↓ Exportar cartera Excel
+              ↓ Exportar Excel
+            </button>
+            <button class="sa g" onclick="goStep(0)" style="background:#EEF3FC;color:#1848A0;border-color:#1848A0">
+              ↺ Modificar evaluación
             </button>
             <button class="sa g" onclick="guardar()">↓ Guardar JSON</button>
-            <button class="sa g" onclick="resetAll()">↺ Nueva evaluación</button>
-            <button class="sa g" onclick="goStep(0)">← Editar datos</button>
+            <button class="sa g" onclick="resetAll()">+ Nueva evaluación</button>
           </div>
 
           <!-- Save to portfolio banner (shown after manual eval) -->

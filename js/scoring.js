@@ -1289,6 +1289,7 @@ function renderNav() {
 function renderDimSteps() {
   document.getElementById('dim-steps').innerHTML = DIMS.map((d, di) => `
     <div class="step" id="step-${di+1}">
+      <div id="dim-ov-${di+1}" class="dim-overview-bar"></div>
       <div class="dim-banner">${d.desc}</div>
       <div class="c-list">
         ${d.criterios.map((c, ci) => `
@@ -1336,6 +1337,30 @@ function renderDimSteps() {
       </div>
     </div>`).join('');
 }
+
+function updateDimOverview() {
+  const COLORS = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+  const BGS    = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
+  DIMS.forEach((d, di) => {
+    const el = document.getElementById('dim-ov-' + (di+1));
+    if (!el) return;
+    const ds = scoreDim(d.criterios.map(c => ({...c, val: c.val || 5}))).toFixed(1);
+    el.innerHTML = DIMS.map((dd, ddi) => {
+      const ddScore = scoreDim(dd.criterios.map(c => ({...c, val: c.val || 5}))).toFixed(1);
+      const isActive = ddi === di;
+      return '<span style="display:inline-flex;flex-direction:column;align-items:center;'
+        + 'padding:3px 8px;border-radius:6px;font-size:8px;font-weight:700;'
+        + 'background:' + (isActive ? COLORS[ddi] : BGS[ddi]) + ';'
+        + 'color:' + (isActive ? '#fff' : COLORS[ddi]) + ';'
+        + 'border:1px solid ' + (isActive ? COLORS[ddi] : 'transparent') + ';'
+        + 'min-width:36px;text-align:center;gap:1px" title="' + dd.nom + '">'
+        + '<span>' + dd.id + '</span>'
+        + '<span style="font-size:10px">' + ddScore + '</span>'
+        + '</span>';
+    }).join('');
+  });
+}
+
 
 
 /* ── CHARTS STEP ──────────────────────────────────── */
@@ -1549,11 +1574,14 @@ function renderPoolsStep() {
             onmouseenter="this.style.opacity='1'"
             onmouseleave="this.style.opacity='0'"
             onclick="event.stopPropagation()">
-            <button onclick="event.stopPropagation();openProjectEdit(${idx})"
-              title="Reevaluar proyecto"
-              style="padding:4px 8px;background:var(--d5t);border:1px solid var(--d5);
-                     border-radius:4px;color:var(--d5);font-size:9px;cursor:pointer">
-              ✎ Eval
+            <button onclick="event.stopPropagation();reEvalProject(${idx})"
+              title="Reevaluar este proyecto"
+              style="padding:4px 8px;background:#EEF3FC;border:1px solid #1848A0;
+                     border-radius:4px;color:#1848A0;font-size:9px;font-weight:600;cursor:pointer;
+                     transition:all .15s"
+              onmouseover="this.style.background='#1848A0';this.style.color='#fff'"
+              onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'">
+              ↺ Reevaluar
             </button>
             <button onclick="event.stopPropagation();dvDeleteOne(${idx})"
               title="Eliminar proyecto"
@@ -1661,6 +1689,8 @@ function upd() {
   // Recalc portfolio if loaded
   if (portfolioData.length > 0) renderPortfolio();
   checkTotal();
+
+  updateDimOverview();
 }
 
 function updSummary() {

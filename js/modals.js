@@ -102,3 +102,67 @@ function createNewProject() {
   document.getElementById('new-project-overlay').classList.remove('open');
   renderPortfolio();
 }
+
+/* ═══ RE-EVALUATION FLOW ═══════════════════════════════════════
+   Instead of the dark overlay modal, we load the project into
+   the same manual evaluation wizard (step 0 → 6), pre-filled
+   with current scores. User can review and adjust each dimension,
+   then save back to portfolio.
+   ═══════════════════════════════════════════════════════════════ */
+
+function reEvalProject(idx) {
+  const p = portfolioData[idx];
+  if (!p) return;
+
+  // Store which project we are re-evaluating
+  _pemIdx = idx;
+
+  // ── Pre-fill wizard fields ──────────────────────────────────
+  const setVal = (id, val) => {
+    const e = document.getElementById(id);
+    if (e && val != null) e.value = val;
+  };
+
+  setVal('f-name',    p.nom);
+  setVal('f-area',    p.area);
+  setVal('f-type',    p.adoType || '');
+  setVal('f-req',     p.reqDate || '');
+
+  // Pre-fill all 22 criterion sliders with current scores
+  DIMS.forEach(d => d.criterios.forEach(c => {
+    const val = p.scores?.[c.id] ?? 5;
+    c.val = val;
+    const sl = document.getElementById('sl-' + c.id);
+    const vl = document.getElementById('vl-' + c.id);
+    if (sl) sl.value = val;
+    if (vl) vl.textContent = val;
+  }));
+
+  // Update wizard header and progress
+  upd();
+
+  // Show a notice banner in the wizard that this is a re-evaluation
+  const notice = document.getElementById('reeval-notice');
+  if (notice) {
+    notice.style.display = 'flex';
+    notice.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0">
+        <circle cx="7" cy="7" r="6" stroke="#1848A0" stroke-width="1.2"/>
+        <path d="M7 4v3.5M7 9.5h.01" stroke="#1848A0" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <span>Reevaluando: <strong>${p.nom.substring(0, 50)}${p.nom.length > 50 ? '…' : ''}</strong>
+        &nbsp;· Score actual: <strong style="color:${scColorHex(p.sf || 0)}">${(p.sf || 0).toFixed(1)}</strong>
+      </span>
+      <button onclick="document.getElementById('reeval-notice').style.display='none'"
+        style="margin-left:auto;background:none;border:none;color:#1848A0;cursor:pointer;font-size:14px;padding:0">✕</button>`;
+  }
+
+  // Navigate to step 0 (project metadata) — same as manual eval
+  goStep(0);
+
+  // Scroll to top
+  const shell = document.getElementById('shell');
+  if (shell) shell.scrollTop = 0;
+
+  toast(`↺ Reevaluando "${p.nom.substring(0, 30)}…" · Ajusta los criterios y guarda`);
+}
