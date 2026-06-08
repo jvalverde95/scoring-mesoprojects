@@ -3,6 +3,20 @@ function openAiModal(adoItems) {
   _aiItems  = adoItems;
   _aiScored = adoItems.map(wi => ({wi, proj:adoMapToProject(wi), status:'pending', selected:false}));
   _aiStopped = false;
+
+  // Update modal subtitle with hours summary
+  const withH = _aiScored.filter(s => s.proj.horas != null).length;
+  const total = _aiScored.length;
+  const subEl = document.getElementById('ai-modal-sub');
+  if (subEl) {
+    subEl.innerHTML = `${total} proyectos de Azure DevOps · 
+      <span style="color:#087B50;font-weight:600">${withH} con horas estimadas ✓</span>
+      ${withH < total
+        ? ` · <span style="color:#C07800;font-weight:600">${total-withH} sin horas</span>
+            <span style="color:#AAA"> — asígnalas aquí o en Pools</span>`
+        : ''}`;
+  }
+
   renderAiColumns();
   const el = document.getElementById('ai-overlay');
   if (el) el.classList.add('open');

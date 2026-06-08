@@ -66,9 +66,17 @@ async function adoFetchRequirements(org, project, pat, queryId) {
   else if(runData.workItemRelations) ids=runData.workItemRelations.filter(r=>r.target).map(r=>r.target.id);
   ids=[...new Set(ids)];
   if(!ids.length) throw new Error('La query no devolvió work items.');
-  const fields=['System.Id','System.Title','System.WorkItemType','System.State',
+  const fields=[
+    'System.Id','System.Title','System.WorkItemType','System.State',
     'System.AssignedTo','System.CreatedDate','System.Description',
-    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent'];
+    'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
+    // Effort / estimation fields — ADO uses different field names depending on process template
+    'Microsoft.VSTS.Scheduling.OriginalEstimate',   // Scrum: Original Estimate (Hours)
+    'Microsoft.VSTS.Scheduling.StoryPoints',         // Agile: Story Points
+    'Microsoft.VSTS.Scheduling.Effort',              // CMMI: Effort
+    'Microsoft.VSTS.Scheduling.Size',                // CMMI: Size
+    'System.IterationPath',
+  ];
   const allItems=[];
   for(let i=0;i<ids.length;i+=200){
     const bRes=await adoProxy(org, project, `_apis/wit/workitemsbatch?api-version=7.1`, pat, 'POST', {ids:ids.slice(i,i+200),fields});
@@ -92,10 +100,28 @@ function adoMapToProject(wi) {
   const cd=f['System.CreatedDate'];
   if(cd) reqDate=cd.substring(0,10);
   const scores={}; CRIT_IDS.forEach(cid=>{scores[cid]=5;});
-  return {nom:`${wi.id} — ${title}`,area,sponsor,scores,reqDate,regDate:null,
-    adoId:wi.id,adoTitle:title,adoType:f['System.WorkItemType']||'',
-    adoState:f['System.State']||'',adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
-    adoDesc:desc,adoTags:tags,adoRaw:f};
+  // Map hours from whichever estimation field is populated
+  // ADO field names vary by process template (Scrum / Agile / CMMI)
+  const rawHours =
+    f['Microsoft.VSTS.Scheduling.OriginalEstimate'] ||  // Scrum — Original Estimate
+    f['Microsoft.VSTS.Scheduling.StoryPoints']      ||  // Agile — Story Points
+    f['Microsoft.VSTS.Scheduling.Effort']           ||  // CMMI — Effort
+    f['Microsoft.VSTS.Scheduling.Size']             ||  // CMMI — Size
+    null;
+  const horas = rawHours != null ? parseFloat(rawHours) || null : null;
+
+  return {nom:`${wi.id} — ${title}`,area,sponsor,scores,
+    horas,                          // ← mapped from ADO estimation field
+    horasSource: rawHours != null   // which ADO field provided the hours
+      ? (f['Microsoft.VSTS.Scheduling.OriginalEstimate'] != null ? 'OriginalEstimate'
+        : f['Microsoft.VSTS.Scheduling.StoryPoints']    != null ? 'StoryPoints'
+        : f['Microsoft.VSTS.Scheduling.Effort']         != null ? 'Effort' : 'Size')
+      : null,
+    reqDate, regDate:null,
+    adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
+    adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
+    adoIteration:f['System.IterationPath']||'',
+    adoDesc:desc, adoTags:tags, adoRaw:f};
 }
 
 /* ═══ CFG ADO ══════════════════════════════════════════════ */
@@ -266,9 +292,51 @@ async function cfgAdoLoad(){
     const badge=document.getElementById('ado-badge');
     if(badge){badge.className='ado-badge connected';document.getElementById('ado-badge-lbl').textContent=`ADO · ${filtered.length} items`;}
     const prev=document.getElementById('cfg-ado-preview'); if(prev) prev.textContent='';
-    cfgAdoStatusShow('ok',`✓ ${filtered.length} work items listos · Abriendo evaluador...`);
+    // ── Hours summary ─────────────────────────────────────────────
+    const withHours    = filtered.filter(wi => {
+      const f = wi.fields || {};
+      return (f['Microsoft.VSTS.Scheduling.OriginalEstimate'] != null && f['Microsoft.VSTS.Scheduling.OriginalEstimate'] !== '') ||
+             (f['Microsoft.VSTS.Scheduling.StoryPoints']      != null && f['Microsoft.VSTS.Scheduling.StoryPoints']      !== '') ||
+             (f['Microsoft.VSTS.Scheduling.Effort']           != null && f['Microsoft.VSTS.Scheduling.Effort']           !== '');
+    });
+    const withoutHours = filtered.filter(wi => !withHours.includes(wi));
+
+    // Show summary banner before opening modal
+    const summaryHtml = `
+      <div style="background:#F7F7F5;border:1px solid #EBEBEB;border-radius:8px;padding:12px 16px;margin-top:10px;font-size:11px">
+        <div style="font-weight:700;color:#111;margin-bottom:8px">
+          ✓ ${filtered.length} work items cargados de Azure DevOps
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;color:#087B50">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" fill="#ECF8F3" stroke="#087B50" stroke-width="1"/>
+              <path d="M3.5 6l2 2 3-3" stroke="#087B50" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <span><strong>${withHours.length}</strong> con horas estimadas</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;color:#C07800">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" fill="#FAF5E6" stroke="#C07800" stroke-width="1"/>
+              <path d="M6 3.5v3M6 8h.01" stroke="#C07800" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            <span><strong>${withoutHours.length}</strong> sin horas — las podrás asignar en Pools</span>
+          </div>
+        </div>
+        ${withHours.length > 0 ? `
+        <div style="margin-top:8px;font-size:10px;color:#666">
+          Campo mapeado: <code style="background:#F0F0F0;padding:1px 5px;border-radius:3px">OriginalEstimate / StoryPoints / Effort</code>
+        </div>` : ''}
+      </div>`;
+
+    cfgAdoStatusShow('ok', `✓ ${filtered.length} work items · ${withHours.length} con horas · abriendo evaluador…`);
     toast(`✓ ${filtered.length} work items del ADO`);
     saveAllCreds();
-    setTimeout(()=>openAiModal(filtered),300);
+
+    // Show summary in the preview area
+    const previewEl = document.getElementById('cfg-ado-preview');
+    if (previewEl) previewEl.innerHTML = summaryHtml;
+
+    setTimeout(() => openAiModal(filtered), 600);
   } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); }
 }

@@ -31,7 +31,20 @@ function buildAiCard(item,i){
         <div class="ev-card-name">${p.nom}</div>
         <div class="ev-card-meta">${p.area||'—'} · ${p.sponsor||'—'} · ${p.reqDate||'—'}${p.adoType?' · '+p.adoType:''}</div>
         ${p.adoDesc?`<div class="ev-card-desc">${p.adoDesc}</div>`:''}
-        <div class="ev-card-actions">${scoreNum}${tag}<input type="number" class="ev-hours-inp" id="ev-hrs-${i}" value="${p.horas||''}" placeholder="h" min="1" oninput="aiSetHoras(${i},this.value)"/><span style="font-size:9px;color:#BBB">h</span>${btn}</div>
+        <div class="ev-card-actions">
+          ${scoreNum}${tag}
+          <div style="display:flex;align-items:center;gap:4px">
+            <input type="number" class="ev-hours-inp" id="ev-hrs-${i}"
+              value="${p.horas||''}" placeholder="horas" min="1"
+              style="${p.horas ? 'border-color:#087B50;background:#ECF8F3;color:#087B50' : ''}"
+              title="${p.horasSource ? 'Mapeado desde ADO: '+p.horasSource : 'Introduce las horas estimadas'}"
+              oninput="aiSetHoras(${i},this.value)"/>
+            <span style="font-size:8px;font-weight:600;white-space:nowrap;${p.horas ? 'color:#087B50' : 'color:#BBB'}">
+              ${p.horas ? 'ADO✓' : 'h'}
+            </span>
+          </div>
+          ${btn}
+        </div>
       </div>
     </div>
   </div>`;
