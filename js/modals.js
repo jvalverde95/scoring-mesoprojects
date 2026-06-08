@@ -161,8 +161,8 @@ function reEvalProject(idx) {
   goStep(0);
 
   // Scroll to top
-  const shell = document.getElementById('shell');
-  if (shell) shell.scrollTop = 0;
+  const stepsScroll = document.getElementById('steps-scroll');
+  if (stepsScroll) stepsScroll.scrollTop = 0;
 
   toast(`↺ Reevaluando "${p.nom.substring(0, 30)}…" · Ajusta los criterios y guarda`);
 }

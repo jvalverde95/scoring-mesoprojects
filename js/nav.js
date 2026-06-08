@@ -421,8 +421,8 @@ function startManualEval() {
   resetAll();
   goStep(0);
   // Scroll to top
-  const shell = document.getElementById('shell');
-  if (shell) shell.scrollTop = 0;
+  const stepsScroll = document.getElementById('steps-scroll');
+  if (stepsScroll) stepsScroll.scrollTop = 0;
   toast('Nueva evaluación — rellena los datos y puntúa cada criterio');
 }
 

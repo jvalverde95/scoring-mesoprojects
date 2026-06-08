@@ -149,7 +149,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
 
 /* MAIN */
-#main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
 
 /* BACK BUTTON */
 .wb-back{
@@ -1349,3 +1349,15 @@ tr:hover .port-row-reeval,
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
+
+/* ── Steps scroll container ── */
+#steps-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+#steps-scroll::-webkit-scrollbar { width: 4px; }
+#steps-scroll::-webkit-scrollbar-track { background: transparent; }
+#steps-scroll::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
+#steps-scroll::-webkit-scrollbar-thumb:hover { background: #C4974A; }

@@ -256,7 +256,7 @@
 
 
 
-  <div id="main" style="flex:1;min-width:0;overflow-x:hidden;display:flex;flex-direction:column">
+  <div id="main" style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
     <div class="prog"><div class="prog-f" id="wiz-prog" style="width:0%"></div></div>
 
     <div class="wh">
@@ -283,6 +283,8 @@
         </div>
       </div>
     </div>
+    <div id="steps-scroll" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0">
+
 
     <!-- STEP 0: datos del proyecto -->
     <div class="step on" id="step-0">
@@ -1972,7 +1974,9 @@
       </div>
 
     </div><!-- /step-summary -->
-  </div><!-- /main -->
+  
+    </div>
+</div><!-- /main -->
 </div><!-- /shell -->
 
 
