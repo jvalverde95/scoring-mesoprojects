@@ -44,7 +44,7 @@ html{scroll-behavior:smooth}
 }
 /* 4. White backgrounds everywhere */
 body{background:#FFFFFF!important}
-#shell{background:#FFFFFF;display:flex;height:calc(100vh - 52px);overflow:hidden;margin-top:52px}
+
 .cfg-section{background:#FFFFFF;border:1px solid #EBEBEB!important}
 .sum-radar{background:#FFFFFF}
 .port-wrap{background:#FFFFFF}
@@ -100,7 +100,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .bar-pesos:hover{border-color:#666;color:#E0E0E0}
 
 /* SHELL */
-#shell{background:#FFFFFF;display:flex;height:calc(100vh - 52px);overflow:hidden;margin-top:52px}
+
 
 /* LEFT NAV — fondo negro, texto blanco, un solo bloque sin conflictos */
 
@@ -147,7 +147,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
 
 /* MAIN */
-#main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;height:100%}
+
 
 /* BACK BUTTON */
 .wb-back{
@@ -765,7 +765,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .pem-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 1.5px #111;cursor:pointer}
 .pem-crit-val{font-size:10px;font-weight:700;color:#111;text-align:right}
 .pem-footer{padding:14px 24px;border-top:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FAFAFA;border-radius:0 0 12px 12px;flex-shrink:0}
-@media print{#bar,#lnav,#rbar,.wdrawer{display:none!important}#shell{background:#FFFFFF;display:flex;height:calc(100vh - 52px);overflow:hidden;margin-top:52px}}
+@media print{#bar,#lnav,#rbar,.wdrawer{display:none!important}}
 
 
 
@@ -787,23 +787,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
    LEFT NAV — redesigned clean sidebar
    ══════════════════════════════════════════════════════════ */
 
-#lnav {
-  width: 72px;
-  min-width: 72px;
-  background: #FAFAF8;
-  border-right: 1px solid #EBEBEB;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  gap: 0;
-  z-index: 100;
-}
+
 
 /* Logo mark */
 .lnav-logo {
@@ -1014,11 +998,7 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .ctab.on { background: #111; color: #fff; border-color: #111; }
 
 /* Shell layout */
-#shell {
-  display: flex;
-  margin-top: 0 !important;
-  min-height: 100vh;
-}
+
 
 /* Main content area */
 #main-content, .app-content {
@@ -1066,17 +1046,10 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 
 
 /* ── Shell fills viewport cleanly ── */
-#shell {
-  display: flex !important;
-  margin-top: 0 !important;
-  min-height: 100vh !important;
-  overflow: hidden;
-}
+
 
 /* ── lnav fills height ── */
-#lnav {
-  flex-shrink: 0;
-}
+
 
 /* ── cfg-section max-width ── */
 .cfg-section {
@@ -1229,9 +1202,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 
    the first visible .step.on should not be hidden under it */
-#main {
-  scroll-padding-top: 56px;
-}
+
 
 /* Export button prominent */
 .export-excel-btn {
@@ -1345,26 +1316,11 @@ tr:hover .port-row-reeval,
 /* ══ DEFINITIVE LAYOUT FIX ══════════════════════════════════════
    Only #steps-scroll scrolls. No sticky needed.
    ═══════════════════════════════════════════════════════════════ */
-#shell {
-  display: flex !important;
-  height: 100vh !important;
-  overflow: hidden !important;
-}
 
-#lnav {
-  height: 100vh !important;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
 
-#main {
-  flex: 1 !important;
-  min-width: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  height: 100vh !important;
-}
+
+
+
 
 
 /* Only steps-scroll scrolls */
@@ -1378,24 +1334,9 @@ tr:hover .port-row-reeval,
 /* ══════════════════════════════════════════════════════════════
    LAYOUT — single source of truth
    ══════════════════════════════════════════════════════════════ */
-#shell {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-#lnav {
-  flex-shrink: 0;
-  height: 100vh;
-  overflow-y: auto;
-}
-#main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
+
+
+
 .prog { flex-shrink: 0; }
 .wh {
   flex-shrink: 0;
@@ -1433,3 +1374,45 @@ tr:hover .port-row-reeval,
 #steps-scroll::-webkit-scrollbar { width: 4px; }
 #steps-scroll::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
 #steps-scroll::-webkit-scrollbar-thumb:hover { background: #C4974A; }
+
+/* ══ DEFINITIVE LAYOUT — #bar is 52px fixed top ══════════════ */
+#shell {
+  background: #FFFFFF;
+  display: flex;
+  height: calc(100vh - 52px);
+  overflow: hidden;
+  margin-top: 52px;
+}
+
+#main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+.prog { flex-shrink: 0; }
+
+
+
+/* Dim banner also needs breathing room */
+.dim-banner {
+  margin-top: 4px;
+}
+
+/* ── lnav sidebar ── */
+#lnav {
+  width: 72px;
+  min-width: 72px;
+  background: #FAFAF8;
+  border-right: 1px solid #EBEBEB;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  height: 100%;   /* 100% of #shell = 100vh - 52px */
+}
+#lnav::-webkit-scrollbar { display: none; }
