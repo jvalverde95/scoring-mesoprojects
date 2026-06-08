@@ -31,14 +31,12 @@ function goStep(t) {
 
   // 1b. Show/hide wizard steps + .wh header based on step type
   const wizardPanel = document.getElementById('nav-dots');
-  const whHeader    = document.querySelector('.wh');
+  const whHeader    = document.getElementById('wiz-nav-bar');
   const isWizardStep = !isSpecial && typeof idx === 'number';
   const showWh = isWizardStep || ['summary','charts','pools'].includes(t);
 
   if (wizardPanel) wizardPanel.style.display = isWizardStep ? 'flex' : 'none';
-  if (whHeader) {
-    whHeader.style.display = showWh ? 'flex' : 'none';
-  }
+  if (whHeader) whHeader.style.display = showWh ? 'flex' : 'none';
 
   // 2. Show the correct panel and activate nav
   if (t === 'summary') {

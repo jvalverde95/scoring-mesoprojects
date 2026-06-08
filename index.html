@@ -259,68 +259,68 @@
   <div id="main" style="flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden">
     <div class="prog"><div class="prog-f" id="wiz-prog" style="width:0%"></div></div>
 
-    <!-- NEXUS WIZARD HEADER — white bar with nav buttons -->
-    <div class="wh" id="wiz-header" style="
+    <!-- NEXUS WIZARD NAV — fixed bottom bar with prev/next -->
+    <div id="wiz-nav-bar" style="
       display:none;
-      flex-shrink:0;
+      position:fixed;
+      bottom:0;
+      left:55px;
+      right:0;
+      height:56px;
       background:#fff;
-      border-bottom:2px solid #EBEBEB;
-      padding:10px 24px;
-      flex-direction:row;
+      border-top:2px solid #EBEBEB;
+      z-index:150;
       align-items:center;
       justify-content:space-between;
+      padding:0 32px;
       gap:16px;
-      min-height:56px;
-      position:relative;
-      z-index:10;
+      box-shadow:0 -2px 12px rgba(0,0,0,.06);
     ">
-      <!-- Left: back + step name -->
-      <div style="display:flex;align-items:center;gap:10px;min-width:0">
-        <button onclick="goLanding()" title="Volver al inicio"
-          style="width:32px;height:32px;border-radius:50%;border:1px solid #E0E0E0;
-                 background:#fff;cursor:pointer;display:flex;align-items:center;
-                 justify-content:center;flex-shrink:0;color:#666;transition:all .15s"
-          onmouseover="this.style.background='#111';this.style.color='#fff'"
-          onmouseout="this.style.background='#fff';this.style.color='#666'">
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-            <path d="M8.5 3L5 7L8.5 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <div class="wh-badge" id="wh-badge" style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0"></div>
+      <!-- Left: step info -->
+      <div style="display:flex;align-items:center;gap:12px;min-width:0">
+        <div id="wh-badge" style="width:32px;height:32px;border-radius:50%;background:#F5F5F5;
+          color:#888;font-size:11px;font-weight:800;display:flex;align-items:center;
+          justify-content:center;flex-shrink:0"></div>
         <div style="min-width:0">
-          <div id="wh-name" style="font-size:13px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px">datos del proyecto</div>
-          <div id="wh-meta" style="font-size:9px;color:#AAA;margin-top:1px">información básica · paso 0 de 7</div>
+          <div id="wh-name" style="font-size:12px;font-weight:700;color:#111;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px">
+            datos del proyecto
+          </div>
+          <div id="wh-meta" style="font-size:9px;color:#AAA;margin-top:1px">
+            información básica · paso 0 de 7
+          </div>
         </div>
       </div>
 
-      <!-- Right: score + NAV BUTTONS -->
-      <div style="display:flex;align-items:center;gap:16px;flex-shrink:0">
-        <div style="text-align:right">
-          <div id="wh-score" style="font-size:28px;font-weight:800;color:#CCC;font-family:'Inter',sans-serif;line-height:1">—</div>
-          <div style="font-size:8px;color:#BBB;text-transform:uppercase;letter-spacing:.1em">Score dim.</div>
+      <!-- Center: score -->
+      <div style="text-align:center;flex-shrink:0">
+        <div id="wh-score" style="font-size:24px;font-weight:800;color:#CCC;
+          font-family:'Inter',sans-serif;line-height:1">—</div>
+        <div style="font-size:8px;color:#BBB;text-transform:uppercase;letter-spacing:.1em">
+          Score dim.
         </div>
-        <div style="display:flex;gap:8px">
-          <button id="btn-prev" onclick="stepNav(-1)"
-            style="padding:9px 18px;font-size:10px;font-weight:600;border-radius:7px;
-                   border:1px solid #DEDEDE;background:#fff;color:#666;cursor:pointer;
-                   transition:all .15s;white-space:nowrap"
-            onmouseover="this.style.borderColor='#111';this.style.color='#111'"
-            onmouseout="this.style.borderColor='#DEDEDE';this.style.color='#666'">
-            ← Anterior
-          </button>
-          <button id="btn-next" onclick="stepNav(1)"
-            style="padding:9px 20px;font-size:10px;font-weight:700;border-radius:7px;
-                   border:none;background:#111;color:#fff;cursor:pointer;
-                   transition:background .15s;white-space:nowrap"
-            onmouseover="this.style.background='#C4974A'"
-            onmouseout="this.style.background='#111'">
-            Siguiente →
-          </button>
-        </div>
+      </div>
+
+      <!-- Right: navigation buttons -->
+      <div style="display:flex;gap:10px;flex-shrink:0">
+        <button id="btn-prev" onclick="stepNav(-1)"
+          style="padding:10px 22px;font-size:11px;font-weight:600;border-radius:8px;
+                 border:1.5px solid #DEDEDE;background:#fff;color:#555;cursor:pointer;
+                 transition:all .15s;white-space:nowrap;min-width:110px"
+          onmouseover="this.style.borderColor='#111';this.style.color='#111'"
+          onmouseout="this.style.borderColor='#DEDEDE';this.style.color='#555'">
+          ← Anterior
+        </button>
+        <button id="btn-next" onclick="stepNav(1)"
+          style="padding:10px 24px;font-size:11px;font-weight:700;border-radius:8px;
+                 border:none;background:#111;color:#fff;cursor:pointer;
+                 transition:background .15s;white-space:nowrap;min-width:130px"
+          onmouseover="this.style.background='#C4974A'"
+          onmouseout="this.style.background='#111'">
+          Siguiente →
+        </button>
       </div>
     </div>
-    <div id="steps-scroll" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0">
-
 
     <!-- STEP 0: datos del proyecto -->
     <div class="step on" id="step-0">

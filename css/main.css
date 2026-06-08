@@ -44,7 +44,7 @@ html{scroll-behavior:smooth}
 }
 /* 4. White backgrounds everywhere */
 body{background:#FFFFFF!important}
-#shell{background:#FFFFFF;display:flex;height:100vh;overflow:hidden}
+#shell{background:#FFFFFF;display:flex;height:calc(100vh - 52px);overflow:hidden;margin-top:52px}
 .cfg-section{background:#FFFFFF;border:1px solid #EBEBEB!important}
 .sum-radar{background:#FFFFFF}
 .port-wrap{background:#FFFFFF}
@@ -1430,3 +1430,11 @@ tr:hover .port-row-reeval,
 #steps-scroll::-webkit-scrollbar { width: 4px; }
 #steps-scroll::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
 #steps-scroll::-webkit-scrollbar-thumb:hover { background: #C4974A; }
+
+/* Wizard bottom nav bar */
+#wiz-nav-bar.visible { display: flex !important; }
+
+/* Steps scroll needs bottom padding to not be hidden behind fixed nav bar */
+#steps-scroll {
+  padding-bottom: 72px;
+}
