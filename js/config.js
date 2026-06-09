@@ -21,6 +21,31 @@ function updateWizHeader(step) {
   const scoreEl = document.getElementById('wh-score');
   const btnPrev = document.getElementById('btn-prev');
   const btnNext = document.getElementById('btn-next');
+  const dimRow  = document.getElementById('wiz-dim-row');
+
+  // ── Always update dimension dots row ──────────────────────
+  if (dimRow && typeof DIMS !== 'undefined') {
+    const COLORS = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+    const BGS    = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
+    const isNum  = typeof step === 'number' && step >= 1 && step <= 6;
+    dimRow.innerHTML = DIMS.map((d, di) => {
+      const ds     = typeof scoreDim === 'function'
+        ? scoreDim(d.criterios.map(c => ({...c, val: c.val || 5}))).toFixed(1)
+        : '5.0';
+      const active = isNum && di === step - 1;
+      const done   = isNum && di < step - 1;
+      return '<button onclick="goStep(' + (di+1) + ')" style="'
+        + 'display:inline-flex;flex-direction:column;align-items:center;'
+        + 'gap:2px;padding:4px 10px;border-radius:6px;cursor:pointer;'
+        + 'border:1.5px solid ' + (active ? COLORS[di] : done ? '#DEDEDE' : '#F0F0F0') + ';'
+        + 'background:' + (active ? COLORS[di] : done ? '#FAFAFA' : '#fff') + ';'
+        + 'transition:all .15s;min-width:44px;'
+        + '">'
+        + '<span style="font-size:8px;font-weight:700;color:' + (active ? '#fff' : COLORS[di]) + ';letter-spacing:.05em">' + d.id + '</span>'
+        + '<span style="font-size:11px;font-weight:800;color:' + (active ? '#fff' : done ? '#999' : '#CCC') + ';line-height:1">' + ds + '</span>'
+        + '</button>';
+    }).join('');
+  }
 
   const DT = ['var(--d1t)','var(--d2t)','var(--d3t)','var(--d4t)','var(--d5t)','var(--d6t)'];
   const DC = ['var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)'];

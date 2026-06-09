@@ -59,7 +59,10 @@ function goStep(t) {
     if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows(); }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
-    if (t === 'sprint')     { if(typeof renderSprintScreen==='function') renderSprintScreen(); }
+    if (t === 'sprint')     {
+      if(typeof renderSprintScreen==='function') renderSprintScreen();
+      switchSprintTab('sprint');
+    }
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
     if (t === 'config')    { if(typeof aiLoadKeywords==='function') aiLoadKeywords(); }
@@ -442,5 +445,30 @@ function enterApp() {
     goStep('dashboard');
   } else {
     goStep('dashboard');  // always start at dashboard
+  }
+}
+
+function switchSprintTab(tab) {
+  const sprintTab  = document.getElementById('sprint-tab');
+  const planTab    = document.getElementById('planning-tab');
+  const btnSprint  = document.getElementById('tab-sprint');
+  const btnPlan    = document.getElementById('tab-planning');
+
+  if (sprintTab)  sprintTab.style.display  = tab === 'sprint'   ? '' : 'none';
+  if (planTab)    planTab.style.display    = tab === 'planning' ? '' : 'none';
+
+  if (btnSprint) {
+    btnSprint.style.background = tab==='sprint' ? '#111' : '#fff';
+    btnSprint.style.color      = tab==='sprint' ? '#fff' : '#666';
+    btnSprint.style.borderColor= tab==='sprint' ? '#111' : '#DEDEDE';
+  }
+  if (btnPlan) {
+    btnPlan.style.background = tab==='planning' ? '#111' : '#fff';
+    btnPlan.style.color      = tab==='planning' ? '#fff' : '#666';
+    btnPlan.style.borderColor= tab==='planning' ? '#111' : '#DEDEDE';
+  }
+
+  if (tab === 'planning' && typeof renderPlanning === 'function') {
+    renderPlanning();
   }
 }

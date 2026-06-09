@@ -128,6 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── Load team capacity & AI keywords from localStorage ───────
   if (typeof loadDevTeam  === 'function') loadDevTeam();
+  if (typeof loadPlanningState === 'function') loadPlanningState();
+  if (typeof renderScheduleEditor === 'function') renderScheduleEditor();
   if (typeof aiLoadKeywords === 'function') aiLoadKeywords();
 
   // ── Load ADO config from localStorage ────────────────────────

@@ -1369,7 +1369,7 @@ tr:hover .port-row-reeval,
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
-  padding-bottom: 80px; /* space for bottom nav bar */
+  padding-bottom: 110px; /* space for bottom nav bar */
 }
 #steps-scroll::-webkit-scrollbar { width: 4px; }
 #steps-scroll::-webkit-scrollbar-thumb { background: #DEDEDE; border-radius: 2px; }
@@ -1424,4 +1424,82 @@ tr:hover .port-row-reeval,
   overflow: hidden;
   min-height: 0;
   display: flex;
+}
+
+/* During wizard: hide lnav nav-dots (replaced by bottom bar dim row) */
+#nav-dots { display: none !important; }
+
+/* ══ PLANNING SCREEN ════════════════════════════════════════ */
+
+/* Tab buttons in sprint screen */
+#tab-sprint, #tab-planning {
+  transition: all .15s;
+}
+
+/* Schedule editor slot tags */
+.slot-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Planning timeline cards */
+.plan-card {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #EBEBEB;
+  background: #FAFAF8;
+  transition: box-shadow .15s;
+  margin-bottom: 4px;
+}
+.plan-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.plan-card.first {
+  background: #fff;
+  border-color: currentColor;
+}
+
+/* Active project modal overlay */
+#active-proj-modal {
+  backdrop-filter: blur(2px);
+}
+
+/* Schedule day row */
+.sched-day-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  min-height: 32px;
+}
+
+.sched-day-label {
+  width: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #888;
+  padding-top: 8px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* Planning KPI strip */
+.planning-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+  .planning-kpi-strip { grid-template-columns: repeat(2, 1fr); }
 }
