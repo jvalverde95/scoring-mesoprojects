@@ -1,7 +1,7 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary'];
 
 function goStep(t) {
   // Track where we're coming FROM (needed to detect manual eval → summary)
