@@ -225,6 +225,8 @@
         <span class="lnav-label">Pools</span>
       </div>
       <div class="lnav-item" id="nav-sprint" onclick="goStep('sprint')" title="En marcha">
+        <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="lnav-label">En marcha</span>
       </div>
 
       <div class="lnav-item" id="nav-planning" onclick="goStep('planning')" title="Planificación">
@@ -236,8 +238,6 @@
           </svg>
         </div>
         <span class="lnav-label">Plan.</span>
-        <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <span class="lnav-label">En marcha</span>
       </div>
     </div>
 
@@ -1673,14 +1673,13 @@
     </div>
 
     <!-- Calendar/planning output -->
-    <div id="calendar-container" style="min-height:300px">
+    <div id="calendar-container-sprint" style="min-height:300px">
       <div style="padding:48px;text-align:center;color:#AAA;font-size:13px">
         Cargando…
       </div>
     </div>
 
-    <!-- Planning list (below Gantt) -->
-    <div id="planning-content" style="margin-top:16px"></div>
+    
   </div>
 
   <!-- ── ADD ACTIVE PROJECT MODAL ─────────────────────────── -->
