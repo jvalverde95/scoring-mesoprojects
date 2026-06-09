@@ -89,7 +89,7 @@ body{background:#FFFFFF!important}
 body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color:var(--ink);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
 
 /* TOPBAR */
-#bar{position:fixed;top:0;left:0;right:0;z-index:200;height:52px;background:var(--k);display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #141414}
+#bar{position:relative;top:auto;left:auto;right:auto;z-index:200;height:52px;background:var(--k);display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #141414}
 .bar-l{display:flex;align-items:center}
 .bar-logo{height:16px;object-fit:contain;display:block;image-rendering:-webkit-optimize-contrast}
 .bar-sep{width:1px;height:14px;background:#282828;margin:0 16px}
@@ -1379,9 +1379,10 @@ tr:hover .port-row-reeval,
 #shell {
   background: #FFFFFF;
   display: flex;
-  height: calc(100vh - 52px);
+  flex-direction: column;
+  height: 100vh;
   overflow: hidden;
-  margin-top: 52px;
+  margin-top: 0;
 }
 
 #main {
@@ -1413,6 +1414,14 @@ tr:hover .port-row-reeval,
   padding: 0;
   overflow-y: auto;
   flex-shrink: 0;
-  height: 100%;   /* 100% of #shell = 100vh - 52px */
+  height: 100%;
 }
 #lnav::-webkit-scrollbar { display: none; }
+
+/* flex-body: the row container below #bar */
+#shell > div[style*="display:flex;flex:1"] {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+}
