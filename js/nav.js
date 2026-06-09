@@ -16,7 +16,7 @@ function goStep(t) {
     if (!area) { toast('⚠ Selecciona un área antes de continuar'); document.getElementById('f-area')?.focus(); return; }
   }
 
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -62,6 +62,11 @@ function goStep(t) {
     if (t === 'sprint')     {
       if(typeof renderSprintScreen==='function') renderSprintScreen();
       switchSprintTab('sprint');
+    }
+    if (t === 'planning') {
+      if (typeof loadLocked      === 'function') loadLocked();
+      if (typeof loadPlanningState=== 'function') loadPlanningState();
+      if (typeof renderCalendar  === 'function') renderCalendar();
     }
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }

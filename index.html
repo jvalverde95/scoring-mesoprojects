@@ -225,6 +225,17 @@
         <span class="lnav-label">Pools</span>
       </div>
       <div class="lnav-item" id="nav-sprint" onclick="goStep('sprint')" title="En marcha">
+      </div>
+
+      <div class="lnav-item" id="nav-planning" onclick="goStep('planning')" title="Planificación">
+        <div class="lnav-icon">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 8h8M6 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M2 7h16" stroke="currentColor" stroke-width="1.2" opacity=".4"/>
+          </svg>
+        </div>
+        <span class="lnav-label">Plan.</span>
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <span class="lnav-label">En marcha</span>
       </div>
@@ -1722,6 +1733,87 @@
       </div>
     </div>
   </div>
+
+<div class="step" id="step-planning">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:4px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div class="s-title" style="margin:0">Planificación</div>
+      <div class="s-sub" style="margin:0">
+        Gantt · Vista mensual · Vista semanal · Arrastrar para mover con efecto dominó
+      </div>
+    </div>
+    <!-- View switcher + actions -->
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      <div style="display:flex;gap:3px;background:#F5F5F3;border-radius:8px;padding:3px">
+        <button id="cal-btn-gantt" onclick="switchCalView('gantt')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1.5px solid #111;background:#111;color:#fff;cursor:pointer;transition:all .15s">
+          Gantt
+        </button>
+        <button id="cal-btn-month" onclick="switchCalView('month')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1.5px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
+          Mes
+        </button>
+        <button id="cal-btn-week" onclick="switchCalView('week')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1.5px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
+          Semana
+        </button>
+      </div>
+      <button onclick="openAddActiveProject()"
+        style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer">
+        + En curso
+      </button>
+      <button onclick="ganttGoToday()"
+        style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
+        Hoy
+      </button>
+      <button onclick="exportPlanningExcel()"
+        style="padding:6px 14px;font-size:10px;font-weight:700;border-radius:7px;
+               border:none;background:#087B50;color:#fff;cursor:pointer">
+        ↓ Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Change log badge -->
+  <div id="gantt-changelog-bar" style="display:none;background:#EEF3FC;border:1px solid rgba(26,72,160,.2);
+    border-radius:8px;padding:8px 14px;margin-bottom:10px;display:flex;align-items:center;
+    justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="font-size:10px;color:#1848A0" id="gantt-changelog-text"></div>
+    <button onclick="ganttClearLog()"
+      style="font-size:9px;color:#1848A0;background:none;border:none;cursor:pointer;
+             text-decoration:underline;white-space:nowrap">Limpiar historial</button>
+  </div>
+
+  <!-- Calendar container -->
+  <div id="calendar-container" style="min-height:400px;overflow:hidden">
+    <div style="padding:48px;text-align:center;color:#AAA;font-size:13px">
+      Configura el equipo en ⚙ Configuración y asegúrate de que los proyectos tienen horas estimadas.
+    </div>
+  </div>
+
+  <!-- Change history panel -->
+  <div style="margin-top:16px">
+    <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;
+      letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      Historial de cambios
+      <span id="changelog-count" style="background:#F0F0F0;color:#888;font-size:8px;
+        padding:1px 6px;border-radius:10px">0</span>
+    </div>
+    <div id="gantt-history" style="display:flex;flex-direction:column;gap:4px;
+      max-height:200px;overflow-y:auto">
+      <div style="font-size:10px;color:#CCC;padding:8px 0">Sin cambios registrados.</div>
+    </div>
+  </div>
+
+</div><!-- /step-planning -->
+
 <div class="step" id="step-wiki">
 
   <div class="s-title" style="margin:0 0 4px">Documentación</div>

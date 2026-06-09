@@ -609,216 +609,7 @@ function renderCalendar() {
   if (calView === 'week')   renderWeek(el, timeline);
 }
 
-// ═══ GANTT VIEW ═══════════════════════════════════════════════
-function renderGantt(el, timeline) {
-  // Compute date range: start of first project to end of last + 4 weeks
-  const allDates = timeline.flatMap(t => [t.startDate, t.endDate]);
-  const minDate  = new Date(Math.min(...allDates));
-  const maxDate  = new Date(Math.max(...allDates));
-  minDate.setDate(minDate.getDate() - 7);
-  maxDate.setDate(maxDate.getDate() + 14);
-
-  // Build week columns
-  const weeks = [];
-  const d = new Date(startOfWeek(minDate));
-  while (d <= maxDate) {
-    weeks.push(new Date(d));
-    d.setDate(d.getDate() + 7);
-  }
-
-  const totalDays = Math.ceil((maxDate - minDate) / 86400000);
-  const dayPx = Math.max(28, Math.min(48, Math.floor(1200 / totalDays)));
-
-  // Group by dev
-  const devs = [...new Set(timeline.map(t => t.devName))];
-
-  // Header: weeks
-  const weekHeaderHtml = weeks.map(w => {
-    const leftPx = Math.round((w - minDate) / 86400000) * dayPx;
-    const label  = w.toLocaleDateString('es-ES', { day:'2-digit', month:'short' });
-    return `<div style="position:absolute;left:${leftPx}px;top:0;font-size:8px;
-      color:#AAA;white-space:nowrap;padding:4px 0 4px 4px;
-      border-left:1px solid #F0F0F0;height:100%">${label}</div>`;
-  }).join('');
-
-  // Today marker
-  const todayLeft = Math.round((new Date() - minDate) / 86400000) * dayPx;
-  const todayMarker = `<div style="position:absolute;left:${todayLeft}px;top:0;bottom:0;
-    width:2px;background:#CC1F26;z-index:20;opacity:.6"></div>
-    <div style="position:absolute;left:${todayLeft-12}px;top:0;font-size:7px;
-      color:#CC1F26;font-weight:700;white-space:nowrap">HOY</div>`;
-
-  // Dev rows
-  const ROW_H = 44;
-  const rowsHtml = devs.map(devName => {
-    const devProjs = timeline.filter(t => t.devName === devName);
-    const wh = devWeeklyHours(devTeam.find(d => d.name === devName) || {});
-
-    const barsHtml = devProjs.map(t => {
-      const leftPx = Math.max(0, Math.round((t.startDate - minDate) / 86400000) * dayPx);
-      const widthPx = Math.max(24, Math.round((t.endDate - t.startDate) / 86400000) * dayPx);
-      const col = POOL_COLORS[t.pool] || '#888';
-      const bg  = t.locked ? col : POOL_BGS[t.pool] || '#F5F5F5';
-      const textCol = t.locked ? '#fff' : col;
-      const score = (t.proj.sf || 0).toFixed(1);
-      const label = t.proj.nom.substring(0, Math.max(6, Math.floor(widthPx / 7)));
-
-      return `<div
-        class="gantt-bar"
-        data-nom="${escHtml(t.proj.nom)}"
-        data-dev="${escHtml(devName)}"
-        draggable="true"
-        ondragstart="ganttDragStart(event)"
-        ondblclick="ganttUnlock('${escHtml(t.proj.nom)}')"
-        title="${escHtml(t.proj.nom)} · ${t.proj.horas}h · ${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}${t.locked?' · 🔒 Asignado manualmente':''}"
-        style="
-          position:absolute;
-          left:${leftPx}px;
-          width:${widthPx - 2}px;
-          top:8px;height:28px;
-          background:${bg};
-          border:1.5px solid ${col};
-          border-radius:5px;
-          cursor:grab;
-          display:flex;align-items:center;
-          padding:0 6px;gap:4px;
-          overflow:hidden;
-          box-shadow:${t.locked?'0 2px 6px rgba(0,0,0,.15)':'none'};
-          transition:box-shadow .15s;
-          z-index:10;
-        ">
-        ${t.locked ? `<span style="font-size:8px;flex-shrink:0">🔒</span>` : ''}
-        <span style="font-size:8px;font-weight:700;color:${textCol};
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">
-          ${label}
-        </span>
-        <span style="font-size:7px;color:${textCol};opacity:.8;flex-shrink:0">${score}</span>
-      </div>`;
-    }).join('');
-
-    // Drop zone for this row
-    return `
-      <div style="display:flex;align-items:stretch;border-bottom:1px solid #F0F0F0;">
-        <!-- Dev label -->
-        <div style="width:140px;flex-shrink:0;padding:10px 12px;
-          background:#FAFAF8;border-right:1px solid #EBEBEB;
-          display:flex;flex-direction:column;justify-content:center">
-          <div style="font-size:10px;font-weight:700;color:#111;white-space:nowrap;
-            overflow:hidden;text-overflow:ellipsis">${devName}</div>
-          <div style="font-size:8px;color:#AAA;margin-top:1px">
-            ${Object.entries(wh).filter(([,v])=>v>0)
-              .map(([k,v])=>`<span style="color:${POOL_COLORS[k]}">${k} ${v.toFixed(0)}h</span>`)
-              .join(' · ')}
-          </div>
-        </div>
-        <!-- Gantt row -->
-        <div style="flex:1;position:relative;height:${ROW_H}px;overflow:hidden;"
-          ondragover="event.preventDefault()"
-          ondrop="ganttDrop(event,'${escHtml(devName)}')"
-          data-dev="${escHtml(devName)}">
-          <!-- Week grid lines -->
-          ${weeks.map(w => {
-            const lx = Math.round((w - minDate) / 86400000) * dayPx;
-            return `<div style="position:absolute;left:${lx}px;top:0;bottom:0;
-              width:1px;background:#F5F5F5;"></div>`;
-          }).join('')}
-          ${todayMarker}
-          ${barsHtml}
-        </div>
-      </div>`;
-  }).join('');
-
-  const totalW = Math.round((maxDate - minDate) / 86400000) * dayPx;
-
-  el.innerHTML = `
-    <div style="overflow-x:auto;overflow-y:visible;padding-bottom:8px">
-      <!-- Timeline header -->
-      <div style="display:flex;">
-        <div style="width:140px;flex-shrink:0;background:#FAFAF8;
-          border-right:1px solid #EBEBEB;border-bottom:1px solid #EBEBEB;
-          padding:8px 12px;font-size:9px;font-weight:700;color:#AAA;
-          text-transform:uppercase;letter-spacing:.1em">
-          Desarrollador
-        </div>
-        <div style="flex:1;position:relative;height:28px;min-width:${totalW}px;
-          border-bottom:1px solid #EBEBEB;overflow:hidden">
-          ${weekHeaderHtml}
-        </div>
-      </div>
-      <!-- Rows -->
-      <div style="min-width:${totalW + 140}px">
-        ${rowsHtml}
-      </div>
-    </div>
-    <div style="margin-top:10px;font-size:9px;color:#AAA;display:flex;gap:16px;flex-wrap:wrap">
-      ${Object.entries(POOL_COLORS).map(([k,c]) =>
-        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;
-          background:${POOL_BGS[k]};border:1.5px solid ${c};margin-right:4px"></span>${k}</span>`
-      ).join('')}
-      <span style="color:#AAA">🔒 = asignado manualmente · Arrastra para mover · Doble clic para desbloquear</span>
-    </div>`;
-}
-
-// ── Gantt drag & drop ─────────────────────────────────────────
-function ganttDragStart(e) {
-  const nom = e.currentTarget.dataset.nom;
-  const dev = e.currentTarget.dataset.dev;
-  e.dataTransfer.setData('text/plain', nom);
-  e.dataTransfer.setData('dev', dev);
-  dragState = { nom, dev };
-  e.currentTarget.style.opacity = '.6';
-}
-
-function ganttDrop(e, targetDev) {
-  e.preventDefault();
-  const nom = e.dataTransfer.getData('text/plain');
-  if (!nom) return;
-
-  const timeline = buildTimeline();
-  const t = timeline.find(x => x.proj.nom === nom);
-  if (!t) return;
-
-  // Calculate new start date from drop position
-  const rect  = e.currentTarget.getBoundingClientRect();
-  const allDates = timeline.flatMap(t => [t.startDate, t.endDate]);
-  const minDate = new Date(Math.min(...allDates));
-  minDate.setDate(minDate.getDate() - 7);
-
-  const totalDays = Math.ceil((new Date(Math.max(...allDates)) - minDate) / 86400000) + 14;
-  const dayPx = Math.max(28, Math.min(48, Math.floor(1200 / totalDays)));
-
-  const dropX   = e.clientX - rect.left;
-  const dropDay = Math.max(0, Math.round(dropX / dayPx));
-  const newStart = new Date(minDate);
-  newStart.setDate(newStart.getDate() + dropDay);
-
-  // Skip to next Monday if weekend
-  while (newStart.getDay() === 0 || newStart.getDay() === 6) {
-    newStart.setDate(newStart.getDate() + 1);
-  }
-
-  const wh = devWeeklyHours(devTeam.find(d => d.name === targetDev) || {});
-  const poolWh = wh[t.pool] || 1;
-  const days = Math.ceil((t.proj.horas / poolWh) * 5);
-  const newEnd = addWorkingDays(new Date(newStart), days);
-
-  // Update or create locked assignment
-  const existingIdx = lockedAssignments.findIndex(l => l.nom === nom);
-  const locked = { nom, devName: targetDev, startDate: newStart.toISOString(), endDate: newEnd.toISOString() };
-  if (existingIdx >= 0) lockedAssignments[existingIdx] = locked;
-  else lockedAssignments.push(locked);
-
-  saveLocked();
-  renderCalendar();
-  toast(`✓ "${nom.substring(0,30)}" → ${targetDev} · ${fmtDateShort(newStart)}–${fmtDateShort(newEnd)}`);
-}
-
-function ganttUnlock(nom) {
-  lockedAssignments = lockedAssignments.filter(l => l.nom !== nom);
-  saveLocked();
-  renderCalendar();
-  toast(`↺ "${nom.substring(0,25)}" vuelve a planificación automática`);
-}
+// ═══ GANTT VIEW — see gantt engine below
 
 // ═══ MONTHLY VIEW ═════════════════════════════════════════════
 function renderMonth(el, timeline) {
@@ -1046,4 +837,499 @@ function startOfWeek(date) {
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS GANTT ENGINE v2
+   
+   Key features:
+   • No-overlap constraint: drag cascades all following projects (domino)
+   • One project per dev per moment
+   • Change history with timestamps
+   • Resize handles on bars
+   • Milestone markers (today line)
+   • Critical path highlight (longest chain)
+   • Progress % on bars
+   • Mini-map / zoom
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Change history ────────────────────────────────────────────
+let ganttHistory = [];
+
+function ganttLogChange(action, nom, from, to, dev) {
+  ganttHistory.unshift({
+    ts:     new Date(),
+    action, nom, from, to, dev,
+  });
+  if (ganttHistory.length > 50) ganttHistory.pop();
+  renderGanttHistory();
+}
+
+function renderGanttHistory() {
+  const el    = document.getElementById('gantt-history');
+  const count = document.getElementById('changelog-count');
+  if (count) count.textContent = ganttHistory.length;
+  if (!el) return;
+
+  if (!ganttHistory.length) {
+    el.innerHTML = '<div style="font-size:10px;color:#CCC;padding:8px 0">Sin cambios registrados.</div>';
+    return;
+  }
+
+  el.innerHTML = ganttHistory.map(h => {
+    const ts = h.ts.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+    const date = h.ts.toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+    let detail = '';
+    if (h.action === 'move') {
+      detail = `<strong>${h.nom}</strong> → <span style="color:#1848A0">${h.dev}</span> · 
+        <span style="text-decoration:line-through;color:#AAA">${h.from}</span> → 
+        <span style="color:#087B50;font-weight:700">${h.to}</span>`;
+    } else if (h.action === 'unlock') {
+      detail = `<strong>${h.nom}</strong> desbloqueado → planificación automática`;
+    } else if (h.action === 'active') {
+      detail = `<strong>${h.nom}</strong> marcado como <em>en curso</em> hasta ${h.to}`;
+    }
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:6px 8px;
+      background:#fff;border-radius:6px;border:1px solid #F0F0F0;font-size:10px">
+      <div style="flex-shrink:0;color:#AAA;white-space:nowrap">${date} ${ts}</div>
+      <div style="flex:1;color:#555">${detail}</div>
+    </div>`;
+  }).join('');
+}
+
+function ganttClearLog() {
+  ganttHistory = [];
+  renderGanttHistory();
+}
+
+// ── Today button ──────────────────────────────────────────────
+function ganttGoToday() {
+  calRefDate = new Date();
+  renderCalendar();
+}
+
+// ── Cascade / domino effect ───────────────────────────────────
+// After moving a project, push all subsequent projects for same dev+pool
+function cascadeAfter(timeline, movedNom, newEnd, devName, pool) {
+  // Get all projects for this dev+pool after the moved one, sorted by startDate
+  const chain = timeline
+    .filter(t => t.devName === devName && t.pool === pool && t.proj.nom !== movedNom)
+    .sort((a,b) => a.startDate - b.startDate);
+
+  let cursor = new Date(newEnd);
+  chain.forEach(t => {
+    if (t.startDate < cursor) {
+      // Push this project to start after cursor
+      const dur = Math.ceil((t.endDate - t.startDate) / 86400000); // working days
+      const newStart = nextWorkingDay(new Date(cursor));
+      const newEnd2  = addWorkingDays(new Date(newStart), dur);
+
+      const existing = lockedAssignments.findIndex(l => l.nom === t.proj.nom);
+      const lock = {
+        nom:       t.proj.nom,
+        devName:   t.devName,
+        startDate: newStart.toISOString(),
+        endDate:   newEnd2.toISOString(),
+      };
+      if (existing >= 0) lockedAssignments[existing] = lock;
+      else lockedAssignments.push(lock);
+
+      cursor = new Date(newEnd2);
+      // Update the in-memory timeline object too for next iteration
+      t.startDate = new Date(newStart);
+      t.endDate   = new Date(newEnd2);
+    } else {
+      cursor = new Date(t.endDate);
+    }
+  });
+  saveLocked();
+}
+
+function nextWorkingDay(date) {
+  const d = new Date(date);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+// ── Improved Gantt render ─────────────────────────────────────
+function renderGantt(el, timeline) {
+  if (!timeline.length) {
+    el.innerHTML = `<div style="padding:40px;text-align:center;color:#AAA">
+      Sin proyectos planificados. Configura el equipo y las horas de los proyectos.
+    </div>`;
+    return;
+  }
+
+  // Date range
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const allDates = timeline.flatMap(t => [t.startDate, t.endDate]);
+  let   minDate  = new Date(Math.min(...allDates));
+  let   maxDate  = new Date(Math.max(...allDates));
+  // Show at least 3 months
+  const minSpan = 90 * 86400000;
+  if (maxDate - minDate < minSpan) maxDate = new Date(minDate.getTime() + minSpan);
+  // Always include today
+  if (today < minDate) minDate = new Date(today.getTime() - 7*86400000);
+  minDate = startOfWeek(minDate);
+  maxDate.setDate(maxDate.getDate() + 14);
+
+  const totalDays = Math.ceil((maxDate - minDate) / 86400000);
+  const DAY_PX    = Math.max(20, Math.min(40, Math.floor(900 / totalDays)));
+  const ROW_H     = 52;
+  const HEAD_H    = 48;
+  const LABEL_W   = 160;
+
+  // Build weeks/months for header
+  const headerMonths = [], headerWeeks = [];
+  let d = new Date(minDate);
+  while (d <= maxDate) {
+    const leftPx = Math.round((d - minDate) / 86400000) * DAY_PX;
+    if (d.getDate() <= 7) {
+      headerMonths.push({
+        label: d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).replace(' ',`'`),
+        left: leftPx
+      });
+    }
+    if (d.getDay() === 1) { // Monday
+      headerWeeks.push({
+        label: d.getDate(),
+        left: leftPx,
+        isMonth: d.getDate() <= 7
+      });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+
+  // Today line
+  const todayLeft = Math.round((today - minDate) / 86400000) * DAY_PX;
+
+  // Group timeline by dev
+  const devOrder = [...new Set(timeline.map(t => t.devName))];
+  const totalW   = totalDays * DAY_PX;
+
+  // Build grid lines (weeks)
+  const gridLines = headerWeeks.map(w =>
+    `<div style="position:absolute;left:${w.left}px;top:0;bottom:0;
+      width:1px;background:${w.isMonth?'#E0E0E0':'#F5F5F5'}"></div>`
+  ).join('');
+
+  // Compute critical path (longest chain of sequential projects)
+  const criticalDevs = new Set();
+  devOrder.forEach(devName => {
+    const devTimeline = timeline.filter(t => t.devName === devName);
+    ['corto','medio','largo'].forEach(pool => {
+      const chain = devTimeline.filter(t => t.pool === pool).sort((a,b) => a.startDate-b.startDate);
+      if (chain.length > 0) {
+        const totalHours = chain.reduce((s,t) => s + t.totalHours, 0);
+        if (totalHours > 200) chain.forEach(t => criticalDevs.add(t.proj.nom));
+      }
+    });
+  });
+
+  // Build rows
+  const rowsHtml = devOrder.map((devName, ri) => {
+    const dev      = devTeam.find(d => d.name === devName) || { name: devName };
+    const wh       = devWeeklyHours(dev);
+    const devProjs = timeline.filter(t => t.devName === devName)
+                             .sort((a,b) => a.startDate - b.startDate);
+
+    const bars = devProjs.map((t, qi) => {
+      const leftPx  = Math.max(0, Math.round((t.startDate - minDate) / 86400000) * DAY_PX);
+      const widthPx = Math.max(2, Math.round((t.endDate - t.startDate) / 86400000) * DAY_PX);
+      const col     = POOL_COLORS[t.pool] || '#888';
+      const bgLight = POOL_BGS[t.pool]   || '#F5F5F5';
+      const isCrit  = criticalDevs.has(t.proj.nom);
+      const isLocked= t.locked;
+
+      // Progress: if start is in past, compute %
+      const elapsed = Math.max(0, Math.min(1,
+        (today - t.startDate) / (t.endDate - t.startDate || 1)
+      ));
+      const progressW = Math.round(widthPx * elapsed);
+      const pct = Math.round(elapsed * 100);
+
+      const labelLen = Math.max(0, Math.floor((widthPx - 16) / 6.5));
+      const label    = t.proj.nom.substring(0, labelLen) + (t.proj.nom.length > labelLen ? '…' : '');
+
+      return `
+        <div class="gantt-bar${isLocked?' gantt-locked':''}"
+          data-nom="${escHtml(t.proj.nom)}"
+          data-dev="${escHtml(devName)}"
+          data-pool="${t.pool}"
+          data-start="${t.startDate.toISOString()}"
+          data-end="${t.endDate.toISOString()}"
+          data-days="${Math.round((t.endDate - t.startDate)/86400000)}"
+          draggable="true"
+          ondragstart="ganttDragStart(event)"
+          ondblclick="ganttUnlock('${escHtml(t.proj.nom)}')"
+          title="${escHtml(t.proj.nom)}&#10;${t.proj.horas}h · ${t.weeks}sem&#10;${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}&#10;Score: ${(t.proj.sf||0).toFixed(1)}&#10;${isLocked?'🔒 Asignado manualmente':'Auto-planificado'}&#10;Doble clic para desbloquear"
+          style="
+            position:absolute;
+            left:${leftPx}px;
+            width:${widthPx}px;
+            top:10px;height:32px;
+            border-radius:6px;
+            cursor:grab;
+            overflow:hidden;
+            border:${isLocked?`2px solid ${col}`:`1.5px solid ${col}`};
+            ${isCrit && !isLocked ? `box-shadow:0 0 0 2px rgba(204,31,38,.2);` : ''}
+          ">
+          <!-- Background -->
+          <div style="position:absolute;inset:0;background:${isLocked?col:bgLight}"></div>
+          <!-- Progress fill -->
+          ${pct > 0 ? `<div style="position:absolute;left:0;top:0;bottom:0;width:${progressW}px;
+            background:${isLocked?'rgba(255,255,255,.2)':col};opacity:${isLocked?.4:.25}"></div>` : ''}
+          <!-- Content -->
+          <div style="position:relative;z-index:2;display:flex;align-items:center;
+            height:100%;padding:0 6px;gap:4px;pointer-events:none">
+            ${isLocked ? `<span style="font-size:8px;flex-shrink:0">🔒</span>` : ''}
+            <span style="font-size:9px;font-weight:700;
+              color:${isLocked?'#fff':col};
+              white-space:nowrap;overflow:hidden;flex:1">
+              ${label}
+            </span>
+            ${pct > 0 && pct < 100 ? `<span style="font-size:8px;color:${isLocked?'rgba(255,255,255,.8)':col};
+              opacity:.8;flex-shrink:0">${pct}%</span>` : ''}
+            <span style="font-size:8px;color:${isLocked?'rgba(255,255,255,.7)':col};
+              flex-shrink:0;opacity:.7">${(t.proj.sf||0).toFixed(1)}</span>
+          </div>
+          <!-- Resize handle right -->
+          <div class="gantt-resize"
+            data-nom="${escHtml(t.proj.nom)}"
+            data-dev="${escHtml(devName)}"
+            style="position:absolute;right:0;top:0;bottom:0;width:8px;
+              cursor:ew-resize;background:${isLocked?'rgba(255,255,255,.2)':'transparent'};
+              border-radius:0 6px 6px 0"
+            onmousedown="ganttResizeStart(event)">
+          </div>
+        </div>`;
+    }).join('');
+
+    const bgRow = ri % 2 === 0 ? '#fff' : '#FDFDFD';
+    const whLabel = Object.entries(wh).filter(([,v])=>v>0)
+      .map(([k,v]) => `<span style="display:inline-block;width:6px;height:6px;
+        border-radius:50%;background:${POOL_COLORS[k]};margin-right:2px"></span>${v.toFixed(0)}h`)
+      .join(' ');
+
+    return `
+      <div style="display:flex;border-bottom:1px solid #F5F5F5;background:${bgRow}"
+        ondragover="event.preventDefault()"
+        ondrop="ganttDrop(event,'${escHtml(devName)}')"
+        data-dev="${escHtml(devName)}">
+        <!-- Dev label -->
+        <div style="width:${LABEL_W}px;flex-shrink:0;padding:10px 14px;
+          border-right:1px solid #EBEBEB;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:11px;font-weight:700;color:#111;display:flex;align-items:center;gap:6px">
+            <span style="width:22px;height:22px;border-radius:50%;background:#111;color:#fff;
+              font-size:9px;font-weight:800;display:inline-flex;align-items:center;
+              justify-content:center;flex-shrink:0">${devName.charAt(0).toUpperCase()}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${devName}</span>
+          </div>
+          <div style="font-size:8px;color:#AAA;margin-top:3px">${whLabel}</div>
+        </div>
+        <!-- Gantt row area -->
+        <div style="flex:1;position:relative;height:${ROW_H}px;min-width:${totalW}px;overflow:hidden">
+          ${gridLines}
+          <!-- Today vertical line -->
+          <div style="position:absolute;left:${todayLeft}px;top:0;bottom:0;
+            width:2px;background:rgba(204,31,38,.6);z-index:30;pointer-events:none"></div>
+          ${bars}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Week scale header
+  const weekScaleHtml = headerWeeks.map(w =>
+    `<div style="position:absolute;left:${w.left}px;top:${w.isMonth?0:16}px;
+      font-size:${w.isMonth?9:8}px;font-weight:${w.isMonth?700:400};
+      color:${w.isMonth?'#111':'#AAA'};white-space:nowrap;
+      padding-left:3px;border-left:${w.isMonth?'1px solid #D0D0D0':'none'}">
+      ${w.isMonth ? w.label.toUpperCase() : w.label}
+    </div>`
+  ).join('');
+
+  // Today label in header
+  const todayLabelHtml = `<div style="position:absolute;left:${todayLeft}px;bottom:2px;
+    transform:translateX(-50%);font-size:7px;font-weight:800;color:#CC1F26;
+    white-space:nowrap;pointer-events:none">▼ HOY</div>`;
+
+  el.innerHTML = `
+    <div style="border:1px solid #EBEBEB;border-radius:10px;overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,.04)">
+      <!-- Scale header -->
+      <div style="display:flex;border-bottom:2px solid #EBEBEB">
+        <div style="width:${LABEL_W}px;flex-shrink:0;border-right:1px solid #EBEBEB;
+          background:#FAFAF8;padding:8px 14px;font-size:9px;font-weight:700;color:#AAA;
+          text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:flex-end">
+          Equipo
+        </div>
+        <div style="flex:1;position:relative;height:${HEAD_H}px;min-width:${totalW}px;
+          background:#FAFAF8;overflow:hidden">
+          ${gridLines}
+          ${weekScaleHtml}
+          ${todayLabelHtml}
+          <div style="position:absolute;left:${todayLeft}px;top:0;bottom:0;
+            width:2px;background:rgba(204,31,38,.6);pointer-events:none"></div>
+        </div>
+      </div>
+      <!-- Rows -->
+      <div style="min-width:${totalW + LABEL_W}px">
+        ${rowsHtml}
+      </div>
+    </div>
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:9px;color:#AAA;
+      align-items:center">
+      ${Object.entries(POOL_COLORS).map(([k,c]) => `
+        <span style="display:flex;align-items:center;gap:4px">
+          <span style="width:12px;height:12px;border-radius:3px;background:${POOL_BGS[k]};
+            border:1.5px solid ${c}"></span>${k}
+        </span>`).join('')}
+      <span style="display:flex;align-items:center;gap:4px">
+        <span style="width:12px;height:12px;border-radius:3px;background:#087B50;
+          border:2px solid #087B50"></span>bloqueado (manual)
+      </span>
+      <span style="color:#888">Arrastra → mueve con efecto dominó · Doble clic → desbloquear</span>
+    </div>`;
+}
+
+// ── Override ganttDrop with domino cascade ────────────────────
+function ganttDrop(e, targetDev) {
+  e.preventDefault();
+  const nom = e.dataTransfer.getData('text/plain');
+  if (!nom || !dragState) return;
+
+  const timeline  = buildTimeline();
+  const t         = timeline.find(x => x.proj.nom === nom);
+  if (!t) { dragState = null; return; }
+
+  // Compute drop position → new start date
+  const rowEl  = e.currentTarget;
+  const allDates = timeline.flatMap(t2 => [t2.startDate, t2.endDate]);
+  let   minDate  = new Date(Math.min(...allDates));
+  const maxDate  = new Date(Math.max(...allDates));
+  const totalDays= Math.ceil((maxDate - minDate) / 86400000) + 14;
+  const dayPx    = Math.max(20, Math.min(40, Math.floor(900 / totalDays)));
+  minDate        = startOfWeek(minDate);
+
+  const rowRect  = rowEl.querySelector('[data-dev]')?.getBoundingClientRect()
+                || rowEl.getBoundingClientRect();
+  const dropX    = e.clientX - rowRect.left - 160; // subtract label width
+  const dropDay  = Math.max(0, Math.round(dropX / dayPx));
+  let   newStart = new Date(minDate);
+  newStart.setDate(newStart.getDate() + dropDay);
+  newStart = nextWorkingDay(newStart);
+
+  // Compute new end
+  const durDays = t.locked
+    ? Math.ceil((t.endDate - t.startDate) / 86400000)
+    : Math.ceil((t.proj.horas / (devWeeklyHours(devTeam.find(d=>d.name===targetDev)||{})
+        [t.pool] || 1)) * 5);
+  const newEnd = addWorkingDays(new Date(newStart), durDays);
+
+  const prevStart = fmtDateShort(t.startDate);
+  const prevDev   = t.devName;
+
+  // Check for overlap with other projects of targetDev+pool
+  // If overlap → push newStart after the conflicting end
+  const conflicts = timeline.filter(x =>
+    x.proj.nom !== nom &&
+    x.devName === targetDev &&
+    x.pool === t.pool &&
+    x.startDate < newEnd &&
+    x.endDate > newStart
+  ).sort((a,b) => a.startDate - b.startDate);
+
+  if (conflicts.length) {
+    const lastConflictEnd = new Date(Math.max(...conflicts.map(c => c.endDate)));
+    newStart = nextWorkingDay(new Date(lastConflictEnd));
+    newEnd.setTime(addWorkingDays(new Date(newStart), durDays).getTime());
+  }
+
+  // Save locked assignment
+  const existing = lockedAssignments.findIndex(l => l.nom === nom);
+  const lock = { nom, devName:targetDev, startDate:newStart.toISOString(), endDate:newEnd.toISOString() };
+  if (existing >= 0) lockedAssignments[existing] = lock;
+  else lockedAssignments.push(lock);
+
+  // 🎯 CASCADE: push all subsequent projects for targetDev+pool
+  cascadeAfter(timeline, nom, newEnd, targetDev, t.pool);
+
+  // If dev changed → also cascade original dev+pool
+  if (prevDev !== targetDev) {
+    cascadeAfter(timeline, nom, t.startDate, prevDev, t.pool);
+  }
+
+  saveLocked();
+  ganttLogChange('move', nom,
+    `${prevStart} (${prevDev})`,
+    `${fmtDateShort(newStart)}–${fmtDateShort(newEnd)} (${targetDev})`,
+    targetDev
+  );
+  dragState = null;
+  renderCalendar();
+  toast(`🎯 "${nom.substring(0,25)}" → ${targetDev} · ${fmtDateShort(newStart)}`);
+}
+
+// ── Resize handle ─────────────────────────────────────────────
+let resizeState = null;
+function ganttResizeStart(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const bar   = e.currentTarget.parentElement;
+  const nom   = bar.dataset.nom;
+  const dev   = bar.dataset.dev;
+  const start = new Date(bar.dataset.start);
+  const end   = new Date(bar.dataset.end);
+  resizeState = { nom, dev, start, end, startX: e.clientX };
+
+  const onMove = (ev) => {
+    if (!resizeState) return;
+    // Calculate delta days from mouse move
+    const timeline  = buildTimeline();
+    const allDates  = timeline.flatMap(t=>[t.startDate,t.endDate]);
+    const totalDays = Math.ceil((new Date(Math.max(...allDates)) - new Date(Math.min(...allDates)))/86400000)+14;
+    const dayPx     = Math.max(20, Math.min(40, Math.floor(900/totalDays)));
+    const deltaDays = Math.round((ev.clientX - resizeState.startX) / dayPx);
+    if (deltaDays === 0) return;
+
+    const newEnd = addWorkingDays(new Date(resizeState.end), deltaDays);
+    if (newEnd <= resizeState.start) return;
+
+    const existing = lockedAssignments.findIndex(l=>l.nom===resizeState.nom);
+    const lock = { nom:resizeState.nom, devName:resizeState.dev,
+                   startDate:resizeState.start.toISOString(), endDate:newEnd.toISOString() };
+    if (existing>=0) lockedAssignments[existing]=lock;
+    else lockedAssignments.push(lock);
+
+    resizeState.startX = ev.clientX;
+    resizeState.end = new Date(newEnd);
+    saveLocked();
+  };
+
+  const onUp = () => {
+    if (resizeState) {
+      ganttLogChange('move', resizeState.nom,
+        fmtDateShort(resizeState.start),
+        fmtDateShort(resizeState.end),
+        resizeState.dev
+      );
+      renderCalendar();
+    }
+    resizeState = null;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// ── Override ganttUnlock ──────────────────────────────────────
+function ganttUnlock(nom) {
+  lockedAssignments = lockedAssignments.filter(l => l.nom !== nom);
+  saveLocked();
+  ganttLogChange('unlock', nom, '', 'automático', '');
+  renderCalendar();
+  toast(`↺ "${nom.substring(0,25)}" → planificación automática`);
 }
