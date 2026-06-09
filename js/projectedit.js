@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ── Load team capacity & AI keywords from localStorage ───────
   if (typeof loadDevTeam  === 'function') loadDevTeam();
   if (typeof loadPlanningState === 'function') loadPlanningState();
+  if (typeof loadLocked       === 'function') loadLocked();
   if (typeof renderScheduleEditor === 'function') renderScheduleEditor();
   if (typeof aiLoadKeywords === 'function') aiLoadKeywords();
 

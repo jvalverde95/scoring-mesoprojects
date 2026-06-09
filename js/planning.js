@@ -544,3 +544,506 @@ function exportPlanningExcel() {
   XLSX.writeFile(wb, `nexus_planning_${new Date().toISOString().split('T')[0]}.xlsx`);
   toast(`✓ Planificación exportada (${timeline.length} proyectos)`);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS CALENDAR VIEWS
+   
+   Three views: Gantt · Monthly · Weekly
+   All read from planificar() + activeProjects
+   Drag-and-drop in Gantt locks the assignment
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Locked assignments (moved in Gantt) ───────────────────────
+// { nom, devName, startDate (ISO), endDate (ISO) }
+let lockedAssignments = [];
+
+function saveLocked() {
+  try { localStorage.setItem('nexus_locked', JSON.stringify(lockedAssignments)); } catch(_) {}
+}
+function loadLocked() {
+  try {
+    const s = localStorage.getItem('nexus_locked');
+    if (s) lockedAssignments = JSON.parse(s);
+  } catch(_) {}
+}
+
+// Build full timeline merging locked + auto
+function buildTimeline() {
+  const base = planificar();
+  // Apply any locked overrides
+  const lockedMap = {};
+  lockedAssignments.forEach(l => { lockedMap[l.nom] = l; });
+  return base.map(t => {
+    const lock = lockedMap[t.proj.nom];
+    if (lock) return {
+      ...t,
+      devName:   lock.devName,
+      startDate: new Date(lock.startDate),
+      endDate:   new Date(lock.endDate),
+      locked:    true,
+    };
+    return t;
+  });
+}
+
+// ── Calendar state ────────────────────────────────────────────
+let calView      = 'gantt';   // 'gantt' | 'month' | 'week'
+let calRefDate   = new Date();// anchor date
+let dragState    = null;      // {nom, origStart, origDev, mouseOffset}
+
+// ── Render calendar container ─────────────────────────────────
+function renderCalendar() {
+  const el = document.getElementById('calendar-container');
+  if (!el) return;
+
+  const timeline = buildTimeline();
+  if (!timeline.length) {
+    el.innerHTML = `<div style="padding:48px;text-align:center;color:#AAA;font-size:13px">
+      No hay proyectos planificados. Configura el equipo y asegúrate de que los proyectos tienen horas estimadas.
+    </div>`;
+    return;
+  }
+
+  if (calView === 'gantt')  renderGantt(el, timeline);
+  if (calView === 'month')  renderMonth(el, timeline);
+  if (calView === 'week')   renderWeek(el, timeline);
+}
+
+// ═══ GANTT VIEW ═══════════════════════════════════════════════
+function renderGantt(el, timeline) {
+  // Compute date range: start of first project to end of last + 4 weeks
+  const allDates = timeline.flatMap(t => [t.startDate, t.endDate]);
+  const minDate  = new Date(Math.min(...allDates));
+  const maxDate  = new Date(Math.max(...allDates));
+  minDate.setDate(minDate.getDate() - 7);
+  maxDate.setDate(maxDate.getDate() + 14);
+
+  // Build week columns
+  const weeks = [];
+  const d = new Date(startOfWeek(minDate));
+  while (d <= maxDate) {
+    weeks.push(new Date(d));
+    d.setDate(d.getDate() + 7);
+  }
+
+  const totalDays = Math.ceil((maxDate - minDate) / 86400000);
+  const dayPx = Math.max(28, Math.min(48, Math.floor(1200 / totalDays)));
+
+  // Group by dev
+  const devs = [...new Set(timeline.map(t => t.devName))];
+
+  // Header: weeks
+  const weekHeaderHtml = weeks.map(w => {
+    const leftPx = Math.round((w - minDate) / 86400000) * dayPx;
+    const label  = w.toLocaleDateString('es-ES', { day:'2-digit', month:'short' });
+    return `<div style="position:absolute;left:${leftPx}px;top:0;font-size:8px;
+      color:#AAA;white-space:nowrap;padding:4px 0 4px 4px;
+      border-left:1px solid #F0F0F0;height:100%">${label}</div>`;
+  }).join('');
+
+  // Today marker
+  const todayLeft = Math.round((new Date() - minDate) / 86400000) * dayPx;
+  const todayMarker = `<div style="position:absolute;left:${todayLeft}px;top:0;bottom:0;
+    width:2px;background:#CC1F26;z-index:20;opacity:.6"></div>
+    <div style="position:absolute;left:${todayLeft-12}px;top:0;font-size:7px;
+      color:#CC1F26;font-weight:700;white-space:nowrap">HOY</div>`;
+
+  // Dev rows
+  const ROW_H = 44;
+  const rowsHtml = devs.map(devName => {
+    const devProjs = timeline.filter(t => t.devName === devName);
+    const wh = devWeeklyHours(devTeam.find(d => d.name === devName) || {});
+
+    const barsHtml = devProjs.map(t => {
+      const leftPx = Math.max(0, Math.round((t.startDate - minDate) / 86400000) * dayPx);
+      const widthPx = Math.max(24, Math.round((t.endDate - t.startDate) / 86400000) * dayPx);
+      const col = POOL_COLORS[t.pool] || '#888';
+      const bg  = t.locked ? col : POOL_BGS[t.pool] || '#F5F5F5';
+      const textCol = t.locked ? '#fff' : col;
+      const score = (t.proj.sf || 0).toFixed(1);
+      const label = t.proj.nom.substring(0, Math.max(6, Math.floor(widthPx / 7)));
+
+      return `<div
+        class="gantt-bar"
+        data-nom="${escHtml(t.proj.nom)}"
+        data-dev="${escHtml(devName)}"
+        draggable="true"
+        ondragstart="ganttDragStart(event)"
+        ondblclick="ganttUnlock('${escHtml(t.proj.nom)}')"
+        title="${escHtml(t.proj.nom)} · ${t.proj.horas}h · ${fmtDate(t.startDate)} → ${fmtDate(t.endDate)}${t.locked?' · 🔒 Asignado manualmente':''}"
+        style="
+          position:absolute;
+          left:${leftPx}px;
+          width:${widthPx - 2}px;
+          top:8px;height:28px;
+          background:${bg};
+          border:1.5px solid ${col};
+          border-radius:5px;
+          cursor:grab;
+          display:flex;align-items:center;
+          padding:0 6px;gap:4px;
+          overflow:hidden;
+          box-shadow:${t.locked?'0 2px 6px rgba(0,0,0,.15)':'none'};
+          transition:box-shadow .15s;
+          z-index:10;
+        ">
+        ${t.locked ? `<span style="font-size:8px;flex-shrink:0">🔒</span>` : ''}
+        <span style="font-size:8px;font-weight:700;color:${textCol};
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">
+          ${label}
+        </span>
+        <span style="font-size:7px;color:${textCol};opacity:.8;flex-shrink:0">${score}</span>
+      </div>`;
+    }).join('');
+
+    // Drop zone for this row
+    return `
+      <div style="display:flex;align-items:stretch;border-bottom:1px solid #F0F0F0;">
+        <!-- Dev label -->
+        <div style="width:140px;flex-shrink:0;padding:10px 12px;
+          background:#FAFAF8;border-right:1px solid #EBEBEB;
+          display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:10px;font-weight:700;color:#111;white-space:nowrap;
+            overflow:hidden;text-overflow:ellipsis">${devName}</div>
+          <div style="font-size:8px;color:#AAA;margin-top:1px">
+            ${Object.entries(wh).filter(([,v])=>v>0)
+              .map(([k,v])=>`<span style="color:${POOL_COLORS[k]}">${k} ${v.toFixed(0)}h</span>`)
+              .join(' · ')}
+          </div>
+        </div>
+        <!-- Gantt row -->
+        <div style="flex:1;position:relative;height:${ROW_H}px;overflow:hidden;"
+          ondragover="event.preventDefault()"
+          ondrop="ganttDrop(event,'${escHtml(devName)}')"
+          data-dev="${escHtml(devName)}">
+          <!-- Week grid lines -->
+          ${weeks.map(w => {
+            const lx = Math.round((w - minDate) / 86400000) * dayPx;
+            return `<div style="position:absolute;left:${lx}px;top:0;bottom:0;
+              width:1px;background:#F5F5F5;"></div>`;
+          }).join('')}
+          ${todayMarker}
+          ${barsHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  const totalW = Math.round((maxDate - minDate) / 86400000) * dayPx;
+
+  el.innerHTML = `
+    <div style="overflow-x:auto;overflow-y:visible;padding-bottom:8px">
+      <!-- Timeline header -->
+      <div style="display:flex;">
+        <div style="width:140px;flex-shrink:0;background:#FAFAF8;
+          border-right:1px solid #EBEBEB;border-bottom:1px solid #EBEBEB;
+          padding:8px 12px;font-size:9px;font-weight:700;color:#AAA;
+          text-transform:uppercase;letter-spacing:.1em">
+          Desarrollador
+        </div>
+        <div style="flex:1;position:relative;height:28px;min-width:${totalW}px;
+          border-bottom:1px solid #EBEBEB;overflow:hidden">
+          ${weekHeaderHtml}
+        </div>
+      </div>
+      <!-- Rows -->
+      <div style="min-width:${totalW + 140}px">
+        ${rowsHtml}
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:9px;color:#AAA;display:flex;gap:16px;flex-wrap:wrap">
+      ${Object.entries(POOL_COLORS).map(([k,c]) =>
+        `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;
+          background:${POOL_BGS[k]};border:1.5px solid ${c};margin-right:4px"></span>${k}</span>`
+      ).join('')}
+      <span style="color:#AAA">🔒 = asignado manualmente · Arrastra para mover · Doble clic para desbloquear</span>
+    </div>`;
+}
+
+// ── Gantt drag & drop ─────────────────────────────────────────
+function ganttDragStart(e) {
+  const nom = e.currentTarget.dataset.nom;
+  const dev = e.currentTarget.dataset.dev;
+  e.dataTransfer.setData('text/plain', nom);
+  e.dataTransfer.setData('dev', dev);
+  dragState = { nom, dev };
+  e.currentTarget.style.opacity = '.6';
+}
+
+function ganttDrop(e, targetDev) {
+  e.preventDefault();
+  const nom = e.dataTransfer.getData('text/plain');
+  if (!nom) return;
+
+  const timeline = buildTimeline();
+  const t = timeline.find(x => x.proj.nom === nom);
+  if (!t) return;
+
+  // Calculate new start date from drop position
+  const rect  = e.currentTarget.getBoundingClientRect();
+  const allDates = timeline.flatMap(t => [t.startDate, t.endDate]);
+  const minDate = new Date(Math.min(...allDates));
+  minDate.setDate(minDate.getDate() - 7);
+
+  const totalDays = Math.ceil((new Date(Math.max(...allDates)) - minDate) / 86400000) + 14;
+  const dayPx = Math.max(28, Math.min(48, Math.floor(1200 / totalDays)));
+
+  const dropX   = e.clientX - rect.left;
+  const dropDay = Math.max(0, Math.round(dropX / dayPx));
+  const newStart = new Date(minDate);
+  newStart.setDate(newStart.getDate() + dropDay);
+
+  // Skip to next Monday if weekend
+  while (newStart.getDay() === 0 || newStart.getDay() === 6) {
+    newStart.setDate(newStart.getDate() + 1);
+  }
+
+  const wh = devWeeklyHours(devTeam.find(d => d.name === targetDev) || {});
+  const poolWh = wh[t.pool] || 1;
+  const days = Math.ceil((t.proj.horas / poolWh) * 5);
+  const newEnd = addWorkingDays(new Date(newStart), days);
+
+  // Update or create locked assignment
+  const existingIdx = lockedAssignments.findIndex(l => l.nom === nom);
+  const locked = { nom, devName: targetDev, startDate: newStart.toISOString(), endDate: newEnd.toISOString() };
+  if (existingIdx >= 0) lockedAssignments[existingIdx] = locked;
+  else lockedAssignments.push(locked);
+
+  saveLocked();
+  renderCalendar();
+  toast(`✓ "${nom.substring(0,30)}" → ${targetDev} · ${fmtDateShort(newStart)}–${fmtDateShort(newEnd)}`);
+}
+
+function ganttUnlock(nom) {
+  lockedAssignments = lockedAssignments.filter(l => l.nom !== nom);
+  saveLocked();
+  renderCalendar();
+  toast(`↺ "${nom.substring(0,25)}" vuelve a planificación automática`);
+}
+
+// ═══ MONTHLY VIEW ═════════════════════════════════════════════
+function renderMonth(el, timeline) {
+  const y = calRefDate.getFullYear(), m = calRefDate.getMonth();
+  const firstDay = new Date(y, m, 1);
+  const lastDay  = new Date(y, m + 1, 0);
+  const monthName = firstDay.toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+
+  // Build day cells
+  const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null); // empty prefix
+  for (let d = 1; d <= lastDay.getDate(); d++) cells.push(new Date(y, m, d));
+
+  const cellsHtml = cells.map(day => {
+    if (!day) return `<div style="background:#FAFAFA;border:1px solid #F5F5F5;
+      border-radius:6px;min-height:80px"></div>`;
+
+    const isToday = day.toDateString() === new Date().toDateString();
+    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
+    // Projects active on this day
+    const active = timeline.filter(t =>
+      t.startDate <= day && t.endDate > day
+    );
+
+    const projTags = active.slice(0, 3).map(t => {
+      const col = POOL_COLORS[t.pool];
+      const bg  = t.locked ? col : POOL_BGS[t.pool];
+      const tc  = t.locked ? '#fff' : col;
+      // Daily hours for this project on this day
+      const dev = devTeam.find(d => d.name === t.devName);
+      const dow = ['D','L','M','X','J','V','S'][day.getDay()];
+      const slots = dev?.schedule?.[dow] || [];
+      const poolSlots = slots.filter(s => s.pool === t.pool);
+      const hToday = poolSlots.reduce((sum, s) => {
+        const [sh, sm] = s.start.split(':').map(Number);
+        const [eh, em] = s.end.split(':').map(Number);
+        return sum + ((eh*60+em) - (sh*60+sm)) / 60;
+      }, 0);
+
+      return `<div style="font-size:8px;font-weight:600;padding:2px 5px;border-radius:3px;
+        background:${bg};color:${tc};border:1px solid ${col};margin-bottom:2px;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"
+        title="${t.proj.nom} · ${t.devName}${hToday>0?' · '+hToday.toFixed(1)+'h':''}">
+        ${t.proj.nom.substring(0,16)}${hToday > 0 ? ` <span style="opacity:.7">${hToday.toFixed(0)}h</span>` : ''}
+      </div>`;
+    }).join('');
+
+    const moreCount = active.length - 3;
+
+    return `<div style="background:${isWeekend?'#FAFAFA':'#fff'};
+      border:1.5px solid ${isToday?'#C4974A':'#EBEBEB'};border-radius:6px;
+      min-height:90px;padding:5px;overflow:hidden">
+      <div style="font-size:9px;font-weight:${isToday?800:500};
+        color:${isToday?'#C4974A':'#888'};margin-bottom:4px">
+        ${day.getDate()}
+      </div>
+      ${projTags}
+      ${moreCount > 0 ? `<div style="font-size:8px;color:#AAA">+${moreCount} más</div>` : ''}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <!-- Month nav -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <button onclick="calNav(-1)" style="padding:6px 14px;border:1px solid #DEDEDE;
+        border-radius:6px;background:#fff;cursor:pointer;font-size:11px">← Anterior</button>
+      <div style="font-size:14px;font-weight:700;color:#111;text-transform:capitalize">
+        ${monthName}
+      </div>
+      <button onclick="calNav(1)" style="padding:6px 14px;border:1px solid #DEDEDE;
+        border-radius:6px;background:#fff;cursor:pointer;font-size:11px">Siguiente →</button>
+    </div>
+    <!-- Day headers -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">
+      ${['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(d =>
+        `<div style="font-size:9px;font-weight:700;color:#AAA;text-align:center;
+          text-transform:uppercase;letter-spacing:.08em;padding:4px 0">${d}</div>`
+      ).join('')}
+    </div>
+    <!-- Day grid -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+      ${cellsHtml}
+    </div>`;
+}
+
+// ═══ WEEKLY VIEW ══════════════════════════════════════════════
+function renderWeek(el, timeline) {
+  const weekStart = startOfWeek(calRefDate);
+  const weekDays  = Array.from({length:5}, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const weekLabel = `${fmtDateShort(weekDays[0])} – ${fmtDateShort(weekDays[4])}`;
+
+  // Build header
+  const dayHeaders = weekDays.map(d => {
+    const isToday = d.toDateString() === new Date().toDateString();
+    return `<div style="text-align:center;padding:8px 4px;
+      border-left:1px solid #EBEBEB;background:${isToday?'#FEF9EC':'#FAFAF8'}">
+      <div style="font-size:9px;font-weight:700;color:${isToday?'#C4974A':'#888'};
+        text-transform:uppercase;letter-spacing:.08em">
+        ${d.toLocaleDateString('es-ES',{weekday:'short'})}
+      </div>
+      <div style="font-size:11px;font-weight:${isToday?800:500};
+        color:${isToday?'#C4974A':'#111'}">
+        ${d.getDate()}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Build rows per dev
+  const rowsHtml = devTeam.map(dev => {
+    const devProjs = timeline.filter(t => t.devName === dev.name);
+
+    const cellsHtml = weekDays.map(day => {
+      const dow = ['D','L','M','X','J','V','S'][day.getDay()];
+      const slots = dev.schedule?.[dow] || [];
+
+      // Project active on this day for this dev
+      const activeProj = devProjs.find(t => t.startDate <= day && t.endDate > day);
+
+      // Show slots with project or free
+      const slotsHtml = slots.length ? slots.map(slot => {
+        const [sh,sm] = slot.start.split(':').map(Number);
+        const [eh,em] = slot.end.split(':').map(Number);
+        const h = ((eh*60+em)-(sh*60+sm))/60;
+        const col = POOL_COLORS[slot.pool];
+        const bg  = activeProj && activeProj.pool === slot.pool
+          ? POOL_BGS[slot.pool] : '#F7F7F5';
+        const projName = activeProj && activeProj.pool === slot.pool
+          ? activeProj.proj.nom.substring(0,18) : '—';
+
+        return `<div style="margin-bottom:3px;padding:4px 6px;border-radius:4px;
+          background:${bg};border-left:3px solid ${col}">
+          <div style="font-size:7px;color:${col};font-weight:700">
+            ${slot.start}–${slot.end} · ${slot.pool} · ${h}h
+          </div>
+          <div style="font-size:8px;color:#555;font-weight:600;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${projName}
+          </div>
+        </div>`;
+      }).join('') : `<div style="font-size:8px;color:#DDD;padding:4px;text-align:center">—</div>`;
+
+      return `<div style="border-left:1px solid #EBEBEB;padding:6px 4px;min-height:80px">
+        ${slotsHtml}
+      </div>`;
+    }).join('');
+
+    const wh = devWeeklyHours(dev);
+    return `
+      <div style="display:grid;grid-template-columns:100px repeat(5,1fr);
+        border-bottom:1px solid #F0F0F0;">
+        <div style="padding:10px 8px;background:#FAFAF8;border-right:1px solid #EBEBEB;
+          display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:10px;font-weight:700;color:#111">${dev.name}</div>
+          <div style="font-size:8px;color:#AAA;margin-top:2px">
+            ${Object.entries(wh).filter(([,v])=>v>0)
+              .map(([k,v])=>`<span style="color:${POOL_COLORS[k]}">${v.toFixed(0)}h</span>`)
+              .join(' ')}
+          </div>
+        </div>
+        ${cellsHtml}
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <!-- Week nav -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <button onclick="calNav(-1)" style="padding:6px 14px;border:1px solid #DEDEDE;
+        border-radius:6px;background:#fff;cursor:pointer;font-size:11px">← Semana anterior</button>
+      <div style="font-size:13px;font-weight:700;color:#111">${weekLabel}</div>
+      <button onclick="calNav(1)" style="padding:6px 14px;border:1px solid #DEDEDE;
+        border-radius:6px;background:#fff;cursor:pointer;font-size:11px">Semana siguiente →</button>
+    </div>
+    <!-- Grid -->
+    <div style="border:1px solid #EBEBEB;border-radius:8px;overflow:hidden">
+      <!-- Header -->
+      <div style="display:grid;grid-template-columns:100px repeat(5,1fr);
+        background:#FAFAF8;border-bottom:2px solid #EBEBEB">
+        <div style="padding:8px;font-size:9px;font-weight:700;color:#AAA;
+          text-transform:uppercase;letter-spacing:.1em">Dev</div>
+        ${dayHeaders}
+      </div>
+      ${rowsHtml}
+    </div>`;
+}
+
+// ── Navigation helpers ────────────────────────────────────────
+function calNav(dir) {
+  if (calView === 'month') {
+    calRefDate = new Date(calRefDate.getFullYear(), calRefDate.getMonth() + dir, 1);
+  } else {
+    calRefDate = new Date(calRefDate);
+    calRefDate.setDate(calRefDate.getDate() + dir * 7);
+  }
+  renderCalendar();
+}
+
+function switchCalView(view) {
+  calView = view;
+  ['gantt','month','week'].forEach(v => {
+    const btn = document.getElementById('cal-btn-'+v);
+    if (btn) {
+      btn.style.background = v === view ? '#111' : '#fff';
+      btn.style.color      = v === view ? '#fff' : '#666';
+      btn.style.borderColor= v === view ? '#111' : '#DEDEDE';
+    }
+  });
+  renderCalendar();
+}
+
+function startOfWeek(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}

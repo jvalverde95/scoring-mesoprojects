@@ -1615,29 +1615,61 @@
   </div><!-- /sprint-tab -->
 
 
-  <!-- ── PLANNING TAB ─────────────────────────────────────── -->
+  <!-- ── PLANNING + CALENDAR TAB ─────────────────────────── -->
   <div id="planning-tab" style="display:none">
 
-    <!-- Active projects: add button -->
+    <!-- Top toolbar -->
     <div style="display:flex;align-items:center;justify-content:space-between;
       margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:11px;color:#666">
-        Marca los proyectos que están <strong>en curso</strong> con su fecha de fin estimada.
-        El resto se planifica en cola, ordenado por score.
+
+      <!-- View switcher -->
+      <div style="display:flex;gap:4px;background:#F5F5F3;border-radius:8px;padding:3px">
+        <button id="cal-btn-gantt" onclick="switchCalView('gantt')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1px solid #111;background:#111;color:#fff;cursor:pointer;transition:all .15s">
+          📊 Gantt
+        </button>
+        <button id="cal-btn-month" onclick="switchCalView('month')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
+          📅 Mes
+        </button>
+        <button id="cal-btn-week" onclick="switchCalView('week')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
+          🗓 Semana
+        </button>
       </div>
-      <button onclick="openAddActiveProject()"
-        style="padding:8px 16px;font-size:10px;font-weight:700;border-radius:7px;
-               border:none;background:#1848A0;color:#fff;cursor:pointer;white-space:nowrap">
-        + En curso
-      </button>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="openAddActiveProject()"
+          style="padding:7px 14px;font-size:10px;font-weight:600;border-radius:7px;
+                 border:1px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer">
+          + En curso
+        </button>
+        <button onclick="renderCalendar()"
+          style="padding:7px 14px;font-size:10px;font-weight:600;border-radius:7px;
+                 border:1px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
+          ↺ Recalcular
+        </button>
+        <button onclick="exportPlanningExcel()"
+          style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
+                 border:none;background:#087B50;color:#fff;cursor:pointer">
+          ↓ Excel
+        </button>
+      </div>
     </div>
 
-    <!-- Planning output -->
-    <div id="planning-content">
-      <div style="padding:40px;text-align:center;color:#AAA;font-size:12px">
-        Cargando planificación…
+    <!-- Calendar/planning output -->
+    <div id="calendar-container" style="min-height:300px">
+      <div style="padding:48px;text-align:center;color:#AAA;font-size:13px">
+        Cargando…
       </div>
     </div>
+
+    <!-- Planning list (below Gantt) -->
+    <div id="planning-content" style="margin-top:16px"></div>
   </div>
 
   <!-- ── ADD ACTIVE PROJECT MODAL ─────────────────────────── -->

@@ -468,7 +468,9 @@ function switchSprintTab(tab) {
     btnPlan.style.borderColor= tab==='planning' ? '#111' : '#DEDEDE';
   }
 
-  if (tab === 'planning' && typeof renderPlanning === 'function') {
-    renderPlanning();
+  if (tab === 'planning') {
+    if (typeof loadLocked === 'function') loadLocked();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    if (typeof renderPlanning === 'function') renderPlanning();
   }
 }
