@@ -474,8 +474,7 @@ function switchSprintTab(tab) {
   }
 
   if (tab === 'planning') {
-    if (typeof loadLocked === 'function') loadLocked();
-    if (typeof renderCalendar === 'function') renderCalendar();
-    if (typeof renderPlanning === 'function') renderPlanning();
+    // Redirect to dedicated planning screen
+    goStep('planning');
   }
 }
