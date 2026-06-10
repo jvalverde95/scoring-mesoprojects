@@ -1405,21 +1405,17 @@
 <!-- ═══ SPRINT / EN MARCHA ══════════════════════════════════════ -->
 <div class="step" id="step-sprint">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-    <div class="s-title" style="margin:0">En marcha · Planificación</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="switchSprintTab('sprint')" id="tab-sprint"
-        style="padding:6px 16px;font-size:10px;font-weight:600;border-radius:6px;
-               border:1px solid #111;background:#111;color:#fff;cursor:pointer">
-        📋 En marcha
-      </button>
-      <button onclick="switchSprintTab('planning')" id="tab-planning"
-        style="padding:6px 16px;font-size:10px;font-weight:600;border-radius:6px;
-               border:1px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
-        📅 Planificación
-      </button>
-    </div>
+    <div class="s-title" style="margin:0">En marcha</div>
+    <button onclick="goStep('planning')"
+      style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+             border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer;
+             transition:all .15s"
+      onmouseover="this.style.background='#111';this.style.color='#fff';this.style.borderColor='#111'"
+      onmouseout="this.style.background='#fff';this.style.color='#666';this.style.borderColor='#DEDEDE'">
+      📅 Ver planificación →
+    </button>
   </div>
-  <div class="s-sub">Vista de proyectos activos y calendario de planificación por desarrollador</div>
+  <div class="s-sub">Proyectos asignados al equipo · capacidad por pool · en curso</div>
 
   <!-- ── SPRINT TAB ──────────────────────────────────────── -->
   <div id="sprint-tab">
@@ -1654,6 +1650,11 @@
     <!-- View switcher + actions -->
     <div style="display:flex;gap:4px;flex-wrap:wrap">
       <div style="display:flex;gap:3px;background:#F5F5F3;border-radius:8px;padding:3px">
+        <button id="cal-btn-horas" onclick="switchCalView('horas')"
+          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
+                 border:1.5px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
+          Horas
+        </button>
         <button id="cal-btn-gantt" onclick="switchCalView('gantt')"
           style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
                  border:1.5px solid #111;background:#111;color:#fff;cursor:pointer;transition:all .15s">

@@ -26,26 +26,25 @@ function renderDevRows() {
   cont.innerHTML = devTeam.map((dev, i) => `
     <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 32px;gap:8px;align-items:center;
                 padding:8px 10px;background:var(--surf);border-radius:6px;border:1px solid var(--b)">
+      <!-- Name -->
       <input type="text" value="${dev.name}" placeholder="Nombre desarrollador"
-        style="border:none;background:transparent;font-size:11px;font-weight:600;color:var(--ink);outline:none"
-        onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary()">
+        style="border:none;background:transparent;font-size:11px;font-weight:600;color:var(--ink);outline:none;min-width:0"
+        onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary();if(typeof renderScheduleEditor==='function')renderScheduleEditor()">
+      <!-- Hours: computed from schedule if available, else legacy fields -->
       <div style="text-align:center">
         <div style="font-size:8px;color:var(--d3);font-weight:700;margin-bottom:2px">CORTO</div>
-        <input type="number" min="0" max="20" value="${dev.corto}"
-          style="width:100%;text-align:center;border:1px solid var(--d3);border-radius:4px;font-size:12px;padding:2px"
-          onchange="devTeam[${i}].corto=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        <div id="dev-h-corto-${i}" style="font-size:11px;font-weight:700;color:var(--d3);padding:3px;border:1px solid var(--d3);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
+          ${typeof pDevHours==='function'?pDevHours(dev).corto.toFixed(0)+'h':(dev.corto||0)}</div>
       </div>
       <div style="text-align:center">
         <div style="font-size:8px;color:var(--d4);font-weight:700;margin-bottom:2px">MEDIO</div>
-        <input type="number" min="0" max="20" value="${dev.medio}"
-          style="width:100%;text-align:center;border:1px solid var(--d4);border-radius:4px;font-size:12px;padding:2px"
-          onchange="devTeam[${i}].medio=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        <div id="dev-h-medio-${i}" style="font-size:11px;font-weight:700;color:var(--d4);padding:3px;border:1px solid var(--d4);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
+          ${typeof pDevHours==='function'?pDevHours(dev).medio.toFixed(0)+'h':(dev.medio||0)}</div>
       </div>
       <div style="text-align:center">
         <div style="font-size:8px;color:var(--d1);font-weight:700;margin-bottom:2px">LARGO</div>
-        <input type="number" min="0" max="20" value="${dev.largo}"
-          style="width:100%;text-align:center;border:1px solid var(--d1);border-radius:4px;font-size:12px;padding:2px"
-          onchange="devTeam[${i}].largo=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        <div id="dev-h-largo-${i}" style="font-size:11px;font-weight:700;color:var(--d1);padding:3px;border:1px solid var(--d1);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
+          ${typeof pDevHours==='function'?pDevHours(dev).largo.toFixed(0)+'h':(dev.largo||0)}</div>
       </div>
       <button onclick="removeDevRow(${i})"
         style="background:none;border:none;color:var(--d1);cursor:pointer;font-size:14px;padding:0">✕</button>
@@ -55,8 +54,20 @@ function renderDevRows() {
 }
 
 function addDevRow() {
-  devTeam.push({ name: `Desarrollador ${devTeam.length + 1}`, corto: 2, medio: 1, largo: 1 });
+  const idx = devTeam.length;
+  devTeam.push({
+    name: `Desarrollador ${idx + 1}`,
+    corto: 0, medio: 0, largo: 0,
+    schedule: { L:[], M:[], X:[], J:[], V:[] }
+  });
   renderDevRows();
+  if (typeof renderScheduleEditor === 'function') renderScheduleEditor();
+  // Scroll to schedule editor so user sees it
+  setTimeout(() => {
+    const el = document.getElementById('schedule-editor');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
+  toast(`✓ "${devTeam[idx].name}" añadido · Configura su horario abajo`);
 }
 
 function removeDevRow(idx) {
