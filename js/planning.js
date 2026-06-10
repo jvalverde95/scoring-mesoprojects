@@ -800,7 +800,7 @@ var GANTT = (function() {
 
   // ── Constants ───────────────────────────────────────────────
   var LABEL_W  = 180;
-  var ROW_H    = 48;
+  var ROW_H    = 54;
   var HEAD_H   = 44;
   var ZOOM_LEVELS = [
     {name:'Horas',   dayPx:999},
@@ -997,8 +997,8 @@ var GANTT = (function() {
 
           var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
           txt.setAttribute('x', lx+8+(t.locked?12:0));
-          txt.setAttribute('y', barY+17);
-          txt.setAttribute('font-size','9');
+          txt.setAttribute('y', barY+13);
+          txt.setAttribute('font-size','8.5');
           txt.setAttribute('font-weight','700');
           txt.setAttribute('fill', t.locked ? '#fff' : col);
           txt.setAttribute('clip-path','url(#'+clipId+')');
@@ -1006,14 +1006,37 @@ var GANTT = (function() {
           txt.textContent = t.proj.nom;
           g.appendChild(txt);
 
-          // Score badge
-          if (wpx > 60) {
+          // Dates line below name (if bar wide enough)
+          if (wpx > 100) {
+            var datesTxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+            var clipId3 = 'clipd-'+ri+'-'+pi;
+            var def3 = ganttSvg.querySelector('defs');
+            var cl3 = document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+            cl3.setAttribute('id', clipId3);
+            var cr3 = document.createElementNS('http://www.w3.org/2000/svg','rect');
+            cr3.setAttribute('x', lx+4); cr3.setAttribute('y', barY+16);
+            cr3.setAttribute('width', wpx-8); cr3.setAttribute('height', 12);
+            cl3.appendChild(cr3); def3.appendChild(cl3);
+            datesTxt.setAttribute('x', lx+8+(t.locked?12:0));
+            datesTxt.setAttribute('y', barY+26);
+            datesTxt.setAttribute('font-size','7');
+            datesTxt.setAttribute('fill', t.locked?'rgba(255,255,255,.75)':col);
+            datesTxt.setAttribute('opacity','.85');
+            datesTxt.setAttribute('clip-path','url(#'+clipId3+')');
+            datesTxt.setAttribute('pointer-events','none');
+            datesTxt.textContent = pShort(t.startDate)+' → '+pShort(t.endDate);
+            g.appendChild(datesTxt);
+          }
+
+          // Score badge top-right
+          if (wpx > 55) {
             var score = document.createElementNS('http://www.w3.org/2000/svg','text');
-            score.setAttribute('x', lx+wpx-18);
-            score.setAttribute('y', barY+17);
-            score.setAttribute('font-size','8');
-            score.setAttribute('fill', t.locked?'rgba(255,255,255,.7)':col);
-            score.setAttribute('opacity','.8');
+            score.setAttribute('x', lx+wpx-20);
+            score.setAttribute('y', barY+13);
+            score.setAttribute('font-size','7.5');
+            score.setAttribute('fill', t.locked?'rgba(255,255,255,.8)':col);
+            score.setAttribute('font-weight','700');
+            score.setAttribute('opacity','.85');
             score.setAttribute('pointer-events','none');
             score.textContent = (t.proj.sf||0).toFixed(1);
             g.appendChild(score);

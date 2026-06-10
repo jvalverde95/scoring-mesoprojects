@@ -23,58 +23,87 @@ function saveDevTeam() {
 function renderDevRows() {
   const cont = document.getElementById('dev-rows');
   if (!cont) return;
+
+  const COLORS = {corto:'#C07800', medio:'#1848A0', largo:'#087B50'};
+  const BGS    = {corto:'#FAF5E6', medio:'#EEF3FC', largo:'#ECF8F3'};
+  const LABELS = {corto:'Cortos',  medio:'Medios',  largo:'Largos'};
+
   cont.innerHTML = devTeam.map((dev, i) => {
-    // Compute hours/week from schedule for display hint
     const wh = typeof pDevHours === 'function' ? pDevHours(dev) : {corto:0,medio:0,largo:0};
     const hasSchedule = dev.schedule && Object.values(dev.schedule).some(d=>d.length>0);
-    const hint = (pool) => {
-      const h = wh[pool];
-      return hasSchedule && h > 0 ? `<span style="font-size:7px;color:#AAA;display:block;margin-top:1px">${h.toFixed(0)}h/sem</span>` : '';
-    };
+    const initial = (dev.name || '?').charAt(0).toUpperCase();
+    // Avatar color based on index
+    const avatarColors = ['#111','#1848A0','#087B50','#C07800','#CC1F26','#5C6570'];
+    const avatarColor  = avatarColors[i % avatarColors.length];
+
+    const poolCols = ['corto','medio','largo'].map(pool => `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <label style="font-size:8px;font-weight:700;color:${COLORS[pool]};
+          text-transform:uppercase;letter-spacing:.04em">${LABELS[pool]}</label>
+        <div style="position:relative">
+          <input type="number" min="0" max="10" value="${dev[pool]||0}"
+            style="width:52px;text-align:center;border:2px solid ${COLORS[pool]};
+                   border-radius:7px;font-size:16px;font-weight:800;color:${COLORS[pool]};
+                   padding:4px 2px;background:${BGS[pool]};outline:none;
+                   box-shadow:inset 0 1px 3px rgba(0,0,0,.06)"
+            title="${LABELS[pool]}: nº máximo de proyectos simultáneos"
+            onchange="devTeam[${i}].${pool}=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()"
+            onfocus="this.style.boxShadow='0 0 0 3px ${COLORS[pool]}33'"
+            onblur="this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,.06)'">
+        </div>
+        ${hasSchedule && wh[pool]>0
+          ? `<span style="font-size:7px;color:#AAA">${wh[pool].toFixed(0)}h/sem</span>`
+          : `<span style="font-size:7px;color:#DDD">—h/sem</span>`}
+      </div>`).join('');
+
     return `
-    <div style="display:grid;grid-template-columns:1fr 90px 90px 90px 32px;gap:8px;align-items:center;
-                padding:10px 12px;background:#fff;border-radius:8px;border:1px solid #EBEBEB;
-                box-shadow:0 1px 3px rgba(0,0,0,.04)">
-      <!-- Name -->
-      <input type="text" value="${dev.name}" placeholder="Nombre del desarrollador"
-        style="border:none;background:transparent;font-size:11px;font-weight:700;color:#111;outline:none;min-width:0"
-        onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary();if(typeof renderScheduleEditor==='function')renderScheduleEditor()">
-      <!-- Corto: num projects simultaneously -->
-      <div style="text-align:center">
-        <div style="font-size:8px;color:#C07800;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Cortos</div>
-        <input type="number" min="0" max="10" value="${dev.corto||0}"
-          style="width:100%;text-align:center;border:1.5px solid #C07800;border-radius:5px;
-                 font-size:13px;font-weight:700;color:#C07800;padding:3px 2px;background:#FAF5E6"
-          title="Nº de proyectos cortos que puede llevar a la vez"
-          onchange="devTeam[${i}].corto=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
-        ${hint('corto')}
-      </div>
-      <!-- Medio -->
-      <div style="text-align:center">
-        <div style="font-size:8px;color:#1848A0;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Medios</div>
-        <input type="number" min="0" max="10" value="${dev.medio||0}"
-          style="width:100%;text-align:center;border:1.5px solid #1848A0;border-radius:5px;
-                 font-size:13px;font-weight:700;color:#1848A0;padding:3px 2px;background:#EEF3FC"
-          title="Nº de proyectos medios que puede llevar a la vez"
-          onchange="devTeam[${i}].medio=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
-        ${hint('medio')}
-      </div>
-      <!-- Largo -->
-      <div style="text-align:center">
-        <div style="font-size:8px;color:#087B50;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Largos</div>
-        <input type="number" min="0" max="10" value="${dev.largo||0}"
-          style="width:100%;text-align:center;border:1.5px solid #087B50;border-radius:5px;
-                 font-size:13px;font-weight:700;color:#087B50;padding:3px 2px;background:#ECF8F3"
-          title="Nº de proyectos largos que puede llevar a la vez"
-          onchange="devTeam[${i}].largo=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
-        ${hint('largo')}
-      </div>
-      <button onclick="removeDevRow(${i})"
-        style="background:none;border:none;color:#CC1F26;cursor:pointer;font-size:16px;padding:0;
-               line-height:1;opacity:.6;transition:opacity .15s"
-        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">✕</button>
-    </div>`;
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;
+        background:#fff;border-radius:10px;border:1px solid #EBEBEB;
+        box-shadow:0 1px 4px rgba(0,0,0,.05);transition:box-shadow .15s"
+        onmouseover="this.style.boxShadow='0 3px 12px rgba(0,0,0,.08)'"
+        onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,.05)'">
+
+        <!-- Avatar -->
+        <div style="width:38px;height:38px;border-radius:50%;background:${avatarColor};
+          color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;
+          justify-content:center;flex-shrink:0;letter-spacing:-.01em">
+          ${initial}
+        </div>
+
+        <!-- Name input -->
+        <div style="flex:1;min-width:0">
+          <div style="font-size:8px;font-weight:700;color:#AAA;text-transform:uppercase;
+            letter-spacing:.1em;margin-bottom:3px">Nombre</div>
+          <input type="text" value="${dev.name}" placeholder="Nombre del desarrollador"
+            style="width:100%;border:none;border-bottom:2px solid #F0F0F0;background:transparent;
+                   font-size:13px;font-weight:700;color:#111;outline:none;padding:2px 0;
+                   transition:border-color .15s"
+            onfocus="this.style.borderColor='#C4974A'"
+            onblur="this.style.borderColor='#F0F0F0'"
+            onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary();
+              // Update avatar initial
+              const av=this.closest('div[style*=border-radius:10px]').querySelector('div[style*=border-radius:50%]');
+              if(av)av.textContent=this.value.charAt(0).toUpperCase();
+              if(typeof renderScheduleEditor==='function')renderScheduleEditor()">
+        </div>
+
+        <!-- Pool capacity inputs -->
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          ${poolCols}
+        </div>
+
+        <!-- Delete -->
+        <button onclick="removeDevRow(${i})"
+          style="width:28px;height:28px;border-radius:50%;border:1.5px solid #FFDDDD;
+                 background:#FFF5F5;color:#CC1F26;cursor:pointer;font-size:13px;
+                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                 transition:all .15s"
+          onmouseover="this.style.background='#CC1F26';this.style.color='#fff'"
+          onmouseout="this.style.background='#FFF5F5';this.style.color='#CC1F26'"
+          title="Eliminar desarrollador">✕</button>
+      </div>`;
   }).join('');
+
   updateDevCapSummary();
 }
 
