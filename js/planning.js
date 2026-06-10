@@ -710,6 +710,7 @@ var GANTT = (function() {
   var ROW_H    = 48;
   var HEAD_H   = 44;
   var ZOOM_LEVELS = [
+    {name:'Día',     dayPx:60},
     {name:'Semanas', dayPx:32},
     {name:'Meses',   dayPx:14},
     {name:'Trim.',   dayPx: 6},
@@ -1166,8 +1167,37 @@ var GANTT = (function() {
     var prevMonthX = 0;
     while (+d <= +new Date(+minDate + totalDays*86400000)) {
       var lx = Math.round((d - minDate)/86400000)*DPX;
-      if (d.getDay()===1) {
-        // Week tick
+      if (DPX >= 50) {
+        // ── DAILY ZOOM ──────────────────────────────────────
+        var isWknd = d.getDay()===0||d.getDay()===6;
+        var isMon  = d.getDay()===1;
+        // Month label on 1st
+        if (d.getDate()===1) {
+          _svgLine(svg, lx, 0, lx, HEAD_H, '#BBBBBB', 1, null);
+          var mth = document.createElementNS('http://www.w3.org/2000/svg','text');
+          mth.setAttribute('x',lx+3); mth.setAttribute('y',11);
+          mth.setAttribute('font-size','8'); mth.setAttribute('font-weight','700');
+          mth.setAttribute('fill','#333');
+          mth.textContent = d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).toUpperCase();
+          svg.appendChild(mth);
+        }
+        // Day number
+        var dd2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+        dd2.setAttribute('x',lx+2); dd2.setAttribute('y',28);
+        dd2.setAttribute('font-size','8');
+        dd2.setAttribute('fill',isWknd?'#CCCCCC':isMon?'#333':'#999');
+        dd2.setAttribute('font-weight',isMon?'700':'400');
+        dd2.textContent = d.getDate();
+        svg.appendChild(dd2);
+        // Short day name
+        var dwn = document.createElementNS('http://www.w3.org/2000/svg','text');
+        dwn.setAttribute('x',lx+2); dwn.setAttribute('y',40);
+        dwn.setAttribute('font-size','7');
+        dwn.setAttribute('fill',isWknd?'#DDDDDD':'#BBB');
+        dwn.textContent = d.toLocaleDateString('es-ES',{weekday:'short'}).slice(0,2).toUpperCase();
+        svg.appendChild(dwn);
+      } else if (d.getDay()===1) {
+        // ── WEEK/MONTH/QUARTER ZOOM ──────────────────────────
         _svgLine(svg, lx, 24, lx, HEAD_H, '#E0E0E0', 1, null);
         if (DPX >= 14) {
           var wt = document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -1176,13 +1206,12 @@ var GANTT = (function() {
           wt.textContent = d.getDate();
           svg.appendChild(wt);
         }
-        // Month label (first week of month)
         if (d.getDate()<=7) {
           _svgLine(svg, lx, 0, lx, HEAD_H, '#CCCCCC', 1, null);
           var mt = document.createElementNS('http://www.w3.org/2000/svg','text');
-          mt.setAttribute('x', lx+3); mt.setAttribute('y',15);
+          mt.setAttribute('x',lx+3); mt.setAttribute('y',15);
           mt.setAttribute('font-size','9'); mt.setAttribute('font-weight','700');
-          mt.setAttribute('fill','#333'); mt.setAttribute('text-transform','uppercase');
+          mt.setAttribute('fill','#333');
           mt.textContent = d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).toUpperCase();
           svg.appendChild(mt);
         }
@@ -1200,13 +1229,20 @@ var GANTT = (function() {
     var d = new Date(minDate);
     while (+d <= +new Date(+minDate + totalDays*86400000)) {
       var lx = Math.round((d - minDate)/86400000)*DPX;
-      if (d.getDay()===1) {
-        var isMonth = d.getDate()<=7;
-        _svgLine(svg, lx, 0, lx, svgH, isMonth?'#E0E0E0':'#F5F5F5', 1, null);
-      }
-      // Weekend shading
-      if (d.getDay()===6 && DPX>=10) {
-        _svgRect(svg, lx, 0, DPX*2, svgH, 'rgba(0,0,0,.015)', 0);
+      if (DPX >= 50) {
+        // Daily zoom: line every day
+        var isWk = d.getDay()===0||d.getDay()===6;
+        _svgLine(svg, lx, 0, lx, svgH, isWk?'#E8E8E8':'#F5F5F5', 1, null);
+        if (isWk) _svgRect(svg, lx, 0, DPX, svgH, 'rgba(0,0,0,.018)', 0);
+      } else {
+        if (d.getDay()===1) {
+          var isMonth = d.getDate()<=7;
+          _svgLine(svg, lx, 0, lx, svgH, isMonth?'#E0E0E0':'#F5F5F5', 1, null);
+        }
+        // Weekend shading
+        if (d.getDay()===6 && DPX>=10) {
+          _svgRect(svg, lx, 0, DPX*2, svgH, 'rgba(0,0,0,.015)', 0);
+        }
       }
       d.setDate(d.getDate()+1);
     }
@@ -1665,3 +1701,119 @@ renderCalendar = function() {
   _origRenderCalendar();
   renderPlanningSummary();
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTO-RECALCULATE HOOKS
+   Called whenever: scoring changes, slots change, hours change
+   ═══════════════════════════════════════════════════════════════ */
+
+// Register hooks after DOM is ready
+(function() {
+  function _scheduleRecalc() {
+    if (typeof renderCalendar !== 'function') return;
+    // Only recalc if planning screen is active
+    var planStep = document.getElementById('step-planning');
+    if (planStep && planStep.classList.contains('on')) {
+      renderCalendar();
+    }
+  }
+
+  // Hook into saveDevCapacity (slots change)
+  var _origSaveDev = typeof saveDevCapacity !== 'undefined' ? saveDevCapacity : null;
+  if (_origSaveDev) {
+    saveDevCapacity = function() {
+      _origSaveDev.apply(this, arguments);
+      _scheduleRecalc();
+    };
+  }
+
+  // Hook into saveManualToPortfolio (hours/score change)
+  var _origSaveManual = typeof saveManualToPortfolio !== 'undefined' ? saveManualToPortfolio : null;
+  if (_origSaveManual) {
+    saveManualToPortfolio = function() {
+      _origSaveManual.apply(this, arguments);
+      setTimeout(_scheduleRecalc, 300);
+    };
+  }
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXT FREE SLOT BANNER — prominent display
+   ═══════════════════════════════════════════════════════════════ */
+function renderNextSlotBanner() {
+  var el = document.getElementById('plan-next-slot-banner');
+  if (!el) return;
+
+  var timeline = planBuildTimeline();
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  if (!devTeam || !devTeam.length || !timeline.length) {
+    el.style.display = 'none';
+    return;
+  }
+
+  // For each dev, find earliest free date per pool
+  var slots = [];
+  (devTeam || []).forEach(function(dev) {
+    var wh = pDevHours(dev);
+    ['corto','medio','largo'].forEach(function(pool) {
+      if (!wh[pool]) return;
+      var devPool = timeline.filter(function(t){ return t.devName===dev.name && t.pool===pool; });
+      var lastEnd = devPool.reduce(function(mx,t){ return t.endDate>mx?t.endDate:mx; }, today);
+      var nextFree = pNextWork(new Date(+lastEnd));
+      var daysUntil = Math.max(0, Math.ceil((+nextFree - +today) / 86400000));
+      slots.push({ dev:dev.name, pool:pool, nextFree:nextFree, daysUntil:daysUntil, wh:wh[pool] });
+    });
+  });
+
+  // Sort by nextFree
+  slots.sort(function(a,b){ return a.nextFree - b.nextFree; });
+
+  var cards = slots.map(function(s) {
+    var col = POOL_COLORS[s.pool];
+    var bg  = POOL_BGS[s.pool];
+    var urgency = s.daysUntil <= 7  ? '#087B50' :
+                  s.daysUntil <= 30 ? '#C07800' : '#888';
+    var urgencyBg = s.daysUntil <= 7  ? '#ECF8F3' :
+                    s.daysUntil <= 30 ? '#FAF5E6' : '#F7F7F7';
+    var label = s.daysUntil === 0 ? 'Disponible HOY' :
+                s.daysUntil === 1 ? 'Mañana' :
+                s.daysUntil <= 7  ? 'En '+s.daysUntil+' días' :
+                s.daysUntil <= 30 ? 'En '+Math.ceil(s.daysUntil/7)+' sem' :
+                                    pShort(s.nextFree);
+
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;'
+      +'padding:14px 18px;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;'
+      +'border-top:3px solid '+col+';min-width:140px;flex:1;max-width:200px">'
+      // Dev avatar + name
+      +'<div style="display:flex;align-items:center;gap:6px">'
+        +'<div style="width:24px;height:24px;border-radius:50%;background:#111;color:#fff;'
+          +'font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center">'+s.dev.charAt(0).toUpperCase()+'</div>'
+        +'<span style="font-size:11px;font-weight:700;color:#111">'+s.dev+'</span>'
+      +'</div>'
+      // Pool badge
+      +'<span style="font-size:8px;font-weight:700;padding:2px 8px;border-radius:12px;'
+        +'background:'+bg+';border:1px solid '+col+';color:'+col+'">'+s.pool+' · '+s.wh.toFixed(0)+'h/sem</span>'
+      // Date
+      +'<div style="text-align:center">'
+        +'<div style="font-size:13px;font-weight:800;color:'+urgency+'">'+pShort(s.nextFree)+'</div>'
+        +'<div style="font-size:9px;font-weight:600;color:'+urgency+';background:'+urgencyBg+';'
+          +'padding:2px 8px;border-radius:10px;margin-top:3px">'+label+'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+
+  el.style.display = 'block';
+  el.innerHTML = '<div style="margin-bottom:10px;font-size:10px;font-weight:700;color:#888;'
+    +'text-transform:uppercase;letter-spacing:.1em">⏭ Próximos slots libres por desarrollador</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+cards+'</div>';
+}
+
+// Override renderCalendar to also update banner
+(function(){
+  var _orig = renderCalendar;
+  renderCalendar = function() {
+    _orig();
+    renderNextSlotBanner();
+  };
+})();
