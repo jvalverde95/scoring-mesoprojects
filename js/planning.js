@@ -1376,3 +1376,292 @@ var GANTT = (function() {
 function renderGanttV4(el, timeline) {
   GANTT.render(el, timeline);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PLANNING SUMMARY + CHAT ASSISTANT
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Render planning summary (occupancy + next slots) ──────────
+function renderPlanningSummary() {
+  var timeline = planBuildTimeline();
+  if (!timeline.length) return;
+
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  // ── Occupancy summary ──────────────────────────────────────
+  var sumEl = document.getElementById('plan-summary-content');
+  if (sumEl) {
+    // Group by dev
+    var devMap = {};
+    timeline.forEach(function(t) {
+      if (!devMap[t.devName]) devMap[t.devName] = {corto:[],medio:[],largo:[]};
+      devMap[t.devName][t.pool].push(t);
+    });
+
+    var html = Object.keys(devMap).map(function(devName) {
+      var pools = devMap[devName];
+      var totalH = timeline.filter(function(t){return t.devName===devName;})
+                           .reduce(function(s,t){return s+t.totalHours;}, 0);
+      var lastEnd = timeline.filter(function(t){return t.devName===devName;})
+                            .reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;}, today);
+      var horizonWeeks = Math.max(0, Math.ceil((+lastEnd - +today)/(7*86400000)));
+
+      return '<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+          +'<div style="font-size:10px;font-weight:700;color:#111">'+devName+'</div>'
+          +'<div style="font-size:9px;color:#AAA">'+totalH+'h · '+horizonWeeks+' sem</div>'
+        +'</div>'
+        +'<div style="display:flex;gap:4px;flex-wrap:wrap">'
+        +Object.keys(pools).map(function(pool) {
+          var items = pools[pool];
+          if (!items.length) return '';
+          var col = POOL_COLORS[pool];
+          return '<span style="font-size:8px;padding:2px 8px;border-radius:12px;'
+            +'background:'+POOL_BGS[pool]+';border:1px solid '+col+';color:'+col+';font-weight:600">'
+            +items.length+' '+pool+'</span>';
+        }).join('')
+        +'</div>'
+        +'</div>';
+    }).join('');
+
+    // Overall stats
+    var totalProjs = timeline.length;
+    var totalH2 = timeline.reduce(function(s,t){return s+t.totalHours;},0);
+    var globalEnd = timeline.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;},today);
+    var globalWeeks = Math.ceil((+globalEnd-+today)/(7*86400000));
+
+    sumEl.innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
+      +[['Proyectos',totalProjs,'#111'],['Total horas',totalH2+'h','#1848A0'],['Horizonte',globalWeeks+' sem','#087B50']]
+        .map(function(k){ return '<div style="text-align:center;padding:6px;background:#F7F7F5;border-radius:6px">'
+          +'<div style="font-size:16px;font-weight:800;color:'+k[2]+'">'+k[1]+'</div>'
+          +'<div style="font-size:8px;color:#AAA;text-transform:uppercase;letter-spacing:.08em">'+k[0]+'</div>'
+          +'</div>'; }).join('')
+      +'</div>'
+      + html;
+  }
+
+  // ── Next free slots ────────────────────────────────────────
+  var slotsEl = document.getElementById('plan-next-slots');
+  if (slotsEl) {
+    var devSlots = (devTeam||[]).map(function(dev) {
+      var devTL = timeline.filter(function(t){return t.devName===dev.name;});
+      var wh = pDevHours(dev);
+      var slots = Object.keys(wh).filter(function(k){return wh[k]>0;}).map(function(pool) {
+        var poolTL = devTL.filter(function(t){return t.pool===pool;})
+                         .sort(function(a,b){return a.endDate-b.endDate;});
+        var nextFree = poolTL.length
+          ? pNextWork(new Date(poolTL[poolTL.length-1].endDate))
+          : pNextWork(new Date());
+        return {pool:pool, nextFree:nextFree, wh:wh[pool]};
+      });
+      return {devName:dev.name, slots:slots};
+    });
+
+    slotsEl.innerHTML = devSlots.map(function(d) {
+      return '<div style="padding:6px 0;border-bottom:1px solid #F5F5F5">'
+        +'<div style="font-size:10px;font-weight:700;color:#111;margin-bottom:4px">'+d.devName+'</div>'
+        +d.slots.map(function(s) {
+          var col = POOL_COLORS[s.pool];
+          var isNow = +s.nextFree <= +today + 7*86400000; // within a week
+          return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+            +'<span style="font-size:8px;padding:1px 6px;border-radius:10px;'
+              +'background:'+POOL_BGS[s.pool]+';color:'+col+';border:1px solid '+col+';font-weight:600">'+s.pool+'</span>'
+            +'<span style="font-size:10px;color:'+( isNow?'#087B50':'#555' )+';font-weight:'+(isNow?700:400)+'">'+pShort(s.nextFree)+'</span>'
+            +'<span style="font-size:8px;color:#AAA">'+s.wh.toFixed(1)+'h/sem</span>'
+            +(isNow?'<span style="font-size:8px;color:#087B50;font-weight:700">← disponible pronto</span>':'')
+            +'</div>';
+        }).join('')
+        +'</div>';
+    }).join('');
+  }
+}
+
+// ── CHAT ASSISTANT ─────────────────────────────────────────────
+var _chatHistory = [];
+
+function planChatQuestion(q) {
+  var inp = document.getElementById('plan-chat-input');
+  if (inp) inp.value = q;
+  planChatSend();
+}
+
+function planChatSend() {
+  var inp = document.getElementById('plan-chat-input');
+  if (!inp || !inp.value.trim()) return;
+  var q = inp.value.trim();
+  inp.value = '';
+
+  _chatAddMsg('user', q);
+  var answer = _planChatAnswer(q);
+  setTimeout(function(){ _chatAddMsg('assistant', answer); }, 200);
+}
+
+function _chatAddMsg(role, text) {
+  var container = document.getElementById('plan-chat-msgs');
+  if (!container) return;
+
+  // Remove placeholder if present
+  var placeholder = container.querySelector('div[style*="color:#AAA"]');
+  if (placeholder && !_chatHistory.length) placeholder.remove();
+
+  var isUser = role === 'user';
+  var msg = document.createElement('div');
+  msg.style.cssText = 'display:flex;gap:8px;align-items:flex-start;'+(isUser?'flex-direction:row-reverse':'');
+  
+  var avatar = document.createElement('div');
+  avatar.style.cssText = 'width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;'
+    +'align-items:center;justify-content:center;font-size:10px;'
+    +(isUser?'background:#111;color:#fff':'background:#ECF8F3;color:#087B50');
+  avatar.textContent = isUser ? '👤' : '🤖';
+
+  var bubble = document.createElement('div');
+  bubble.style.cssText = 'max-width:85%;padding:8px 12px;border-radius:8px;font-size:10px;line-height:1.6;'
+    +(isUser
+      ?'background:#111;color:#fff;border-radius:8px 2px 8px 8px'
+      :'background:#F7F7F5;color:#333;border-radius:2px 8px 8px 8px;border:1px solid #EBEBEB');
+  bubble.innerHTML = text;
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+
+  _chatHistory.push({role:role, text:text});
+}
+
+function _planChatAnswer(q) {
+  var tl = planBuildTimeline();
+  if (!tl.length) return '⚠️ No hay proyectos planificados. Configura el equipo con horario semanal y carga proyectos con horas estimadas.';
+
+  var qLow = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  var today = new Date(); today.setHours(0,0,0,0);
+
+  // ── Query: project start date ──────────────────────────────
+  // "¿Cuándo empieza X?" / "inicio de X" / "when does X start"
+  if (/empie|inicia|inicio|start|cuando.*proy|fecha.*proy/.test(qLow)) {
+    // Extract project name fragment
+    var nameHint = qLow
+      .replace(/cuando empie[az]a?|cuando se inicia?|inicio de|fecha de inicio|empie[az]a?|inicia?|inicio|start/g,'')
+      .replace(/el proyecto|proyecto|proy/g,'').trim();
+
+    if (nameHint.length > 2) {
+      var matches = tl.filter(function(t){
+        return t.proj.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nameHint);
+      });
+      if (matches.length === 0) return '🔍 No encontré ningún proyecto que coincida con "<strong>'+nameHint+'</strong>".<br>Prueba con parte del nombre.';
+      if (matches.length === 1) {
+        var t = matches[0];
+        var started = +t.startDate <= +today;
+        return '📅 <strong>'+t.proj.nom+'</strong><br>'
+          +'Pool: <span style="color:'+POOL_COLORS[t.pool]+'">'+t.pool+'</span> · Dev: '+t.devName+'<br>'
+          +(started?'🟢 <strong>En curso</strong> desde ':'Inicio: <strong>')+pFmt(t.startDate)+(started?'':'</strong>')+'<br>'
+          +'Fin estimado: <strong>'+pFmt(t.endDate)+'</strong><br>'
+          +'Score: '+( t.proj.sf||0).toFixed(2)+' · '+t.totalHours+'h · '+t.weeks+' semanas';
+      }
+      // Multiple matches
+      return '🔍 Encontré '+matches.length+' proyectos con "<strong>'+nameHint+'</strong>":<br>'
+        +matches.map(function(t){
+          return '• <strong>'+t.proj.nom+'</strong> → '+pShort(t.startDate)+' ('+t.devName+' · '+t.pool+')';
+        }).join('<br>');
+    }
+  }
+
+  // ── Query: list by pool ────────────────────────────────────
+  var poolMatch = null;
+  if (/corto|short/.test(qLow)) poolMatch = 'corto';
+  if (/medio|medium|mediano/.test(qLow)) poolMatch = 'medio';
+  if (/larg|long/.test(qLow)) poolMatch = 'largo';
+
+  if (poolMatch && /list|muestra|todos|ver|proyect/.test(qLow)) {
+    var poolItems = tl.filter(function(t){return t.pool===poolMatch;})
+                      .sort(function(a,b){return a.startDate-b.startDate;});
+    if (!poolItems.length) return 'No hay proyectos <strong>'+poolMatch+'</strong> planificados.';
+    return '📋 Proyectos <strong style="color:'+POOL_COLORS[poolMatch]+'">'+poolMatch+'</strong> ('+poolItems.length+'):<br><br>'
+      +poolItems.map(function(t,i){
+        var started = +t.startDate <= +today && +today < +t.endDate;
+        var done    = +today >= +t.endDate;
+        var icon    = done?'✅':started?'🟢':'⏳';
+        return icon+' <strong>'+t.proj.nom+'</strong><br>'
+          +'&nbsp;&nbsp;'+t.devName+' · '+pShort(t.startDate)+' → '+pShort(t.endDate)
+          +' · '+t.totalHours+'h · score '+(t.proj.sf||0).toFixed(1);
+      }).join('<br><br>');
+  }
+
+  // ── Query: all projects ────────────────────────────────────
+  if (/todos|all|list|completa|general|planificado/.test(qLow)) {
+    var byPool = {corto:[], medio:[], largo:[]};
+    tl.forEach(function(t){ (byPool[t.pool]||[]).push(t); });
+    var parts = Object.keys(byPool).filter(function(k){return byPool[k].length;}).map(function(pool){
+      return '<br>📦 <strong style="color:'+POOL_COLORS[pool]+'">'+pool.toUpperCase()+'</strong> ('+byPool[pool].length+'):<br>'
+        +byPool[pool].sort(function(a,b){return a.startDate-b.startDate;}).map(function(t){
+          return '&nbsp;• '+t.proj.nom+' → '+pShort(t.startDate)+' ('+t.devName+')';
+        }).join('<br>');
+    });
+    return '📋 <strong>'+tl.length+' proyectos planificados</strong>:'+parts.join('');
+  }
+
+  // ── Query: next project starting ──────────────────────────
+  if (/siguiente|next|proximo|próximo/.test(qLow)) {
+    var upcoming = tl.filter(function(t){return +t.startDate >= +today;})
+                     .sort(function(a,b){return a.startDate-b.startDate;});
+    if (!upcoming.length) return '✅ Todos los proyectos planificados ya han empezado.';
+    var nx = upcoming[0];
+    var daysUntil = Math.ceil((+nx.startDate-+today)/86400000);
+    return '⏭ El próximo proyecto en empezar es:<br><br>'
+      +'<strong>'+nx.proj.nom+'</strong><br>'
+      +'<span style="color:'+POOL_COLORS[nx.pool]+'">'+nx.pool+'</span> · '+nx.devName+'<br>'
+      +'Inicio: <strong>'+pFmt(nx.startDate)+'</strong> (en '+daysUntil+' días)<br>'
+      +'Fin: '+pFmt(nx.endDate)+' · '+nx.totalHours+'h · score '+(nx.proj.sf||0).toFixed(1);
+  }
+
+  // ── Query: dev availability ────────────────────────────────
+  if (/libre|dispon|availability|cuando.*dev|cuando.*ana|cuando.*marc/.test(qLow)) {
+    // Check if a dev name is mentioned
+    var devMatch = (devTeam||[]).find(function(d){
+      return qLow.includes(d.name.toLowerCase().split(' ')[0]);
+    });
+
+    var devList = devMatch ? [devMatch] : devTeam||[];
+    var lines = devList.map(function(dev) {
+      var devTL = tl.filter(function(t){return t.devName===dev.name;});
+      var lastEnd = devTL.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;}, today);
+      var wh = pDevHours(dev);
+      var daysUntil = Math.max(0, Math.ceil((+lastEnd-+today)/86400000));
+      return '<strong>'+dev.name+'</strong>: libre el <strong>'+pFmt(lastEnd)+'</strong>'
+        +' ('+Math.ceil(daysUntil/7)+' sem) · '+devTL.length+' proyectos pendientes';
+    });
+    return '👤 Disponibilidad del equipo:<br><br>'+lines.join('<br>');
+  }
+
+  // ── Query: dev specific projects ──────────────────────────
+  var devNameMatch = (devTeam||[]).find(function(d){
+    return qLow.includes(d.name.toLowerCase().split(' ')[0]);
+  });
+  if (devNameMatch) {
+    var devItems = tl.filter(function(t){return t.devName===devNameMatch.name;})
+                     .sort(function(a,b){return a.startDate-b.startDate;});
+    if (!devItems.length) return '👤 '+devNameMatch.name+' no tiene proyectos asignados.';
+    return '👤 Proyectos de <strong>'+devNameMatch.name+'</strong> ('+devItems.length+'):<br><br>'
+      +devItems.map(function(t){
+        return '<strong>'+t.proj.nom+'</strong><br>'
+          +'&nbsp;&nbsp;<span style="color:'+POOL_COLORS[t.pool]+'">'+t.pool+'</span> · '
+          +pShort(t.startDate)+' → '+pShort(t.endDate)+' · '+t.totalHours+'h';
+      }).join('<br><br>');
+  }
+
+  // ── Fallback ───────────────────────────────────────────────
+  return '🤖 Puedo ayudarte con:<br>'
+    +'• <em>"¿Cuándo empieza [nombre]?"</em><br>'
+    +'• <em>"Lista los proyectos cortos/medios/largos"</em><br>'
+    +'• <em>"¿Cuándo está libre [dev]?"</em><br>'
+    +'• <em>"Próximo proyecto"</em><br>'
+    +'• <em>"Todos los proyectos"</em>';
+}
+
+// ── renderCalendar override to also update summary ─────────────
+var _origRenderCalendar = renderCalendar;
+renderCalendar = function() {
+  _origRenderCalendar();
+  renderPlanningSummary();
+};
