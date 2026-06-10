@@ -23,51 +23,78 @@ function saveDevTeam() {
 function renderDevRows() {
   const cont = document.getElementById('dev-rows');
   if (!cont) return;
-  cont.innerHTML = devTeam.map((dev, i) => `
-    <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 32px;gap:8px;align-items:center;
-                padding:8px 10px;background:var(--surf);border-radius:6px;border:1px solid var(--b)">
+  cont.innerHTML = devTeam.map((dev, i) => {
+    // Compute hours/week from schedule for display hint
+    const wh = typeof pDevHours === 'function' ? pDevHours(dev) : {corto:0,medio:0,largo:0};
+    const hasSchedule = dev.schedule && Object.values(dev.schedule).some(d=>d.length>0);
+    const hint = (pool) => {
+      const h = wh[pool];
+      return hasSchedule && h > 0 ? `<span style="font-size:7px;color:#AAA;display:block;margin-top:1px">${h.toFixed(0)}h/sem</span>` : '';
+    };
+    return `
+    <div style="display:grid;grid-template-columns:1fr 90px 90px 90px 32px;gap:8px;align-items:center;
+                padding:10px 12px;background:#fff;border-radius:8px;border:1px solid #EBEBEB;
+                box-shadow:0 1px 3px rgba(0,0,0,.04)">
       <!-- Name -->
-      <input type="text" value="${dev.name}" placeholder="Nombre desarrollador"
-        style="border:none;background:transparent;font-size:11px;font-weight:600;color:var(--ink);outline:none;min-width:0"
+      <input type="text" value="${dev.name}" placeholder="Nombre del desarrollador"
+        style="border:none;background:transparent;font-size:11px;font-weight:700;color:#111;outline:none;min-width:0"
         onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary();if(typeof renderScheduleEditor==='function')renderScheduleEditor()">
-      <!-- Hours: computed from schedule if available, else legacy fields -->
+      <!-- Corto: num projects simultaneously -->
       <div style="text-align:center">
-        <div style="font-size:8px;color:var(--d3);font-weight:700;margin-bottom:2px">CORTO</div>
-        <div id="dev-h-corto-${i}" style="font-size:11px;font-weight:700;color:var(--d3);padding:3px;border:1px solid var(--d3);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
-          ${typeof pDevHours==='function'?pDevHours(dev).corto.toFixed(0)+'h':(dev.corto||0)}</div>
+        <div style="font-size:8px;color:#C07800;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Cortos</div>
+        <input type="number" min="0" max="10" value="${dev.corto||0}"
+          style="width:100%;text-align:center;border:1.5px solid #C07800;border-radius:5px;
+                 font-size:13px;font-weight:700;color:#C07800;padding:3px 2px;background:#FAF5E6"
+          title="Nº de proyectos cortos que puede llevar a la vez"
+          onchange="devTeam[${i}].corto=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        ${hint('corto')}
       </div>
+      <!-- Medio -->
       <div style="text-align:center">
-        <div style="font-size:8px;color:var(--d4);font-weight:700;margin-bottom:2px">MEDIO</div>
-        <div id="dev-h-medio-${i}" style="font-size:11px;font-weight:700;color:var(--d4);padding:3px;border:1px solid var(--d4);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
-          ${typeof pDevHours==='function'?pDevHours(dev).medio.toFixed(0)+'h':(dev.medio||0)}</div>
+        <div style="font-size:8px;color:#1848A0;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Medios</div>
+        <input type="number" min="0" max="10" value="${dev.medio||0}"
+          style="width:100%;text-align:center;border:1.5px solid #1848A0;border-radius:5px;
+                 font-size:13px;font-weight:700;color:#1848A0;padding:3px 2px;background:#EEF3FC"
+          title="Nº de proyectos medios que puede llevar a la vez"
+          onchange="devTeam[${i}].medio=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        ${hint('medio')}
       </div>
+      <!-- Largo -->
       <div style="text-align:center">
-        <div style="font-size:8px;color:var(--d1);font-weight:700;margin-bottom:2px">LARGO</div>
-        <div id="dev-h-largo-${i}" style="font-size:11px;font-weight:700;color:var(--d1);padding:3px;border:1px solid var(--d1);border-radius:4px;min-height:24px;display:flex;align-items:center;justify-content:center">
-          ${typeof pDevHours==='function'?pDevHours(dev).largo.toFixed(0)+'h':(dev.largo||0)}</div>
+        <div style="font-size:8px;color:#087B50;font-weight:700;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Largos</div>
+        <input type="number" min="0" max="10" value="${dev.largo||0}"
+          style="width:100%;text-align:center;border:1.5px solid #087B50;border-radius:5px;
+                 font-size:13px;font-weight:700;color:#087B50;padding:3px 2px;background:#ECF8F3"
+          title="Nº de proyectos largos que puede llevar a la vez"
+          onchange="devTeam[${i}].largo=parseInt(this.value)||0;saveDevTeam();updateDevCapSummary()">
+        ${hint('largo')}
       </div>
       <button onclick="removeDevRow(${i})"
-        style="background:none;border:none;color:var(--d1);cursor:pointer;font-size:14px;padding:0">✕</button>
-    </div>
-  `).join('');
+        style="background:none;border:none;color:#CC1F26;cursor:pointer;font-size:16px;padding:0;
+               line-height:1;opacity:.6;transition:opacity .15s"
+        onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">✕</button>
+    </div>`;
+  }).join('');
   updateDevCapSummary();
 }
 
 function addDevRow() {
-  const idx = devTeam.length;
+  const idx2 = devTeam.length;
   devTeam.push({
-    name: `Desarrollador ${idx + 1}`,
-    corto: 0, medio: 0, largo: 0,
+    name: `Desarrollador ${idx2 + 1}`,
+    corto: 1,   // default: 1 project simultaneously
+    medio: 1,
+    largo: 1,
     schedule: { L:[], M:[], X:[], J:[], V:[] }
   });
   renderDevRows();
   if (typeof renderScheduleEditor === 'function') renderScheduleEditor();
-  // Scroll to schedule editor so user sees it
   setTimeout(() => {
     const el = document.getElementById('schedule-editor');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 150);
-  toast(`✓ "${devTeam[idx].name}" añadido · Configura su horario abajo`);
+  saveDevTeam();
+  toast(`✓ "${devTeam[idx2].name}" añadido · Ajusta el nº de proyectos simultáneos y configura el horario`);
 }
 
 function removeDevRow(idx) {
@@ -83,18 +110,12 @@ function saveDevCapacity() {
 }
 
 function getDevCapacity() {
-  // Returns number of developers with capacity in each pool
-  // (= max simultaneous projects per pool)
-  return devTeam.reduce((acc, d) => {
-    const wh = typeof pDevHours === 'function'
-      ? pDevHours(d)
-      : { corto: d.corto||0, medio: d.medio||0, largo: d.largo||0 };
-    return {
-      corto: acc.corto + (wh.corto > 0 ? 1 : 0),
-      medio: acc.medio + (wh.medio > 0 ? 1 : 0),
-      largo: acc.largo + (wh.largo > 0 ? 1 : 0),
-    };
-  }, { corto: 0, medio: 0, largo: 0 });
+  // Sum of manually-set project slots per dev per pool
+  return devTeam.reduce((acc, d) => ({
+    corto: acc.corto + (parseInt(d.corto) || 0),
+    medio: acc.medio + (parseInt(d.medio) || 0),
+    largo: acc.largo + (parseInt(d.largo) || 0),
+  }), { corto: 0, medio: 0, largo: 0 });
 }
 
 function updateDevCapSummary() {
