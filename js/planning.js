@@ -308,218 +308,23 @@ function renderCalendar() {
 // ════════════════════════════════════════════════════════════════
 // GANTT V4 — robust, no-disappear
 // ════════════════════════════════════════════════════════════════
-function renderGanttV4(el, timeline) {
-  var today=new Date(); today.setHours(0,0,0,0);
-
-  // Date bounds
-  var allMs = timeline.reduce(function(a,t){ a.push(+t.startDate,+t.endDate); return a; },[]);
-  var minMs  = Math.min.apply(null,allMs);
-  var maxMs  = Math.max.apply(null,allMs);
-  var minDate=pWeekStart(new Date(minMs - 7*86400000));
-  var maxDate=new Date(maxMs+21*86400000);
-  if (+today < +minDate) minDate=pWeekStart(new Date(+today-7*86400000));
-
-  var totalDays=Math.ceil((maxDate-minDate)/86400000);
-  var DAY_PX   =Math.max(20,Math.min(40,Math.floor(920/totalDays)));
-  var LABEL_W  =160;
-  var ROW_H    =52;
-  var HEAD_H   =44;
-  var totalW   =totalDays*DAY_PX;
-
-  // Week/month markers for header
-  var markers=[];
-  var d=new Date(minDate);
-  while(d<=maxDate){
-    var lx=Math.round((d-minDate)/86400000)*DAY_PX;
-    if(d.getDay()===1){
-      markers.push({lx:lx, label:d.getDate(), isMonth:d.getDate()<=7,
-        monthLabel:d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'})});
-    }
-    d.setDate(d.getDate()+1);
-  }
-
-  var todayX=Math.round((today-minDate)/86400000)*DAY_PX;
-
-  // Grid lines HTML (reused in header and each row)
-  var gridHtml=markers.map(function(m){
-    return '<div style="position:absolute;left:'+m.lx+'px;top:0;bottom:0;width:1px;background:'+(m.isMonth?'#DEDEDE':'#F0F0F0')+';pointer-events:none"></div>';
-  }).join('');
-
-  // Header scale
-  var scaleHtml=markers.map(function(m){
-    return (m.isMonth
-      ? '<div style="position:absolute;left:'+(m.lx+3)+'px;top:3px;font-size:9px;font-weight:700;color:#111;text-transform:uppercase;letter-spacing:.05em;pointer-events:none;white-space:nowrap">'+m.monthLabel+'</div>'
-      : '<div style="position:absolute;left:'+(m.lx+2)+'px;top:22px;font-size:8px;color:#AAA;pointer-events:none">'+m.label+'</div>');
-  }).join('');
-
-  // Today marker
-  var todayHtml='<div style="position:absolute;left:'+todayX+'px;top:0;bottom:0;width:2px;background:rgba(204,31,38,.55);pointer-events:none;z-index:20"></div>'
-    +'<div style="position:absolute;left:'+(todayX-10)+'px;bottom:2px;font-size:7px;font-weight:800;color:#CC1F26;pointer-events:none;white-space:nowrap">▼HOY</div>';
-
-  // Dev rows
-  var devNames=[]; var seen={};
-  timeline.forEach(function(t){ if(!seen[t.devName]){seen[t.devName]=true;devNames.push(t.devName);} });
-
-  var rowsHtml=devNames.map(function(devName,ri){
-    var dev=devTeam.find(function(d){return d.name===devName;})||{name:devName};
-    var wh=pDevHours(dev);
-    var projs=timeline.filter(function(t){return t.devName===devName;}).sort(function(a,b){return a.startDate-b.startDate;});
-
-    var whHtml=Object.keys(wh).filter(function(k){return wh[k]>0;}).map(function(k){
-      return '<span style="color:'+POOL_COLORS[k]+';font-weight:600">'+k+' '+wh[k].toFixed(0)+'h</span>';
-    }).join(' · ');
-
-    var barsHtml=projs.map(function(t){
-      var lx=Math.max(0,Math.round((t.startDate-minDate)/86400000)*DAY_PX);
-      var wpx=Math.max(4,Math.round((t.endDate-t.startDate)/86400000)*DAY_PX)-2;
-      var col=POOL_COLORS[t.pool]||'#888';
-      var bg=t.locked?col:(POOL_BGS[t.pool]||'#F5F5F5');
-      var tc=t.locked?'#fff':col;
-      var elapsed=Math.max(0,Math.min(1,(+today-+t.startDate)/(+t.endDate-+t.startDate||1)));
-      var pct=Math.round(elapsed*100);
-      var maxCh=Math.max(0,Math.floor((wpx-20)/6.5));
-      var lbl=t.proj.nom.length>maxCh?t.proj.nom.slice(0,maxCh)+'…':t.proj.nom;
-      var nomEsc=pEsc(t.proj.nom);
-      var devEsc=pEsc(devName);
-
-      return '<div'
-        +' draggable="true"'
-        +' data-nom="'+nomEsc+'" data-dev="'+devEsc+'" data-pool="'+t.pool+'"'
-        +' ondragstart="ganttBarDragStart(event)"'
-        +' ondragend="ganttBarDragEnd(event)"'
-        +' ondblclick="ganttBarUnlock(\''+nomEsc+'\')"'
-        +' title="'+nomEsc+'&#10;'+t.proj.horas+'h · '+t.weeks+'sem · score '+(t.proj.sf||0).toFixed(1)+'&#10;'
-          +pShort(t.startDate)+' → '+pShort(t.endDate)+(t.locked?'&#10;🔒 Bloqueado — dbl-clic para liberar':'&#10;Auto-planificado')+'"'
-        +' style="position:absolute;left:'+lx+'px;width:'+wpx+'px;top:9px;height:34px;'
-          +'border-radius:6px;cursor:grab;overflow:hidden;'
-          +'border:'+(t.locked?'2px':'1.5px')+' solid '+col+';'
-          +'box-shadow:'+(t.locked?'0 2px 8px rgba(0,0,0,.18)':'none')+';'
-          +'transition:box-shadow .15s;">'
-        // bg fill
-        +'<div style="position:absolute;inset:0;background:'+bg+'"></div>'
-        // progress
-        +(pct>0&&pct<100?'<div style="position:absolute;left:0;top:0;bottom:0;width:'+pct+'%;background:'+col+';opacity:.2"></div>':'')
-        // label
-        +'<div style="position:relative;z-index:2;height:100%;display:flex;align-items:center;padding:0 6px;gap:4px;pointer-events:none">'
-          +(t.locked?'<span style="font-size:9px;flex-shrink:0">🔒</span>':'')
-          +(wpx>40?'<span style="font-size:8.5px;font-weight:700;color:'+tc+';white-space:nowrap;overflow:hidden;flex:1">'+lbl+'</span>':'')
-          +(wpx>60&&pct>0&&pct<100?'<span style="font-size:7px;color:'+tc+';opacity:.8;flex-shrink:0">'+pct+'%</span>':'')
-          +(wpx>50?'<span style="font-size:7px;color:'+tc+';opacity:.7;flex-shrink:0">'+(t.proj.sf||0).toFixed(1)+'</span>':'')
-        +'</div>'
-        // resize handle
-        +'<div onmousedown="ganttResizeStart(event,\''+nomEsc+'\',\''+devEsc+'\')" '
-          +'style="position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:5;'
-          +'background:rgba(0,0,0,.05);border-radius:0 6px 6px 0"></div>'
-        +'</div>';
-    }).join('');
-
-    var bg=ri%2===0?'#fff':'#FDFDFD';
-    return '<div style="display:flex;border-bottom:1px solid #F0F0F0;background:'+bg+'"'
-      +' ondragover="event.preventDefault()"'
-      +' ondrop="ganttRowDrop(event,\''+pEsc(devName)+'\')"'
-      +'>'
-      // Label
-      +'<div style="width:'+LABEL_W+'px;flex-shrink:0;padding:8px 12px;border-right:1px solid #EBEBEB;'
-        +'display:flex;flex-direction:column;justify-content:center">'
-        +'<div style="display:flex;align-items:center;gap:6px">'
-          +'<div style="width:22px;height:22px;border-radius:50%;background:#111;color:#fff;'
-            +'font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-            +devName.charAt(0).toUpperCase()
-          +'</div>'
-          +'<span style="font-size:10px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+devName+'</span>'
-        +'</div>'
-        +'<div style="font-size:8px;color:#AAA;margin-top:3px">'+whHtml+'</div>'
-      +'</div>'
-      // Gantt area — this is the drop target for position calculation
-      +'<div id="gantt-row-'+ri+'" style="flex:1;position:relative;height:'+ROW_H+'px;min-width:'+totalW+'px;overflow:hidden"'
-        +' ondragover="event.preventDefault()"'
-        +' ondrop="ganttAreaDrop(event,\''+pEsc(devName)+'\','+ri+')"'
-        +'>'
-        +gridHtml
-        +todayHtml
-        +barsHtml
-      +'</div>'
-      +'</div>';
-  }).join('');
-
-  el.innerHTML=
-    '<div style="border:1px solid #EBEBEB;border-radius:10px;overflow-x:auto;'
-      +'box-shadow:0 2px 8px rgba(0,0,0,.04)">'
-    // Header
-    +'<div style="display:flex;border-bottom:2px solid #EBEBEB;position:sticky;top:0;z-index:50;background:#fff">'
-      +'<div style="width:'+LABEL_W+'px;flex-shrink:0;border-right:1px solid #EBEBEB;background:#FAFAF8;'
-        +'padding:8px 12px;font-size:8px;font-weight:700;color:#AAA;text-transform:uppercase;'
-        +'letter-spacing:.1em;display:flex;align-items:flex-end">Equipo</div>'
-      +'<div style="flex:1;position:relative;height:'+HEAD_H+'px;min-width:'+totalW+'px;background:#FAFAF8;overflow:hidden">'
-        +gridHtml+scaleHtml+todayHtml
-      +'</div>'
-    +'</div>'
-    // Rows
-    +'<div style="min-width:'+(totalW+LABEL_W)+'px">'+rowsHtml+'</div>'
-    +'</div>'
-    // Legend
-    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:#888;align-items:center">'
-    +Object.keys(POOL_COLORS).map(function(k){
-      return '<span style="display:flex;align-items:center;gap:4px">'
-        +'<span style="width:10px;height:10px;border-radius:2px;background:'+POOL_BGS[k]+';border:1.5px solid '+POOL_COLORS[k]+'"></span>'+k
-        +'</span>';
-    }).join('')
-    +'<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#087B50;border:2px solid #087B50"></span>bloqueado</span>'
-    +'<span>Arrastra para mover · efecto dominó · dbl-clic para liberar · ▐ para redimensionar</span>'
-    +'</div>';
-
-  // Store render params globally for drop calculation
-  window._ganttRender = {minDate:minDate, maxDate:maxDate, totalDays:totalDays, DAY_PX:DAY_PX, LABEL_W:LABEL_W};
-}
+// renderGanttV4 → replaced by GANTT module below
 
 // ── Gantt drag events ──────────────────────────────────────────
-function ganttBarDragStart(e) {
-  _dragNom = e.currentTarget.dataset.nom;
-  e.dataTransfer.setData('text/plain', _dragNom);
-  e.dataTransfer.effectAllowed = 'move';
-  // Make bar semi-transparent
-  setTimeout(function(){ e.currentTarget.style.opacity='.4'; }, 0);
-}
-function ganttBarDragEnd(e) {
-  e.currentTarget.style.opacity = '1';
-}
-function ganttBarUnlock(nom) {
-  lockedAssignments = lockedAssignments.filter(function(l){ return l.nom!==nom; });
-  saveLocked();
-  pLogChange(nom, '🔒 bloqueado', '↺ automático', '');
-  renderCalendar();
-  toast('↺ "'+nom.substring(0,28)+'" → planificación automática');
-}
+// ganttBarDragStart moved to GANTT module
+
+// ganttBarDragEnd moved to GANTT module
+
+// ganttBarUnlock moved to GANTT module
+
 
 // Drop on row (for dev reassignment — position at start of row)
-function ganttRowDrop(e, targetDev) {
-  e.preventDefault();
-  // Delegate to area drop with no position info → place at dev's next available
-  var nom = e.dataTransfer.getData('text/plain') || _dragNom;
-  if (!nom) return;
-  ganttDoMove(nom, targetDev, null);
-}
+// ganttRowDrop moved to GANTT module
+
 
 // Drop on gantt area (precise position from mouse X)
-function ganttAreaDrop(e, targetDev, rowIdx) {
-  e.preventDefault();
-  var nom = e.dataTransfer.getData('text/plain') || _dragNom;
-  if (!nom) return;
+// ganttAreaDrop moved to GANTT module
 
-  var r = window._ganttRender;
-  if (!r) { ganttDoMove(nom, targetDev, null); return; }
-
-  // Get the gantt area element (not including label)
-  var areaEl = document.getElementById('gantt-row-'+rowIdx);
-  if (!areaEl) { ganttDoMove(nom, targetDev, null); return; }
-  var rect = areaEl.getBoundingClientRect();
-  var dropX = e.clientX - rect.left;
-  var dropDays = Math.max(0, Math.round(dropX / r.DAY_PX));
-  var newStart = new Date(r.minDate);
-  newStart.setDate(newStart.getDate() + dropDays);
-  newStart = pNextWork(newStart);
-  ganttDoMove(nom, targetDev, newStart);
-}
 
 // Core move logic
 function ganttDoMove(nom, targetDev, newStart) {
@@ -578,41 +383,8 @@ function ganttDoMove(nom, targetDev, newStart) {
 
 // ── Resize ─────────────────────────────────────────────────────
 var _resizeState = null;
-function ganttResizeStart(e, nom, dev) {
-  e.preventDefault(); e.stopPropagation();
-  var timeline = planBuildTimeline();
-  var t = timeline.find(function(x){ return x.proj.nom===nom; });
-  if (!t) return;
-  _resizeState = {nom:nom, dev:dev, origStart:new Date(t.startDate), origEnd:new Date(t.endDate), mouseX:e.clientX};
+// ganttResizeStart moved to GANTT module
 
-  function onMove(ev) {
-    if (!_resizeState) return;
-    var r = window._ganttRender;
-    if (!r) return;
-    var deltaDays = Math.round((ev.clientX - _resizeState.mouseX) / r.DAY_PX);
-    if (deltaDays===0) return;
-    var ne = pAddDays(new Date(_resizeState.origEnd), deltaDays);
-    if (+ne <= +_resizeState.origStart) return;
-    var idx2 = lockedAssignments.findIndex(function(l){ return l.nom===_resizeState.nom; });
-    var lock = {nom:_resizeState.nom, devName:_resizeState.dev,
-      startDate:_resizeState.origStart.toISOString(), endDate:ne.toISOString()};
-    if (idx2>=0) lockedAssignments[idx2]=lock; else lockedAssignments.push(lock);
-    _resizeState.origEnd = ne;
-    _resizeState.mouseX  = ev.clientX;
-    saveLocked();
-  }
-  function onUp() {
-    if (_resizeState) {
-      pLogChange(_resizeState.nom, pShort(_resizeState.origStart), pShort(_resizeState.origEnd), _resizeState.dev);
-      renderCalendar();
-    }
-    _resizeState = null;
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('mouseup', onUp);
-  }
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onUp);
-}
 
 // ════════════════════════════════════════════════════════════════
 // MONTHLY VIEW V4
@@ -911,4 +683,696 @@ function exportPlanningExcel() {
   }
   XLSX.writeFile(wb,'nexus_planning_'+new Date().toISOString().split('T')[0]+'.xlsx');
   toast('✓ '+timeline.length+' proyectos exportados');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS GANTT V5 — Professional resource Gantt
+   
+   Features:
+   • SVG-based rendering for crisp, pixel-perfect bars
+   • Two-row header: months (top) + weeks (bottom)
+   • Per-dev rows with pool-coloured bars and progress overlay
+   • "Resource view" below Gantt: shows daily slot occupation
+     with project transitions highlighted
+   • Drag: ghost cursor, snap to week, no-overlap, domino cascade
+   • Resize: right handle, updates duration
+   • Tooltip: rich popup on hover
+   • Zoom: 3 levels (week/month/quarter scale)
+   • Today marker with pulsing dot
+   • Critical path: longest chain highlighted
+   • Mini-map: scrollbar overview
+   ═══════════════════════════════════════════════════════════════ */
+
+var GANTT = (function() {
+
+  // ── Constants ───────────────────────────────────────────────
+  var LABEL_W  = 180;
+  var ROW_H    = 48;
+  var HEAD_H   = 44;
+  var ZOOM_LEVELS = [
+    {name:'Semanas', dayPx:32},
+    {name:'Meses',   dayPx:14},
+    {name:'Trim.',   dayPx: 6},
+  ];
+  var zoomIdx = 0;
+
+  // Pool visual config
+  var PCOL = { corto:'#C07800', medio:'#1848A0', largo:'#087B50' };
+  var PBGG = { corto:'rgba(192,120,0,.10)', medio:'rgba(24,72,160,.10)', largo:'rgba(8,123,80,.10)' };
+
+  // State
+  var _tl   = [];          // timeline
+  var _cont = null;        // container element
+  var _drag = null;        // drag state
+  var _tip  = null;        // tooltip el
+
+  // ── Entry point ────────────────────────────────────────────
+  function render(container, timeline) {
+    _cont = container;
+    _tl   = timeline;
+    _tip  = null;
+    _build();
+  }
+
+  // ── Build ──────────────────────────────────────────────────
+  function _build() {
+    if (!_tl.length) return;
+
+    var DPX = ZOOM_LEVELS[zoomIdx].dayPx;
+
+    // Date bounds
+    var allMs = _tl.reduce(function(a,t){a.push(+t.startDate,+t.endDate);return a;},[]);
+    var minDate = pWeekStart(new Date(Math.min.apply(null,allMs) - 7*86400000));
+    var maxDate = new Date(Math.max.apply(null,allMs) + 28*86400000);
+    var today   = new Date(); today.setHours(0,0,0,0);
+    if (+today < +minDate) minDate = pWeekStart(new Date(+today - 7*86400000));
+
+    var totalDays = Math.ceil((maxDate - minDate) / 86400000);
+    var totalW    = totalDays * DPX;
+
+    // Dev order (preserves sort from timeline)
+    var devSeen = {}; var devNames = [];
+    _tl.forEach(function(t){ if(!devSeen[t.devName]){devSeen[t.devName]=1;devNames.push(t.devName);} });
+
+    var svgH = HEAD_H + devNames.length * ROW_H;
+
+    // ── Outer wrapper ────────────────────────────────────────
+    _cont.innerHTML = '';
+
+    // Toolbar
+    var toolbar = _mkEl('div', 'display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap');
+    // Zoom
+    var zLabel = _mkEl('span','font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.1em');
+    zLabel.textContent = 'Escala:';
+    toolbar.appendChild(zLabel);
+    ZOOM_LEVELS.forEach(function(z,i){
+      var btn = _mkEl('button',
+        'padding:5px 12px;font-size:9px;font-weight:600;border-radius:5px;cursor:pointer;'
+        +'border:1.5px solid '+(i===zoomIdx?'#111':'#DEDEDE')+';'
+        +'background:'+(i===zoomIdx?'#111':'#fff')+';'
+        +'color:'+(i===zoomIdx?'#fff':'#666')+';transition:all .15s');
+      btn.textContent = z.name;
+      btn.onclick = function(){ zoomIdx=i; _build(); };
+      toolbar.appendChild(btn);
+    });
+
+    // Summary counts
+    var summary = _mkEl('div','margin-left:auto;display:flex;gap:12px;font-size:9px;color:#888;align-items:center');
+    var pools = {corto:0,medio:0,largo:0};
+    _tl.forEach(function(t){ pools[t.pool]=(pools[t.pool]||0)+1; });
+    Object.keys(pools).forEach(function(k){
+      if(!pools[k]) return;
+      var dot = _mkEl('span','display:inline-flex;align-items:center;gap:4px');
+      dot.innerHTML = '<span style="width:8px;height:8px;border-radius:2px;background:'+PBGG[k]+';border:1.5px solid '+PCOL[k]+'"></span>'
+        +'<span style="color:'+PCOL[k]+';font-weight:600">'+k+' '+pools[k]+'</span>';
+      summary.appendChild(dot);
+    });
+    toolbar.appendChild(summary);
+    _cont.appendChild(toolbar);
+
+    // Scroll wrapper
+    var wrap = _mkEl('div',
+      'border:1px solid #E8E8E8;border-radius:10px;overflow:hidden;'
+      +'box-shadow:0 2px 12px rgba(0,0,0,.06);background:#fff');
+
+    // Sticky header row
+    var headerRow = _mkEl('div',
+      'display:flex;position:sticky;top:0;z-index:40;background:#fff;border-bottom:2px solid #E8E8E8');
+
+    // Dev label corner
+    var corner = _mkEl('div',
+      'width:'+LABEL_W+'px;flex-shrink:0;background:#F7F7F5;border-right:1px solid #E8E8E8;'
+      +'padding:8px 14px;font-size:8px;font-weight:700;color:#AAA;text-transform:uppercase;'
+      +'letter-spacing:.1em;display:flex;align-items:flex-end');
+    corner.textContent = 'Desarrollador';
+    headerRow.appendChild(corner);
+
+    // Time scale SVG
+    var scaleWrap = _mkEl('div','flex:1;overflow-x:auto;overflow-y:hidden;background:#F7F7F5');
+    var scaleSvg  = _svgEl('svg', totalW, HEAD_H);
+    _buildScale(scaleSvg, minDate, totalDays, DPX, today);
+    scaleWrap.appendChild(scaleSvg);
+    headerRow.appendChild(scaleWrap);
+    wrap.appendChild(headerRow);
+
+    // Body (dev rows)
+    var body = _mkEl('div','display:flex');
+    var labelsCol = _mkEl('div','width:'+LABEL_W+'px;flex-shrink:0;border-right:1px solid #E8E8E8');
+    var ganttCol  = _mkEl('div','flex:1;overflow-x:auto;overflow-y:visible');
+
+    // Main Gantt SVG
+    var ganttSvg = _svgEl('svg', totalW, svgH);
+    ganttSvg.setAttribute('style','display:block;cursor:default');
+
+    // Grid lines into Gantt SVG
+    _buildGrid(ganttSvg, minDate, totalDays, DPX, devNames.length);
+
+    // Today line
+    var todayX = Math.round((today - minDate)/86400000)*DPX;
+    _svgLine(ganttSvg, todayX, 0, todayX, svgH, 'rgba(204,31,38,.5)', 2, '4,3');
+    // Pulsing today dot at top
+    var todayDot = _svgCircle(ganttSvg, todayX, 4, 4, '#CC1F26');
+    todayDot.innerHTML = '<animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>'
+      +'<animate attributeName="opacity" values="1;.5;1" dur="2s" repeatCount="indefinite"/>';
+
+    // Dev rows
+    devNames.forEach(function(devName, ri) {
+      var dev  = (devTeam||[]).find(function(d){return d.name===devName;}) || {name:devName};
+      var wh   = pDevHours(dev);
+      var y    = ri * ROW_H;
+
+      // Row bg (alternate)
+      var rowBg = _svgRect(ganttSvg, 0, y, totalW, ROW_H, ri%2===0?'#fff':'#FAFAFA', 0);
+      rowBg.setAttribute('opacity','1');
+
+      // Project bars
+      var devProjs = _tl.filter(function(t){return t.devName===devName;})
+                        .sort(function(a,b){return a.startDate-b.startDate;});
+
+      devProjs.forEach(function(t, pi) {
+        var lx   = Math.max(0, Math.round((t.startDate - minDate)/86400000)*DPX);
+        var wpx  = Math.max(3, Math.round((t.endDate - t.startDate)/86400000)*DPX) - 2;
+        var col  = PCOL[t.pool]  || '#888';
+        var bgc  = PBGG[t.pool]  || 'rgba(0,0,0,.05)';
+        var barY = y + (ROW_H - 28)/2;
+
+        // Bar group
+        var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('class','gantt-bar-g');
+        g.setAttribute('data-nom', t.proj.nom);
+        g.setAttribute('data-dev', devName);
+        g.setAttribute('data-pool', t.pool);
+        g.setAttribute('data-sx', lx);
+        g.setAttribute('data-wpx', wpx);
+        g.setAttribute('data-bary', barY);
+        g.setAttribute('data-row', ri);
+        g.setAttribute('style','cursor:grab');
+
+        // Bar background
+        var bar = _svgRoundRect(g, lx, barY, wpx, 28, 5);
+        bar.setAttribute('fill', t.locked ? col : bgc);
+        bar.setAttribute('stroke', col);
+        bar.setAttribute('stroke-width', t.locked ? '2' : '1.5');
+        if (t.locked) bar.setAttribute('filter','url(#shadow)');
+
+        // Progress overlay (if started)
+        var elapsed = Math.max(0,Math.min(1,(+today-+t.startDate)/(+t.endDate-+t.startDate||1)));
+        if (elapsed>0 && elapsed<1) {
+          var prog = _svgRoundRect(g, lx, barY, Math.round(wpx*elapsed), 28, 5);
+          prog.setAttribute('fill', t.locked ? 'rgba(255,255,255,.25)' : col);
+          prog.setAttribute('opacity', t.locked ? '1' : '0.2');
+          prog.setAttribute('pointer-events','none');
+        }
+
+        // Label (clip to bar width)
+        if (wpx > 20) {
+          var clipId = 'clip-'+ri+'-'+pi;
+          var defs = ganttSvg.querySelector('defs') || ganttSvg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'), ganttSvg.firstChild);
+          var clip = document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+          clip.setAttribute('id', clipId);
+          var clipRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+          clipRect.setAttribute('x', lx+4); clipRect.setAttribute('y', barY);
+          clipRect.setAttribute('width', wpx-20); clipRect.setAttribute('height', 28);
+          clip.appendChild(clipRect); defs.appendChild(clip);
+
+          var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+          txt.setAttribute('x', lx+8+(t.locked?12:0));
+          txt.setAttribute('y', barY+17);
+          txt.setAttribute('font-size','9');
+          txt.setAttribute('font-weight','700');
+          txt.setAttribute('fill', t.locked ? '#fff' : col);
+          txt.setAttribute('clip-path','url(#'+clipId+')');
+          txt.setAttribute('pointer-events','none');
+          txt.textContent = t.proj.nom;
+          g.appendChild(txt);
+
+          // Score badge
+          if (wpx > 60) {
+            var score = document.createElementNS('http://www.w3.org/2000/svg','text');
+            score.setAttribute('x', lx+wpx-18);
+            score.setAttribute('y', barY+17);
+            score.setAttribute('font-size','8');
+            score.setAttribute('fill', t.locked?'rgba(255,255,255,.7)':col);
+            score.setAttribute('opacity','.8');
+            score.setAttribute('pointer-events','none');
+            score.textContent = (t.proj.sf||0).toFixed(1);
+            g.appendChild(score);
+          }
+
+          // Lock icon
+          if (t.locked) {
+            var lock = document.createElementNS('http://www.w3.org/2000/svg','text');
+            lock.setAttribute('x', lx+4); lock.setAttribute('y', barY+17);
+            lock.setAttribute('font-size','9'); lock.setAttribute('fill','#fff');
+            lock.setAttribute('pointer-events','none');
+            lock.textContent = '🔒';
+            g.appendChild(lock);
+          }
+        }
+
+        // Resize handle (right edge)
+        var handle = _svgRect(g, lx+wpx-6, barY, 6, 28, 'rgba(0,0,0,.0)', 0);
+        handle.setAttribute('rx','3');
+        handle.setAttribute('style','cursor:ew-resize');
+        handle.setAttribute('data-resize','1');
+
+        // Events on the group
+        g.addEventListener('mousedown',  function(e){ _startDragOrResize(e,t,ri,minDate,DPX); });
+        g.addEventListener('mouseenter', function(e){ _showTip(e,t); });
+        g.addEventListener('mouseleave', _hideTip);
+        g.addEventListener('dblclick',   function(){ ganttBarUnlock(t.proj.nom); });
+
+        ganttSvg.appendChild(g);
+      });
+
+      // Row separator
+      _svgLine(ganttSvg, 0, y+ROW_H-1, totalW, y+ROW_H-1, '#F0F0F0', 1, null);
+
+      // Dev label
+      var labelDiv = _mkEl('div',
+        'height:'+ROW_H+'px;padding:0 14px;display:flex;flex-direction:column;'
+        +'justify-content:center;border-bottom:1px solid #F0F0F0;'
+        +'background:'+(ri%2===0?'#fff':'#FAFAFA'));
+
+      var nameRow = _mkEl('div','display:flex;align-items:center;gap:6px');
+      var avatar = _mkEl('div',
+        'width:22px;height:22px;border-radius:50%;background:#111;color:#fff;'
+        +'font-size:9px;font-weight:800;display:flex;align-items:center;'
+        +'justify-content:center;flex-shrink:0');
+      avatar.textContent = devName.charAt(0).toUpperCase();
+      nameRow.appendChild(avatar);
+      var nameSpan = _mkEl('span','font-size:10px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis');
+      nameSpan.textContent = devName;
+      nameRow.appendChild(nameSpan);
+      labelDiv.appendChild(nameRow);
+
+      var whDiv = _mkEl('div','font-size:8px;color:#AAA;margin-top:2px;display:flex;gap:6px');
+      Object.keys(wh).forEach(function(k){
+        if(!wh[k]) return;
+        var s = _mkEl('span','color:'+PCOL[k]+';font-weight:600');
+        s.textContent = k+' '+wh[k].toFixed(0)+'h';
+        whDiv.appendChild(s);
+      });
+      labelDiv.appendChild(whDiv);
+      labelsCol.appendChild(labelDiv);
+    });
+
+    // SVG shadow filter
+    var defs = ganttSvg.querySelector('defs') || ganttSvg.insertBefore(document.createElementNS('http://www.w3.org/2000/svg','defs'), ganttSvg.firstChild);
+    defs.innerHTML += '<filter id="shadow" x="-5%" y="-10%" width="110%" height="130%">'
+      +'<feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".15"/></filter>';
+
+    ganttCol.appendChild(ganttSvg);
+    body.appendChild(labelsCol);
+    body.appendChild(ganttCol);
+    wrap.appendChild(body);
+    _cont.appendChild(wrap);
+
+    // ── Resource view ────────────────────────────────────────
+    _buildResourceView();
+
+    // ── Tooltip ──────────────────────────────────────────────
+    _tip = _mkEl('div',
+      'position:fixed;z-index:999;background:#111;color:#fff;padding:10px 14px;'
+      +'border-radius:8px;font-size:11px;pointer-events:none;display:none;'
+      +'box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:280px;line-height:1.6;'
+      +'font-family:Inter,sans-serif');
+    document.body.appendChild(_tip);
+
+    // Sync horizontal scroll between scale and gantt
+    ganttCol.addEventListener('scroll', function(){
+      scaleWrap.scrollLeft = ganttCol.scrollLeft;
+    });
+    scaleWrap.addEventListener('scroll', function(){
+      ganttCol.scrollLeft = scaleWrap.scrollLeft;
+    });
+
+    // Scroll today into view
+    setTimeout(function(){
+      var scrollTarget = Math.max(0, todayX - 200);
+      ganttCol.scrollLeft = scrollTarget;
+      scaleWrap.scrollLeft = scrollTarget;
+    }, 100);
+  }
+
+  // ── Resource view ──────────────────────────────────────────
+  function _buildResourceView() {
+    if (!devTeam || !devTeam.length) return;
+
+    var DPX = ZOOM_LEVELS[zoomIdx].dayPx;
+    var allMs = _tl.reduce(function(a,t){a.push(+t.startDate,+t.endDate);return a;},[]);
+    var minDate = pWeekStart(new Date(Math.min.apply(null,allMs) - 7*86400000));
+    var maxDate = new Date(Math.max.apply(null,allMs) + 28*86400000);
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    var section = _mkEl('div','margin-top:16px');
+    var hdr = _mkEl('div',
+      'font-size:10px;font-weight:700;color:#888;text-transform:uppercase;'
+      +'letter-spacing:.1em;margin-bottom:8px;display:flex;align-items:center;gap:8px');
+    hdr.innerHTML = 'Ocupación por desarrollador y slot'
+      +'<span style="font-size:9px;color:#AAA;font-weight:400;text-transform:none;letter-spacing:0">'
+      +'— cada franja de color = slot activo · transición de proyecto marcada con ▲</span>';
+    section.appendChild(hdr);
+
+    devTeam.forEach(function(dev) {
+      var devTL = _tl.filter(function(t){return t.devName===dev.name;});
+      if (!devTL.length) return;
+
+      var devWrap = _mkEl('div',
+        'background:#fff;border:1px solid #EBEBEB;border-radius:8px;margin-bottom:8px;overflow:hidden');
+
+      // Dev header
+      var devHdr = _mkEl('div',
+        'padding:8px 14px;background:#F7F7F5;border-bottom:1px solid #EBEBEB;'
+        +'display:flex;align-items:center;gap:8px');
+      var av = _mkEl('div',
+        'width:20px;height:20px;border-radius:50%;background:#111;color:#fff;'
+        +'font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0');
+      av.textContent = dev.name.charAt(0).toUpperCase();
+      devHdr.appendChild(av);
+      var dn = _mkEl('span','font-size:10px;font-weight:700;color:#111');
+      dn.textContent = dev.name;
+      devHdr.appendChild(dn);
+      devWrap.appendChild(devHdr);
+
+      // Slot rows
+      ['L','M','X','J','V'].forEach(function(day) {
+        var slots = (dev.schedule||{})[day] || [];
+        if (!slots.length) return;
+
+        slots.forEach(function(slot) {
+          var slotRow = _mkEl('div',
+            'display:flex;align-items:stretch;border-bottom:1px solid #F7F7F5;min-height:28px');
+
+          // Day+slot label
+          var slotLabel = _mkEl('div',
+            'width:180px;flex-shrink:0;padding:4px 14px;border-right:1px solid #F0F0F0;'
+            +'display:flex;align-items:center;gap:6px;background:#FAFAFA');
+          var dayBadge = _mkEl('span',
+            'font-size:8px;font-weight:700;color:#888;width:14px;text-align:center');
+          dayBadge.textContent = day;
+          slotLabel.appendChild(dayBadge);
+          var slotTime = _mkEl('span',
+            'font-size:8px;color:'+PCOL[slot.pool]+';font-weight:600;'
+            +'background:'+PBGG[slot.pool]+';padding:1px 5px;border-radius:3px;'
+            +'border:1px solid '+PCOL[slot.pool]+';white-space:nowrap');
+          slotTime.textContent = slot.start+'–'+slot.end+' '+slot.pool;
+          slotLabel.appendChild(slotTime);
+          slotRow.appendChild(slotLabel);
+
+          // Timeline bar for this slot
+          var slotTimeline = _mkEl('div',
+            'flex:1;overflow-x:auto;overflow-y:hidden;position:relative;height:28px;'
+            +'background:repeating-linear-gradient(90deg,transparent,transparent '+(DPX*7-1)+'px,#F0F0F0 '+(DPX*7)+'px)');
+
+          // Container SVG
+          var totalDays = Math.ceil((maxDate - minDate)/86400000);
+          var svgW = totalDays * DPX;
+          var slotSvg = _svgEl('svg', svgW, 28);
+          slotSvg.setAttribute('style','display:block');
+
+          // Render project blocks for this slot pool
+          // Find all dates where this slot is used (weekday matches day)
+          var DAYMAP = {L:1,M:2,X:3,J:4,V:5};
+          var wdTarget = DAYMAP[day];
+          var sh=parseInt(slot.start), sm=parseInt(slot.start.split(':')[1]||0);
+          var eh=parseInt(slot.end),   em=parseInt(slot.end.split(':')[1]||0);
+          var slotH = ((eh*60+em)-(sh*60+sm))/60;
+
+          // For each project in this pool for this dev, find the weeks it covers
+          devTL.filter(function(t){return t.pool===slot.pool;})
+               .forEach(function(t, ti, arr) {
+            var col = PCOL[t.pool];
+            // Iterate over days within project duration
+            var d = new Date(t.startDate);
+            var prevX = null;
+            while (+d < +t.endDate) {
+              if (d.getDay()===wdTarget) {
+                var lx = Math.round((d - minDate)/86400000)*DPX;
+                var wpx = DPX;
+
+                var blk = _svgRect(slotSvg, lx+1, 3, wpx-2, 22, t.locked?col:PBGG[t.pool], 0);
+                blk.setAttribute('rx','2');
+                blk.setAttribute('fill', t.locked?col:PBGG[t.pool]);
+                blk.setAttribute('stroke', col);
+                blk.setAttribute('stroke-width','1');
+
+                // Transition marker: first day of this project
+                if (+d <= +t.startDate || (+d - +t.startDate) < 7*86400000) {
+                  if (prevX === null) {
+                    var tri = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+                    tri.setAttribute('points', (lx+DPX/2)+',2 '+(lx+DPX/2-4)+',10 '+(lx+DPX/2+4)+',10');
+                    tri.setAttribute('fill', col);
+                    slotSvg.appendChild(tri);
+                  }
+                }
+
+                // Hours label in block
+                if (DPX >= 18) {
+                  var htxt = document.createElementNS('http://www.w3.org/2000/svg','text');
+                  htxt.setAttribute('x', lx+DPX/2); htxt.setAttribute('y', 17);
+                  htxt.setAttribute('font-size','7'); htxt.setAttribute('text-anchor','middle');
+                  htxt.setAttribute('fill', t.locked?'#fff':col);
+                  htxt.setAttribute('font-weight','600'); htxt.setAttribute('pointer-events','none');
+                  htxt.textContent = slotH+'h';
+                  slotSvg.appendChild(htxt);
+                }
+                prevX = lx;
+              }
+              d.setDate(d.getDate()+1);
+            }
+          });
+
+          // Today marker
+          var todayX = Math.round((today - minDate)/86400000)*DPX;
+          var tl2 = _svgRect(slotSvg, todayX, 0, 2, 28, 'rgba(204,31,38,.4)', 0);
+          slotSvg.appendChild(tl2);
+
+          slotTimeline.appendChild(slotSvg);
+          slotRow.appendChild(slotTimeline);
+          devWrap.appendChild(slotRow);
+        });
+      });
+
+      section.appendChild(devWrap);
+    });
+
+    _cont.appendChild(section);
+  }
+
+  // ── Scale header ───────────────────────────────────────────
+  function _buildScale(svg, minDate, totalDays, DPX, today) {
+    var d = new Date(minDate);
+    var prevMonthX = 0;
+    while (+d <= +new Date(+minDate + totalDays*86400000)) {
+      var lx = Math.round((d - minDate)/86400000)*DPX;
+      if (d.getDay()===1) {
+        // Week tick
+        _svgLine(svg, lx, 24, lx, HEAD_H, '#E0E0E0', 1, null);
+        if (DPX >= 14) {
+          var wt = document.createElementNS('http://www.w3.org/2000/svg','text');
+          wt.setAttribute('x',lx+2); wt.setAttribute('y',38);
+          wt.setAttribute('font-size','8'); wt.setAttribute('fill','#AAA');
+          wt.textContent = d.getDate();
+          svg.appendChild(wt);
+        }
+        // Month label (first week of month)
+        if (d.getDate()<=7) {
+          _svgLine(svg, lx, 0, lx, HEAD_H, '#CCCCCC', 1, null);
+          var mt = document.createElementNS('http://www.w3.org/2000/svg','text');
+          mt.setAttribute('x', lx+3); mt.setAttribute('y',15);
+          mt.setAttribute('font-size','9'); mt.setAttribute('font-weight','700');
+          mt.setAttribute('fill','#333'); mt.setAttribute('text-transform','uppercase');
+          mt.textContent = d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).toUpperCase();
+          svg.appendChild(mt);
+        }
+      }
+      d.setDate(d.getDate()+1);
+    }
+    // Today line in header
+    var todayX = Math.round((today - minDate)/86400000)*DPX;
+    _svgLine(svg, todayX, 0, todayX, HEAD_H, 'rgba(204,31,38,.5)', 2, '3,2');
+  }
+
+  // ── Grid ───────────────────────────────────────────────────
+  function _buildGrid(svg, minDate, totalDays, DPX, nRows) {
+    var svgH = nRows * ROW_H;
+    var d = new Date(minDate);
+    while (+d <= +new Date(+minDate + totalDays*86400000)) {
+      var lx = Math.round((d - minDate)/86400000)*DPX;
+      if (d.getDay()===1) {
+        var isMonth = d.getDate()<=7;
+        _svgLine(svg, lx, 0, lx, svgH, isMonth?'#E0E0E0':'#F5F5F5', 1, null);
+      }
+      // Weekend shading
+      if (d.getDay()===6 && DPX>=10) {
+        _svgRect(svg, lx, 0, DPX*2, svgH, 'rgba(0,0,0,.015)', 0);
+      }
+      d.setDate(d.getDate()+1);
+    }
+  }
+
+  // ── Drag & resize ──────────────────────────────────────────
+  function _startDragOrResize(e, t, ri, minDate, DPX) {
+    e.preventDefault();
+    var isResize = e.target.dataset.resize === '1';
+    var nomEsc   = t.proj.nom;
+
+    var origStartMs = +t.startDate;
+    var origEndMs   = +t.endDate;
+    var startX      = e.clientX;
+
+    var ghost = null;
+    if (!isResize) {
+      ghost = _mkEl('div',
+        'position:fixed;z-index:888;pointer-events:none;'
+        +'background:rgba(17,17,17,.12);border:2px dashed #111;border-radius:6px;'
+        +'padding:4px 8px;font-size:9px;font-weight:700;color:#111;white-space:nowrap;'
+        +'display:flex;align-items:center;gap:4px');
+      ghost.innerHTML = '↔ '+t.proj.nom.substring(0,25);
+      ghost.style.left = (e.clientX+12)+'px';
+      ghost.style.top  = (e.clientY-16)+'px';
+      document.body.appendChild(ghost);
+    }
+
+    function onMove(ev) {
+      var deltaPx   = ev.clientX - startX;
+      var deltaDays = Math.round(deltaPx / DPX);
+      if (ghost) {
+        ghost.style.left = (ev.clientX+12)+'px';
+        ghost.style.top  = (ev.clientY-16)+'px';
+        var nd = new Date(origStartMs + deltaDays*86400000);
+        ghost.innerHTML = '↔ '+t.proj.nom.substring(0,20)
+          +'<br><span style="font-weight:400">'+pShort(nd)+'</span>';
+      }
+    }
+
+    function onUp(ev) {
+      if (ghost) ghost.remove();
+      var deltaPx   = ev.clientX - startX;
+      var deltaDays = Math.round(deltaPx / DPX);
+      if (deltaDays === 0) { cleanup(); return; }
+
+      if (isResize) {
+        var ne = pAddDays(new Date(origEndMs), deltaDays);
+        if (+ne <= origStartMs) { cleanup(); return; }
+        var idx = lockedAssignments.findIndex(function(l){return l.nom===nomEsc;});
+        var lk = {nom:nomEsc,devName:t.devName,
+          startDate:new Date(origStartMs).toISOString(),endDate:ne.toISOString()};
+        if(idx>=0) lockedAssignments[idx]=lk; else lockedAssignments.push(lk);
+        pLogChange(nomEsc, pShort(new Date(origEndMs)), pShort(ne), t.devName);
+      } else {
+        var ns = pNextWork(new Date(origStartMs + deltaDays*86400000));
+        ganttDoMove(nomEsc, t.devName, ns);
+        cleanup(); return;
+      }
+
+      saveLocked();
+      cleanup();
+      renderCalendar();
+    }
+
+    function cleanup() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  }
+
+  // ── Tooltip ────────────────────────────────────────────────
+  function _showTip(e, t) {
+    if (!_tip) return;
+    var elapsed = Math.max(0,Math.min(1,(+new Date()-+t.startDate)/(+t.endDate-+t.startDate||1)));
+    _tip.innerHTML =
+      '<div style="font-weight:700;font-size:12px;margin-bottom:6px;line-height:1.3">'
+        +t.proj.nom+'</div>'
+      +'<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:10px;opacity:.85">'
+        +'<span>Pool</span><span style="color:'+PCOL[t.pool]+';font-weight:600">'+t.pool+'</span>'
+        +'<span>Dev</span><span>'+t.devName+'</span>'
+        +'<span>Horas</span><span>'+t.totalHours+'h a '+t.hoursPerWeek.toFixed(1)+'h/sem</span>'
+        +'<span>Duración</span><span>'+t.weeks+' semanas</span>'
+        +'<span>Inicio</span><span>'+pFmt(t.startDate)+'</span>'
+        +'<span>Fin est.</span><span>'+pFmt(t.endDate)+'</span>'
+        +'<span>Score</span><span style="font-weight:700">'+(t.proj.sf||0).toFixed(2)+'</span>'
+        +(elapsed>0&&elapsed<1?'<span>Progreso</span><span>'+Math.round(elapsed*100)+'%</span>':'')
+        +(t.locked?'<span>Estado</span><span style="color:#C4974A">🔒 Bloqueado</span>':
+          '<span>Estado</span><span style="color:#087B50">↺ Auto-planificado</span>')
+      +'</div>'
+      +'<div style="margin-top:6px;font-size:9px;opacity:.5">Dbl-clic para liberar · Arrastra para mover</div>';
+    _tip.style.display = 'block';
+    _moveTip(e);
+  }
+  function _moveTip(e) {
+    if (!_tip||_tip.style.display==='none') return;
+    var x = e.clientX+16, y = e.clientY-10;
+    var w = _tip.offsetWidth, h = _tip.offsetHeight;
+    if (x+w > window.innerWidth-10)  x = e.clientX-w-10;
+    if (y+h > window.innerHeight-10) y = e.clientY-h-10;
+    _tip.style.left = x+'px';
+    _tip.style.top  = y+'px';
+    document.onmousemove = _moveTip;
+  }
+  function _hideTip() {
+    if (_tip) _tip.style.display='none';
+    document.onmousemove = null;
+  }
+
+  // ── SVG helpers ────────────────────────────────────────────
+  function _svgEl(tag, w, h) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    el.setAttribute('width', w);
+    el.setAttribute('height', h);
+    el.setAttribute('viewBox', '0 0 '+w+' '+h);
+    return el;
+  }
+  function _svgRect(parent, x, y, w, h, fill, rx) {
+    var r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x); r.setAttribute('y',y);
+    r.setAttribute('width',w); r.setAttribute('height',h);
+    r.setAttribute('fill',fill||'none');
+    if (rx) r.setAttribute('rx',rx);
+    parent.appendChild(r);
+    return r;
+  }
+  function _svgRoundRect(parent, x, y, w, h, rx) {
+    var r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x); r.setAttribute('y',y);
+    r.setAttribute('width',w); r.setAttribute('height',h);
+    r.setAttribute('rx',rx||4);
+    parent.appendChild(r);
+    return r;
+  }
+  function _svgLine(parent, x1, y1, x2, y2, stroke, sw, dash) {
+    var l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x1);l.setAttribute('y1',y1);
+    l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+    l.setAttribute('stroke',stroke||'#DDD');
+    l.setAttribute('stroke-width',sw||1);
+    if (dash) l.setAttribute('stroke-dasharray',dash);
+    l.setAttribute('pointer-events','none');
+    parent.appendChild(l);
+    return l;
+  }
+  function _svgCircle(parent,cx,cy,r,fill) {
+    var c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r',r);
+    c.setAttribute('fill',fill||'#111');
+    parent.appendChild(c);
+    return c;
+  }
+  function _mkEl(tag, style) {
+    var el = document.createElement(tag);
+    if (style) el.style.cssText = style;
+    return el;
+  }
+
+  // ── Public API ─────────────────────────────────────────────
+  return { render: render };
+})();
+
+// Hook into renderCalendar
+function renderGanttV4(el, timeline) {
+  GANTT.render(el, timeline);
 }

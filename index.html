@@ -424,7 +424,6 @@
 
     <!-- STEPS 1-6: rendered by JS -->
     <div id="dim-steps"></div>    <!-- STEPS 1-6: rendered by JS -->
-    <div id="dim-steps"></div>
 
     <!-- STEP: CHARTS -->
     <div class="step" id="step-charts">
@@ -1627,60 +1626,45 @@
 
 
   <!-- ── PLANNING + CALENDAR TAB ─────────────────────────── -->
-  <div id="planning-tab" style="display:none">
+  <div <div id="planning-tab" style="display:none">
+    <div style="padding:32px;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">📅</div>
+      <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:6px">
+        Planificación &amp; Gantt
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px">
+        La planificación tiene su propia pantalla dedicada con Gantt interactivo,
+        vista mensual, semanal y ocupación por slot.
+      </div>
+      <button onclick="goStep('planning')"
+        style="padding:10px 28px;font-size:11px;font-weight:700;border-radius:8px;
+               border:none;background:#111;color:#fff;cursor:pointer">
+        Ir a Planificación →
+      </button>
+    </div>
+  </div>d="planning-tab" style="display:none">
 
     <!-- Top toolbar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:12px;flex-wrap:wrap;gap:8px">
-
-      <!-- View switcher -->
-      <div style="display:flex;gap:4px;background:#F5F5F3;border-radius:8px;padding:3px">
-        <button id="cal-btn-gantt" onclick="switchCalView('gantt')"
-          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
-                 border:1px solid #111;background:#111;color:#fff;cursor:pointer;transition:all .15s">
-          📊 Gantt
-        </button>
-        <button id="cal-btn-month" onclick="switchCalView('month')"
-          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
-                 border:1px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
-          📅 Mes
-        </button>
-        <button id="cal-btn-week" onclick="switchCalView('week')"
-          style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
-                 border:1px solid transparent;background:transparent;color:#666;cursor:pointer;transition:all .15s">
-          🗓 Semana
-        </button>
-      </div>
-
-      <!-- Actions -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button onclick="openAddActiveProject()"
-          style="padding:7px 14px;font-size:10px;font-weight:600;border-radius:7px;
-                 border:1px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer">
-          + En curso
-        </button>
-        <button onclick="renderCalendar()"
-          style="padding:7px 14px;font-size:10px;font-weight:600;border-radius:7px;
-                 border:1px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
-          ↺ Recalcular
-        </button>
-        <button onclick="exportPlanningExcel()"
-          style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
-                 border:none;background:#087B50;color:#fff;cursor:pointer">
-          ↓ Excel
-        </button>
-      </div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button onclick="goStep('planning')"
+        style="padding:7px 16px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #111;background:#fff;color:#111;cursor:pointer;
+               transition:all .15s"
+        onmouseover="this.style.background='#111';this.style.color='#fff'"
+        onmouseout="this.style.background='#fff';this.style.color='#111'">
+        📅 Ir a Planificación →
+      </button>
+      <button onclick="openAddActiveProject()"
+        style="padding:7px 14px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer">
+        + En curso
+      </button>
+      <button onclick="exportPlanningExcel()"
+        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
+               border:none;background:#087B50;color:#fff;cursor:pointer">
+        ↓ Excel
+      </button>
     </div>
-
-    <!-- Calendar/planning output -->
-    <div id="calendar-container-sprint" style="min-height:300px">
-      <div style="padding:48px;text-align:center;color:#AAA;font-size:13px">
-        Cargando…
-      </div>
-    </div>
-
-    
-  </div>
 
   <!-- ── ADD ACTIVE PROJECT MODAL ─────────────────────────── -->
   <div id="active-proj-modal" style="
