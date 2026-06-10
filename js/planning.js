@@ -809,7 +809,7 @@ var GANTT = (function() {
     {name:'Meses',   dayPx:14},
     {name:'Trim.',   dayPx: 6},
   ];
-  var zoomIdx = 0;
+  var zoomIdx = 1; // Default: Semanas (0=Horas, 1=Semanas, 2=Meses, 3=Trim)
 
   // Pool visual config
   var PCOL = { corto:'#C07800', medio:'#1848A0', largo:'#087B50' };

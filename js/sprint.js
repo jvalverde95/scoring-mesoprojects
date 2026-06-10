@@ -83,11 +83,18 @@ function saveDevCapacity() {
 }
 
 function getDevCapacity() {
-  return devTeam.reduce((acc, d) => ({
-    corto: acc.corto + (parseInt(d.corto) || 0),
-    medio: acc.medio + (parseInt(d.medio) || 0),
-    largo: acc.largo + (parseInt(d.largo) || 0),
-  }), { corto: 0, medio: 0, largo: 0 });
+  // Returns number of developers with capacity in each pool
+  // (= max simultaneous projects per pool)
+  return devTeam.reduce((acc, d) => {
+    const wh = typeof pDevHours === 'function'
+      ? pDevHours(d)
+      : { corto: d.corto||0, medio: d.medio||0, largo: d.largo||0 };
+    return {
+      corto: acc.corto + (wh.corto > 0 ? 1 : 0),
+      medio: acc.medio + (wh.medio > 0 ? 1 : 0),
+      largo: acc.largo + (wh.largo > 0 ? 1 : 0),
+    };
+  }, { corto: 0, medio: 0, largo: 0 });
 }
 
 function updateDevCapSummary() {
