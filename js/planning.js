@@ -762,14 +762,13 @@ function exportPlanningExcel() {
 
   var wb = XLSX.utils.book_new();
 
-  // ── Sheet 1: Calendar view (projects as rows, days as columns) ──
-  var today = new Date(); today.setHours(0,0,0,0);
-  var allMs  = timeline.reduce(function(a,t){a.push(+t.startDate,+t.endDate);return a;},[]);
+  // ── Sheet 1: CALENDAR (projects as rows, dates as columns) ──
+  var allMs = timeline.reduce(function(a,t){a.push(+t.startDate,+t.endDate);return a;},[]);
   var minDate = pWeekStart(new Date(Math.min.apply(null,allMs)));
   var maxDate = new Date(Math.max.apply(null,allMs));
   maxDate.setDate(maxDate.getDate()+7);
 
-  // Build list of working days
+  // Build working days list
   var workDays = [];
   var d = new Date(minDate);
   while (+d <= +maxDate) {
@@ -777,19 +776,25 @@ function exportPlanningExcel() {
     d.setDate(d.getDate()+1);
   }
 
-  // Header row 1: months (merged across their days)
+  // HEADER ROW 1: fixed cols + YEAR (when changes)
   var hdr1 = ['Proyecto','Dev','Pool','Score','Horas','Inicio','Fin'];
-  var hdr2 = ['','','','','','',''];
-  var currentMonth = null;
+  var hdr2 = ['','','','','','','']; // months
+  var hdr3 = ['','','','','','','']; // days
+  var currentYear = null, currentMonth = null;
+
   workDays.forEach(function(day) {
-    var month = day.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).toUpperCase();
-    hdr1.push(month !== currentMonth ? month : '');
-    hdr2.push(day.getDate());
-    currentMonth = month;
+    var yr = day.getFullYear().toString();
+    var mo = day.toLocaleDateString('es-ES',{month:'short'}).toUpperCase();
+    hdr1.push(yr !== currentYear ? yr : '');
+    hdr2.push(mo !== currentMonth ? mo : '');
+    hdr3.push(day.getDate());
+    currentYear  = yr;
+    currentMonth = mo;
   });
 
-  // Data rows
-  var rows = timeline.sort(function(a,b){return (b.proj.sf||0)-(a.proj.sf||0);}).map(function(t) {
+  // DATA ROWS: sorted by score desc
+  var sortedTL = timeline.slice().sort(function(a,b){return (b.proj.sf||0)-(a.proj.sf||0);});
+  var rows = sortedTL.map(function(t) {
     var row = [
       t.proj.nom,
       t.devName,
@@ -799,10 +804,9 @@ function exportPlanningExcel() {
       pFmt(t.startDate),
       pFmt(t.endDate)
     ];
-    // Mark each working day: 'X' if project active, '' if not
     workDays.forEach(function(day) {
       if (+t.startDate <= +day && +day < +t.endDate) {
-        row.push(t.proj.nom.substring(0,3).toUpperCase()); // short code
+        row.push('■'); // active day
       } else {
         row.push('');
       }
@@ -810,39 +814,155 @@ function exportPlanningExcel() {
     return row;
   });
 
-  var wsData = [hdr1, hdr2].concat(rows);
+  var wsData = [hdr1, hdr2, hdr3].concat(rows);
   var ws = XLSX.utils.aoa_to_sheet(wsData);
 
   // Column widths
-  var colWidths = [40,14,8,6,6,12,12].concat(workDays.map(function(){return 3;}));
+  var colWidths = [40,14,8,7,7,14,14].concat(workDays.map(function(){return 3;}));
   ws['!cols'] = colWidths.map(function(w){return {wch:w};});
 
-  // Style header rows (XLSX doesn't support rich styles in free version, use cell values)
+  // Row heights
+  ws['!rows'] = [{hpx:16},{hpx:16},{hpx:14}];
+
+  // Apply colors using XLSX cell styles
+  // Header rows: dark background
+  var POOL_COLOR_HEX = {corto:'C07800', medio:'1848A0', largo:'087B50'};
+  var POOL_BG_HEX    = {corto:'FAF5E6', medio:'EEF3FC', largo:'ECF8F3'};
+
+  // Style cells manually
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  var nFixedCols = 7;
+
+  for (var R = 0; R <= range.e.r; R++) {
+    for (var C = 0; C <= range.e.c; C++) {
+      var addr = XLSX.utils.encode_cell({r:R, c:C});
+      if (!ws[addr]) ws[addr] = {v:'', t:'s'};
+
+      var isHeaderRow = R < 3;
+      var isFixedCol  = C < nFixedCols;
+      var cellVal = ws[addr].v;
+
+      // Build style object
+      var style = {
+        font:      {name:'Calibri', sz: isHeaderRow ? 9 : 10},
+        alignment: {horizontal: isFixedCol ? 'left' : 'center', vertical:'center', wrapText:false},
+        border: {
+          right:  {style:'thin', color:{rgb:'E0E0E0'}},
+          bottom: {style:'thin', color:{rgb:'E0E0E0'}}
+        }
+      };
+
+      if (R === 0) {
+        // Year row: dark bg
+        style.fill = {fgColor:{rgb:'111111'}, patternType:'solid'};
+        style.font.color = {rgb:'FFFFFF'};
+        style.font.bold  = true;
+      } else if (R === 1) {
+        // Month row: mid grey
+        style.fill = {fgColor:{rgb:'3D3D3D'}, patternType:'solid'};
+        style.font.color = {rgb:'FFFFFF'};
+        style.font.bold  = true;
+        style.font.sz    = 8;
+      } else if (R === 2) {
+        // Day numbers
+        style.fill = {fgColor:{rgb:'F5F5F5'}, patternType:'solid'};
+        style.font.color = {rgb:'666666'};
+        style.font.sz    = 8;
+      } else {
+        // Data rows
+        var rowTL = sortedTL[R-3];
+        if (rowTL && isFixedCol) {
+          // Fixed columns: pool color
+          var pool = rowTL.pool;
+          if (C === 0) { // project name: bold
+            style.font.bold = true;
+          }
+          if (C === 2) { // pool column: colored
+            style.fill = {fgColor:{rgb: POOL_BG_HEX[pool]||'F5F5F5'}, patternType:'solid'};
+            style.font.color = {rgb: POOL_COLOR_HEX[pool]||'333333'};
+            style.font.bold  = true;
+          }
+          if (C === 5 || C === 6) { // dates: light blue
+            style.fill = {fgColor:{rgb:'EEF3FC'}, patternType:'solid'};
+            style.font.color = {rgb:'1848A0'};
+          }
+        } else if (rowTL && !isFixedCol) {
+          // Calendar cells
+          if (cellVal === '■') {
+            // Active day: pool color
+            var pool2 = rowTL.pool;
+            style.fill = {fgColor:{rgb: POOL_COLOR_HEX[pool2]||'087B50'}, patternType:'solid'};
+            style.font.color = {rgb: POOL_COLOR_HEX[pool2]||'087B50'};
+            style.font.sz    = 8;
+          } else {
+            style.fill = {fgColor:{rgb:'FFFFFF'}, patternType:'solid'};
+          }
+          // Alternate row shading
+          if ((R-3) % 2 === 1 && cellVal !== '■') {
+            style.fill = {fgColor:{rgb:'FAFAFA'}, patternType:'solid'};
+          }
+        }
+      }
+      ws[addr].s = style;
+    }
+  }
+
   XLSX.utils.book_append_sheet(wb, ws, 'Calendario');
 
-  // ── Sheet 2: Summary list ──────────────────────────────────
-  var hdrs2 = ['Dev','Pool','#','Proyecto','Horas','h/sem','Semanas','Inicio','Fin est.','Score'];
-  var rows2 = timeline.map(function(t, i) {
-    var qi = timeline.filter(function(x){return x.devName===t.devName&&x.pool===t.pool;}).indexOf(t)+1;
-    return [t.devName, t.pool, qi, t.proj.nom, t.totalHours,
-            +t.hoursPerWeek.toFixed(1), t.weeks,
-            pFmt(t.startDate), pFmt(t.endDate), +(t.proj.sf||0).toFixed(2)];
+  // ── Sheet 2: SUMMARY LIST ─────────────────────────────────
+  var hdrs2 = ['Dev','Pool','#','Proyecto','Inicio','Fin','Horas','h/sem','Semanas','Score'];
+  var rows2 = sortedTL.map(function(t,i) {
+    var qi = sortedTL.filter(function(x){return x.devName===t.devName&&x.pool===t.pool;}).indexOf(t)+1;
+    return [t.devName, t.pool, qi, t.proj.nom,
+            pFmt(t.startDate), pFmt(t.endDate),
+            t.totalHours, +t.hoursPerWeek.toFixed(1), t.weeks,
+            +(t.proj.sf||0).toFixed(2)];
   });
+
   var ws2 = XLSX.utils.aoa_to_sheet([hdrs2].concat(rows2));
-  ws2['!cols'] = [14,8,4,40,8,7,8,14,14,7].map(function(w){return {wch:w};});
+  ws2['!cols'] = [14,8,4,40,14,14,8,7,8,7].map(function(w){return {wch:w};});
+
+  // Color sheet 2 header
+  var range2 = XLSX.utils.decode_range(ws2['!ref']);
+  for (var C2=0; C2<=range2.e.c; C2++) {
+    var addr2 = XLSX.utils.encode_cell({r:0,c:C2});
+    if (!ws2[addr2]) ws2[addr2]={v:'',t:'s'};
+    ws2[addr2].s = {
+      fill:{fgColor:{rgb:'111111'},patternType:'solid'},
+      font:{color:{rgb:'FFFFFF'},bold:true,sz:9},
+      alignment:{horizontal:'center',vertical:'center'}
+    };
+  }
+  // Color data rows by pool
+  for (var R2=1; R2<=range2.e.r; R2++) {
+    var tRow = rows2[R2-1];
+    var pool3 = tRow ? tRow[1] : '';
+    for (var C2=0; C2<=range2.e.c; C2++) {
+      var addr3 = XLSX.utils.encode_cell({r:R2,c:C2});
+      if (!ws2[addr3]) ws2[addr3]={v:'',t:'s'};
+      var s3 = {
+        fill:{fgColor:{rgb: C2===1 ? (POOL_BG_HEX[pool3]||'FFFFFF') : (R2%2===0?'FAFAFA':'FFFFFF')},patternType:'solid'},
+        font:{sz:9, bold: C2===3, color:{rgb: C2===1?(POOL_COLOR_HEX[pool3]||'333333'):'333333'}},
+        alignment:{horizontal: C2===2?'center':'left', vertical:'center'},
+        border:{right:{style:'thin',color:{rgb:'E0E0E0'}},bottom:{style:'thin',color:{rgb:'E0E0E0'}}}
+      };
+      ws2[addr3].s = s3;
+    }
+  }
   XLSX.utils.book_append_sheet(wb, ws2, 'Lista');
 
-  // ── Sheet 3: Active projects ───────────────────────────────
+  // ── Sheet 3: EN CURSO ──────────────────────────────────────
   if (activeProjects.length) {
     var ws3 = XLSX.utils.aoa_to_sheet(
-      [['Proyecto','Dev','Pool','Fin en curso']].concat(
+      [['Proyecto','Desarrollador','Pool','Fin en curso']].concat(
         activeProjects.map(function(a){return [a.nom,a.devName,a.pool,a.endDate];})));
+    ws3['!cols'] = [{wch:40},{wch:16},{wch:8},{wch:14}];
     XLSX.utils.book_append_sheet(wb, ws3, 'En curso');
   }
 
   var fname = 'nexus_planning_'+new Date().toISOString().split('T')[0]+'.xlsx';
   XLSX.writeFile(wb, fname);
-  toast('✓ Exportado: Calendario ('+workDays.length+' días) + Lista + En curso');
+  toast('✓ Exportado · Calendario ('+workDays.length+' días) · Lista · En curso');
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2235,22 +2355,94 @@ function renderHourlyView(el, timeline) {
           return t.pool===slot.pool && +t.startDate<=+day && +day<+t.endDate;
         });
 
-        var slotDiv = document.createElement('div');
-        slotDiv.style.cssText = 'position:absolute;left:'+lx+'px;width:'+wpx+'px;top:6px;height:'+(ROW_H2-12)+'px;'
-          +'border-radius:5px;overflow:hidden;border:'+(activeProj?'2px':'1px')+' solid '+col+';'
-          +'background:'+(activeProj?col:bg)+';cursor:'+(activeProj?'pointer':'default');
-
         var projName = activeProj ? activeProj.proj.nom : '';
         var hours = durFrac.toFixed(1);
+        var barH2 = ROW_H2 - 10;
 
-        slotDiv.innerHTML =
-          '<div style="height:100%;padding:2px 4px;display:flex;flex-direction:column;justify-content:center">'
-          +'<div style="font-size:7px;font-weight:700;color:'+(activeProj?'rgba(255,255,255,.8)':col)+';letter-spacing:.05em">'+slot.pool.toUpperCase()+' '+hours+'h</div>'
-          +(wpx>50&&projName?'<div style="font-size:7.5px;font-weight:600;color:'+(activeProj?'#fff':col)+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+projName.substring(0,15)+'</div>':'')
-          +'</div>';
-
+        var slotDiv = document.createElement('div');
+        slotDiv.style.cssText = 'position:absolute;left:'+lx+'px;width:'+wpx+'px;top:5px;height:'+barH2+'px;'
+          +'border-radius:5px;overflow:hidden;'
+          +'border:'+(activeProj?'2px':'1px')+' solid '+col+';'
+          +'background:'+(activeProj?col:bg)+';'
+          +'cursor:'+(activeProj?'grab':'default')+';'
+          +'user-select:none;transition:box-shadow .1s;';
         if (activeProj) {
-          slotDiv.title = activeProj.proj.nom+'\n'+slot.start+'–'+slot.end+' · '+slot.pool+' · '+hours+'h';
+          slotDiv.title = projName + '\n' + slot.start+'–'+slot.end+' · '+slot.pool+' · '+hours+'h' + '\n' + pShort(activeProj.startDate)+' → '+pShort(activeProj.endDate) + '\nScore: '+(activeProj.proj.sf||0).toFixed(2);
+        }
+
+        // Content
+        var inner = document.createElement('div');
+        inner.style.cssText = 'height:100%;padding:2px 5px;display:flex;flex-direction:column;justify-content:center;pointer-events:none';
+        // Row 1: pool + hours
+        var r1 = document.createElement('div');
+        r1.style.cssText = 'font-size:7px;font-weight:700;color:'+(activeProj?'rgba(255,255,255,.75)':col)+';letter-spacing:.04em';
+        r1.textContent = slot.pool.toUpperCase()+' '+hours+'h';
+        inner.appendChild(r1);
+        // Row 2: project name (always shown if there is one)
+        if (projName) {
+          var r2 = document.createElement('div');
+          r2.style.cssText = 'font-size:'+(wpx>80?'8.5':'7.5')+'px;font-weight:700;'
+            +'color:'+(activeProj?'#fff':col)+';'
+            +'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+            +'max-width:'+(wpx-10)+'px;line-height:1.2';
+          r2.textContent = wpx > 60 ? projName : projName.substring(0,Math.max(3,Math.floor(wpx/6)));
+          inner.appendChild(r2);
+          // Row 3: dates (only if wide)
+          if (wpx > 120 && activeProj) {
+            var r3 = document.createElement('div');
+            r3.style.cssText = 'font-size:7px;color:rgba(255,255,255,.65);margin-top:1px';
+            r3.textContent = pShort(activeProj.startDate)+' → '+pShort(activeProj.endDate);
+            inner.appendChild(r3);
+          }
+        }
+        slotDiv.appendChild(inner);
+
+        // Drag support for active project slots
+        if (activeProj) {
+          var nomForDrag = activeProj.proj.nom;
+          var devForDrag = dev.name;
+          var slotStartMs = +activeProj.startDate;
+          var slotEndMs   = +activeProj.endDate;
+          var durD = Math.max(1, Math.ceil((slotEndMs - slotStartMs)/86400000));
+
+          slotDiv.addEventListener('mouseenter', function(){this.style.boxShadow='0 2px 10px rgba(0,0,0,.25)';});
+          slotDiv.addEventListener('mouseleave', function(){this.style.boxShadow='none';});
+
+          slotDiv.addEventListener('mousedown', function(ev) {
+            ev.preventDefault(); ev.stopPropagation();
+            var startX = ev.clientX;
+            var HOUR_PX2 = 56;
+            var ghost2 = document.createElement('div');
+            ghost2.style.cssText = 'position:fixed;z-index:999;pointer-events:none;white-space:nowrap;'
+              +'background:#111;color:#fff;padding:6px 12px;border-radius:8px;'
+              +'font-size:10px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+            ghost2.textContent = '↔ ' + nomForDrag.substring(0,30);
+            ghost2.style.left = (ev.clientX+14)+'px';
+            ghost2.style.top  = (ev.clientY-20)+'px';
+            document.body.appendChild(ghost2);
+            document.body.style.userSelect = 'none';
+
+            function onHourMove(e2) {
+              var deltaH = (e2.clientX - startX) / HOUR_PX2;
+              var nd = new Date(slotStartMs + deltaH*3600000);
+              ghost2.textContent = '↔ '+nomForDrag.substring(0,20)+' · '+pShort(nd);
+              ghost2.style.left = (e2.clientX+14)+'px';
+              ghost2.style.top  = (e2.clientY-20)+'px';
+            }
+            function onHourUp(e2) {
+              ghost2.remove(); document.body.style.userSelect = '';
+              var deltaH = (e2.clientX - startX) / HOUR_PX2;
+              var deltaDays = Math.round(deltaH / 8); // 8 work hours per day
+              if (deltaDays !== 0) {
+                var ns = pNextWork(new Date(slotStartMs + deltaDays*86400000));
+                ganttDoMove(nomForDrag, devForDrag, ns);
+              }
+              document.removeEventListener('mousemove', onHourMove);
+              document.removeEventListener('mouseup', onHourUp);
+            }
+            document.addEventListener('mousemove', onHourMove);
+            document.addEventListener('mouseup', onHourUp);
+          });
         }
 
         timeArea.appendChild(slotDiv);
