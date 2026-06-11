@@ -556,13 +556,13 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #EBEBEB;border-radius:8px;padding:8px 16px;flex-shrink:0">
           <span style="font-size:9px;font-weight:700;color:#CC1F26;letter-spacing:.06em;text-transform:uppercase">Largo ≥</span>
-          <input type="number" id="thr-m2" value="100" min="1"
+          <input type="number" id="thr-m2" value="50" min="1"
             style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#CC1F26"
             oninput="syncThresholds('m',this.value)">
           <span style="font-size:9px;color:#CCC">h</span>
           <span style="width:1px;height:16px;background:#EBEBEB;flex-shrink:0"></span>
           <span style="font-size:9px;font-weight:700;color:#C07800;letter-spacing:.06em;text-transform:uppercase">Medio ≥</span>
-          <input type="number" id="thr-s2" value="30" min="1"
+          <input type="number" id="thr-s2" value="10" min="1"
             style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#C07800"
             oninput="syncThresholds('s',this.value)">
           <span style="font-size:9px;color:#CCC">h</span>
@@ -681,20 +681,20 @@
         <div class="cfg-row">
           <div class="cfg-field">
             <label>Prioritario Estratégico ≥</label>
-            <input type="number" class="cfg-inp" id="cfg-thr-s1" value="8.5" min="1" max="10" step="0.1">
+            <input type="number" class="cfg-inp" id="cfg-thr-s1" value="10" min="1" max="10" step="0.1">
             <div class="cfg-note">Score mínimo para clasificar como Prioritario</div>
           </div>
           <div class="cfg-field">
             <label>Alta Prioridad ≥</label>
-            <input type="number" class="cfg-inp" id="cfg-thr-s2" value="7.0" min="1" max="10" step="0.1">
+            <input type="number" class="cfg-inp" id="cfg-thr-s2" value="10" min="1" max="10" step="0.1">
           </div>
           <div class="cfg-field">
             <label>Prioridad Media ≥</label>
-            <input type="number" class="cfg-inp" id="cfg-thr-s3" value="5.5" min="1" max="10" step="0.1">
+            <input type="number" class="cfg-inp" id="cfg-thr-s3" value="10" min="1" max="10" step="0.1">
           </div>
           <div class="cfg-field">
             <label>Baja Prioridad ≥</label>
-            <input type="number" class="cfg-inp" id="cfg-thr-s4" value="4.0" min="1" max="10" step="0.1">
+            <input type="number" class="cfg-inp" id="cfg-thr-s4" value="10" min="1" max="10" step="0.1">
             <div class="cfg-note">Por debajo = Descartar</div>
           </div>
         </div>
@@ -711,7 +711,7 @@
         <div class="cfg-row">
           <div class="cfg-field">
             <label>Corto — horas máximas</label>
-            <input type="number" class="cfg-inp" id="cfg-thr-short" value="30" min="1">
+            <input type="number" class="cfg-inp" id="cfg-thr-short" value="10" min="1">
             <div class="cfg-note">Proyectos con menos de este tiempo = Corto</div>
           </div>
           <div class="cfg-field">
@@ -738,13 +738,13 @@
           <div style="display:flex;align-items:center;gap:16px;margin-top:10px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:8px;font-size:10px">
               <span style="color:var(--d3);font-weight:700">Corto &lt;</span>
-              <input type="number" class="thr-inp" id="cfg-thr-s" value="30" min="1" max="999"
+              <input type="number" class="thr-inp" id="cfg-thr-s" value="10" min="1" max="999"
                 oninput="syncThrInputs()" style="width:60px;text-align:center;font-size:12px;border:1px solid var(--b);border-radius:4px;padding:3px">
               <span style="color:var(--ink3)">horas</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;font-size:10px">
               <span style="color:var(--d4);font-weight:700">Medio &lt;</span>
-              <input type="number" class="thr-inp" id="cfg-thr-m" value="100" min="1" max="9999"
+              <input type="number" class="thr-inp" id="cfg-thr-m" value="50" min="1" max="9999"
                 oninput="syncThrInputs()" style="width:60px;text-align:center;font-size:12px;border:1px solid var(--b);border-radius:4px;padding:3px">
               <span style="color:var(--ink3)">horas</span>
             </div>
@@ -2232,10 +2232,10 @@
           <div class="pool-title">clasificación por nivel</div>
           <div class="pool-thr">
             <span class="pool-tag pool-S" style="font-size:8px">corto &lt;</span>
-            <input type="number" class="thr-inp" id="thr-s" value="30" min="1" oninput="updThresholds()">
+            <input type="number" class="thr-inp" id="thr-s" value="10" min="1" oninput="updThresholds()">
             <span style="font-size:8px;color:#555">h</span>
             <span class="pool-tag pool-M" style="font-size:8px">medio &lt;</span>
-            <input type="number" class="thr-inp" id="thr-m" value="100" min="1" oninput="updThresholds()">
+            <input type="number" class="thr-inp" id="thr-m" value="50" min="1" oninput="updThresholds()">
             <span style="font-size:8px;color:#555">h · largo ≥ <span id="thr-l-lbl">100h</span></span>
           </div>
         </div>

@@ -168,8 +168,8 @@ function syncThrInputs() {
   if (_syncingThr) return;
   _syncingThr = true;
   try {
-    const s = parseInt(document.getElementById('cfg-thr-s')?.value) || 30;
-    const m = parseInt(document.getElementById('cfg-thr-m')?.value) || 100;
+    const s = parseInt(document.getElementById('cfg-thr-s')?.value) || 10;
+    const m = parseInt(document.getElementById('cfg-thr-m')?.value) || 50;
     // Sync to pools panel inputs (one-way, no callbacks triggered)
     const setVal = (id, v) => { const e = document.getElementById(id); if (e && e.value != v) e.value = v; };
     setVal('thr-s', s);
@@ -190,8 +190,8 @@ function syncThrInputs() {
 /* ── Sprint screen rendering ─────────────────────────────────── */
 function renderSprintScreen() {
   updateDevCapSummary();
-  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
-  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
   const cap  = getDevCapacity();
 
   // All projects with hours, sorted by score desc
@@ -336,8 +336,8 @@ function openAiModalFromEval() {
 function applyBulkHorasEval() {
   const val = parseInt(document.getElementById('eval-horas-masivo')?.value);
   if (!val) { toast('Selecciona un valor de horas'); return; }
-  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
-  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
   // Apply to all projects without hours
   let count = 0;
   portfolioData.forEach(p => {
@@ -357,8 +357,8 @@ function applyBulkHorasEval() {
 function renderDashboard() {
   if (!portfolioData) return;
 
-  const thrS = parseInt(document.getElementById('thr-s')?.value) || 30;
-  const thrM = parseInt(document.getElementById('thr-m')?.value) || 100;
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
   const total       = portfolioData.length;
   const scored      = portfolioData.filter(p => (p.sf||0) > 0).length;
   const estimated   = portfolioData.filter(p => p.horas != null).length;
@@ -484,8 +484,8 @@ function renderDashboard() {
 
 /* ── Wiki: update threshold values from config ──────────────── */
 function renderWikiThresholds() {
-  const thrS = document.getElementById('thr-s')?.value || 30;
-  const thrM = document.getElementById('thr-m')?.value || 100;
+  const thrS = document.getElementById('thr-s')?.value || 10;
+  const thrM = document.getElementById('thr-m')?.value || 50;
   const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   s('wiki-thr-s', thrS); s('wiki-thr-s2b', thrS); s('wiki-thr-m', thrM); s('wiki-thr-m2', thrM);
   // scoreThr values

@@ -99,8 +99,8 @@ function pDevHours(dev) {
 // ── Pool assignment ────────────────────────────────────────────
 function pPool(p) {
   if (p.pool) return p.pool;
-  var thrS=parseInt((document.getElementById('thr-s')||{}).value)||30;
-  var thrM=parseInt((document.getElementById('thr-m')||{}).value)||100;
+  var thrS=parseInt((document.getElementById('thr-s')||{}).value)||10;
+  var thrM=parseInt((document.getElementById('thr-m')||{}).value)||50;
   var h=p.horas||0;
   if (h<=0) return null;
   if (h<thrS) return 'corto';
@@ -757,25 +757,92 @@ function planRemoveSlot(di, day, si) {
 
 // ── Export ─────────────────────────────────────────────────────
 function exportPlanningExcel() {
-  var timeline=planBuildTimeline();
-  if(!timeline.length){toast('Sin datos para exportar');return;}
-  var wb=XLSX.utils.book_new();
-  var hdr=['Dev','Pool','#','Proyecto','Horas','h/sem','Semanas','Inicio','Fin est.','Score'];
-  var rows=timeline.map(function(t){
-    var qi=timeline.filter(function(x){return x.devName===t.devName&&x.pool===t.pool;}).indexOf(t)+1;
-    return [t.devName,t.pool,qi,t.proj.nom,t.totalHours,+t.hoursPerWeek.toFixed(1),t.weeks,
-            pFmt(t.startDate),pFmt(t.endDate),+(t.proj.sf||0).toFixed(2)];
-  });
-  var ws=XLSX.utils.aoa_to_sheet([hdr].concat(rows));
-  ws['!cols']=[14,8,4,40,8,7,8,14,14,7].map(function(w){return {wch:w};});
-  XLSX.utils.book_append_sheet(wb,ws,'Planificación');
-  if(activeProjects.length){
-    var ws2=XLSX.utils.aoa_to_sheet([['Proyecto','Dev','Pool','Fin en curso']]
-      .concat(activeProjects.map(function(a){return [a.nom,a.devName,a.pool,a.endDate];})));
-    XLSX.utils.book_append_sheet(wb,ws2,'En curso');
+  var timeline = planBuildTimeline();
+  if (!timeline.length) { toast('Sin datos para exportar'); return; }
+
+  var wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Calendar view (projects as rows, days as columns) ──
+  var today = new Date(); today.setHours(0,0,0,0);
+  var allMs  = timeline.reduce(function(a,t){a.push(+t.startDate,+t.endDate);return a;},[]);
+  var minDate = pWeekStart(new Date(Math.min.apply(null,allMs)));
+  var maxDate = new Date(Math.max.apply(null,allMs));
+  maxDate.setDate(maxDate.getDate()+7);
+
+  // Build list of working days
+  var workDays = [];
+  var d = new Date(minDate);
+  while (+d <= +maxDate) {
+    if (d.getDay()!==0 && d.getDay()!==6) workDays.push(new Date(d));
+    d.setDate(d.getDate()+1);
   }
-  XLSX.writeFile(wb,'nexus_planning_'+new Date().toISOString().split('T')[0]+'.xlsx');
-  toast('✓ '+timeline.length+' proyectos exportados');
+
+  // Header row 1: months (merged across their days)
+  var hdr1 = ['Proyecto','Dev','Pool','Score','Horas','Inicio','Fin'];
+  var hdr2 = ['','','','','','',''];
+  var currentMonth = null;
+  workDays.forEach(function(day) {
+    var month = day.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}).toUpperCase();
+    hdr1.push(month !== currentMonth ? month : '');
+    hdr2.push(day.getDate());
+    currentMonth = month;
+  });
+
+  // Data rows
+  var rows = timeline.sort(function(a,b){return (b.proj.sf||0)-(a.proj.sf||0);}).map(function(t) {
+    var row = [
+      t.proj.nom,
+      t.devName,
+      t.pool,
+      +(t.proj.sf||0).toFixed(2),
+      t.totalHours,
+      pFmt(t.startDate),
+      pFmt(t.endDate)
+    ];
+    // Mark each working day: 'X' if project active, '' if not
+    workDays.forEach(function(day) {
+      if (+t.startDate <= +day && +day < +t.endDate) {
+        row.push(t.proj.nom.substring(0,3).toUpperCase()); // short code
+      } else {
+        row.push('');
+      }
+    });
+    return row;
+  });
+
+  var wsData = [hdr1, hdr2].concat(rows);
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  var colWidths = [40,14,8,6,6,12,12].concat(workDays.map(function(){return 3;}));
+  ws['!cols'] = colWidths.map(function(w){return {wch:w};});
+
+  // Style header rows (XLSX doesn't support rich styles in free version, use cell values)
+  XLSX.utils.book_append_sheet(wb, ws, 'Calendario');
+
+  // ── Sheet 2: Summary list ──────────────────────────────────
+  var hdrs2 = ['Dev','Pool','#','Proyecto','Horas','h/sem','Semanas','Inicio','Fin est.','Score'];
+  var rows2 = timeline.map(function(t, i) {
+    var qi = timeline.filter(function(x){return x.devName===t.devName&&x.pool===t.pool;}).indexOf(t)+1;
+    return [t.devName, t.pool, qi, t.proj.nom, t.totalHours,
+            +t.hoursPerWeek.toFixed(1), t.weeks,
+            pFmt(t.startDate), pFmt(t.endDate), +(t.proj.sf||0).toFixed(2)];
+  });
+  var ws2 = XLSX.utils.aoa_to_sheet([hdrs2].concat(rows2));
+  ws2['!cols'] = [14,8,4,40,8,7,8,14,14,7].map(function(w){return {wch:w};});
+  XLSX.utils.book_append_sheet(wb, ws2, 'Lista');
+
+  // ── Sheet 3: Active projects ───────────────────────────────
+  if (activeProjects.length) {
+    var ws3 = XLSX.utils.aoa_to_sheet(
+      [['Proyecto','Dev','Pool','Fin en curso']].concat(
+        activeProjects.map(function(a){return [a.nom,a.devName,a.pool,a.endDate];})));
+    XLSX.utils.book_append_sheet(wb, ws3, 'En curso');
+  }
+
+  var fname = 'nexus_planning_'+new Date().toISOString().split('T')[0]+'.xlsx';
+  XLSX.writeFile(wb, fname);
+  toast('✓ Exportado: Calendario ('+workDays.length+' días) + Lista + En curso');
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1373,68 +1440,82 @@ var GANTT = (function() {
   // ── Drag & resize ──────────────────────────────────────────
   function _startDragOrResize(e, t, ri, minDate, DPX) {
     e.preventDefault();
-    var isResize = e.target.dataset.resize === '1';
-    var nomEsc   = t.proj.nom;
-
+    e.stopPropagation();
+    var isResize    = e.target.dataset.resize === '1';
+    var nomEsc      = t.proj.nom;
     var origStartMs = +t.startDate;
     var origEndMs   = +t.endDate;
-    var startX      = e.clientX;
+    var durDays     = Math.max(1, Math.ceil((origEndMs - origStartMs) / 86400000));
 
-    var ghost = null;
-    if (!isResize) {
-      ghost = _mkEl('div',
-        'position:fixed;z-index:888;pointer-events:none;'
-        +'background:rgba(17,17,17,.12);border:2px dashed #111;border-radius:6px;'
-        +'padding:4px 8px;font-size:9px;font-weight:700;color:#111;white-space:nowrap;'
-        +'display:flex;align-items:center;gap:4px');
-      ghost.innerHTML = '↔ '+t.proj.nom.substring(0,25);
-      ghost.style.left = (e.clientX+12)+'px';
-      ghost.style.top  = (e.clientY-16)+'px';
-      document.body.appendChild(ghost);
+    // Use ganttCol scrollLeft to compensate for horizontal scroll
+    var ganttColEl = null;
+    if (_cont) {
+      var allDivs = _cont.querySelectorAll('div');
+      for (var qi=0; qi<allDivs.length; qi++) {
+        if (allDivs[qi].style.overflowX === 'auto') { ganttColEl = allDivs[qi]; break; }
+      }
+    }
+    var startClientX  = e.clientX;
+    var startScrollL  = ganttColEl ? ganttColEl.scrollLeft : 0;
+
+    // Ghost tooltip
+    var ghost = _mkEl('div',
+      'position:fixed;z-index:999;pointer-events:none;white-space:nowrap;'
+      +'background:#111;color:#fff;padding:6px 12px;border-radius:8px;'
+      +'font-size:10px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.3);'
+      +'display:'+(isResize?'none':'block'));
+    ghost.textContent = (isResize?'↔':'↔ ') + (isResize ? 'Redimensionar' : t.proj.nom.substring(0,28));
+    ghost.style.left = (e.clientX+14)+'px';
+    ghost.style.top  = (e.clientY-20)+'px';
+    document.body.appendChild(ghost);
+
+    function getDeltaDays(clientX) {
+      var scrollDelta = ganttColEl ? ganttColEl.scrollLeft - startScrollL : 0;
+      var deltaPx = (clientX - startClientX) + scrollDelta;
+      return Math.round(deltaPx / DPX);
     }
 
     function onMove(ev) {
-      var deltaPx   = ev.clientX - startX;
-      var deltaDays = Math.round(deltaPx / DPX);
-      if (ghost) {
-        ghost.style.left = (ev.clientX+12)+'px';
-        ghost.style.top  = (ev.clientY-16)+'px';
-        var nd = new Date(origStartMs + deltaDays*86400000);
-        ghost.innerHTML = '↔ '+t.proj.nom.substring(0,20)
-          +'<br><span style="font-weight:400">'+pShort(nd)+'</span>';
-      }
+      var dd = getDeltaDays(ev.clientX);
+      var nd = new Date(origStartMs + dd * 86400000);
+      ghost.textContent = (isResize ? '⟷ Fin: ' : '↔ ') + (isResize ? pShort(new Date(origEndMs + dd*86400000)) : t.proj.nom.substring(0,20)+' · '+pShort(nd));
+      ghost.style.left = (ev.clientX+14)+'px';
+      ghost.style.top  = (ev.clientY-20)+'px';
     }
 
     function onUp(ev) {
-      if (ghost) ghost.remove();
-      var deltaPx   = ev.clientX - startX;
-      var deltaDays = Math.round(deltaPx / DPX);
-      if (deltaDays === 0) { cleanup(); return; }
+      ghost.remove();
+      var deltaDays = getDeltaDays(ev.clientX);
 
       if (isResize) {
+        if (deltaDays === 0) { cleanup(); return; }
         var ne = pAddDays(new Date(origEndMs), deltaDays);
-        if (+ne <= origStartMs) { cleanup(); return; }
-        var idx = lockedAssignments.findIndex(function(l){return l.nom===nomEsc;});
-        var lk = {nom:nomEsc,devName:t.devName,
-          startDate:new Date(origStartMs).toISOString(),endDate:ne.toISOString()};
-        if(idx>=0) lockedAssignments[idx]=lk; else lockedAssignments.push(lk);
+        if (+ne <= origStartMs + 86400000) { cleanup(); return; }
+        var rix = lockedAssignments.findIndex(function(l){ return l.nom===nomEsc; });
+        var lk = {nom:nomEsc, devName:t.devName,
+          startDate: new Date(origStartMs).toISOString(), endDate: ne.toISOString()};
+        if (rix>=0) lockedAssignments[rix]=lk; else lockedAssignments.push(lk);
+        var tl2 = planBuildTimeline();
+        planCascade(tl2, nomEsc, ne, t.devName, t.pool);
         pLogChange(nomEsc, pShort(new Date(origEndMs)), pShort(ne), t.devName);
+        saveLocked();
+        cleanup();
+        renderCalendar();
       } else {
-        var ns = pNextWork(new Date(origStartMs + deltaDays*86400000));
+        if (deltaDays === 0) { cleanup(); return; }
+        var ns = pNextWork(new Date(origStartMs + deltaDays * 86400000));
         ganttDoMove(nomEsc, t.devName, ns);
-        cleanup(); return;
+        cleanup();
       }
-
-      saveLocked();
-      cleanup();
-      renderCalendar();
     }
 
     function cleanup() {
+      document.body.style.userSelect = '';
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup',   onUp);
     }
 
+    document.body.style.userSelect = 'none';
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup',   onUp);
   }
