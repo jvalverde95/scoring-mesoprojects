@@ -340,3 +340,174 @@ async function cfgAdoLoad(){
     setTimeout(() => openAiModal(filtered), 600);
   } catch(e){ cfgAdoStatusShow('error','✗ '+e.message); }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTO-SYNC: "EVOLUTIVO D365 GAPs Pendientes"
+   Runs automatically on page load if credentials are available.
+   Also exposes adoAutoSync() for manual re-trigger.
+   ═══════════════════════════════════════════════════════════════ */
+
+const ADO_AUTO_QUERY_NAME = 'EVOLUTIVO D365 GAPs Pendientes';
+let   _autoSyncTimer      = null;
+
+function adoSyncStatusBar(state, msg, count) {
+  // Update the sync indicator in #bar
+  const el  = document.getElementById('ado-sync-badge');
+  const lbl = document.getElementById('ado-sync-label');
+  if (!el) return;
+
+  const styles = {
+    syncing: { bg:'#1848A0', color:'#fff',   icon:'⟳', spin:true  },
+    ok:      { bg:'#087B50', color:'#fff',   icon:'✓', spin:false },
+    warn:    { bg:'#C07800', color:'#fff',   icon:'⚠', spin:false },
+    error:   { bg:'#CC1F26', color:'#fff',   icon:'✗', spin:false },
+    idle:    { bg:'#3D3D3D', color:'#AAAAAA',icon:'◌', spin:false },
+  };
+  const s = styles[state] || styles.idle;
+
+  el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;'
+    +'border-radius:20px;cursor:pointer;transition:all .2s;'
+    +'background:'+s.bg+';color:'+s.color+';font-size:9px;font-weight:700;'
+    +'letter-spacing:.04em;user-select:none';
+  el.title = msg || '';
+
+  // Icon
+  const iconEl = el.querySelector('.sync-icon');
+  if (iconEl) {
+    iconEl.textContent = s.icon;
+    iconEl.style.display  = 'inline';
+    iconEl.style.animation= s.spin ? 'ado-spin .8s linear infinite' : 'none';
+  }
+  // Label
+  if (lbl) {
+    if (state === 'ok' && count != null)     lbl.textContent = 'ADO · '+count+' items';
+    else if (state === 'syncing')            lbl.textContent = 'Sincronizando…';
+    else if (state === 'error')              lbl.textContent = 'ADO · error';
+    else if (state === 'warn')               lbl.textContent = 'ADO · sin datos';
+    else                                     lbl.textContent = 'ADO';
+  }
+}
+
+async function adoAutoSync(silent) {
+  // Load creds from DOM (loadAllCreds must have run first)
+  const org     = (document.getElementById('cfg-ado-org')?.value     || '').trim();
+  const project = (document.getElementById('cfg-ado-project')?.value || '').trim();
+  const pat     = (document.getElementById('cfg-ado-pat')?.value     || '').trim();
+
+  if (!org || !project) {
+    if (!silent) toast('Configura organización y proyecto ADO en ⚙ Config');
+    adoSyncStatusBar('idle', 'Credenciales ADO no configuradas');
+    return;
+  }
+
+  adoSyncStatusBar('syncing', 'Buscando query "'+ADO_AUTO_QUERY_NAME+'"...');
+
+  try {
+    // Step 1: list all queries to find the one by name
+    const qRes = await adoProxy(org, project,
+      '_apis/wit/queries?$depth=2&api-version=7.1', pat);
+    if (qRes.status === 401) throw new Error('PAT inválido o sin permisos (401)');
+    if (!qRes.ok) throw new Error('Error '+qRes.status+' listando queries');
+    const qData = await qRes.json();
+
+    // Walk the query tree to find matching name
+    let queryId = null;
+    function walkQueries(node) {
+      if (!node) return;
+      if (node.name && node.name.toLowerCase().trim() === ADO_AUTO_QUERY_NAME.toLowerCase().trim()) {
+        queryId = node.id;
+        return;
+      }
+      if (node.children) node.children.forEach(walkQueries);
+    }
+    if (qData.value) qData.value.forEach(walkQueries);
+    else walkQueries(qData);
+
+    if (!queryId) {
+      // Try partial match
+      function walkPartial(node) {
+        if (!node) return;
+        if (node.name && node.name.toLowerCase().includes('evolutivo') &&
+            (node.name.toLowerCase().includes('gap') || node.name.toLowerCase().includes('pendiente'))) {
+          if (!queryId) queryId = node.id;
+        }
+        if (node.children) node.children.forEach(walkPartial);
+      }
+      if (qData.value) qData.value.forEach(walkPartial);
+      else walkPartial(qData);
+    }
+
+    if (!queryId) {
+      adoSyncStatusBar('warn', 'Query "'+ADO_AUTO_QUERY_NAME+'" no encontrada. Configúrala en ⚙ Config.');
+      if (!silent) toast('⚠ Query "'+ADO_AUTO_QUERY_NAME+'" no encontrada en ADO');
+      return;
+    }
+
+    adoSyncStatusBar('syncing', 'Ejecutando query…');
+
+    // Step 2: execute the query
+    const allItems = await adoFetchRequirements(org, project, pat, queryId);
+    if (!allItems.length) {
+      adoSyncStatusBar('warn', 'La query no devolvió work items');
+      return;
+    }
+
+    // Step 3: apply to portfolio (same as manual import)
+    const mapped = allItems.map(wi => adoMapToProject(wi));
+    if (typeof applyProjects === 'function') {
+      applyProjects(mapped, ADO_AUTO_QUERY_NAME);
+    }
+
+    // Save the resolved queryId for manual re-use
+    _adoCreds = { org, project, pat, queryId };
+    _adoConnected = true;
+
+    // Update badge in #bar
+    const badge = document.getElementById('ado-badge');
+    if (badge) {
+      badge.className = 'ado-badge connected';
+      const lbl2 = document.getElementById('ado-badge-lbl');
+      if (lbl2) lbl2.textContent = 'ADO · '+allItems.length+' items';
+    }
+
+    adoSyncStatusBar('ok', '✓ '+allItems.length+' work items sincronizados', allItems.length);
+    if (!silent) toast('✓ ADO: '+allItems.length+' items de "'+ADO_AUTO_QUERY_NAME+'" cargados');
+
+    // Save queryId so Config tab can re-use it
+    const qIdEl = document.getElementById('cfg-ado-query-id');
+    if (qIdEl) qIdEl.value = queryId;
+    if (typeof saveAllCreds === 'function') saveAllCreds();
+
+  } catch(err) {
+    adoSyncStatusBar('error', '✗ '+err.message);
+    if (!silent) toast('✗ ADO sync: '+err.message);
+    console.error('[ADO auto-sync]', err);
+  }
+}
+
+// ── Initialize on page load ───────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Inject spinner CSS
+  if (!document.getElementById('ado-spin-style')) {
+    const st = document.createElement('style');
+    st.id = 'ado-spin-style';
+    st.textContent = '@keyframes ado-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+    document.head.appendChild(st);
+  }
+
+  // loadAllCreds populates the form fields from localStorage
+  if (typeof loadAllCreds === 'function') loadAllCreds();
+
+  // Auto-sync after a short delay (gives DOM time to settle)
+  setTimeout(function() {
+    const org = (document.getElementById('cfg-ado-org')?.value || '').trim();
+    const pat = (document.getElementById('cfg-ado-pat')?.value || '').trim();
+    if (org) {
+      // We have at least org: attempt auto-sync silently
+      adoAutoSync(true);
+    } else {
+      adoSyncStatusBar('idle', 'Configura credenciales ADO en ⚙ Config');
+    }
+  }, 800);
+});
