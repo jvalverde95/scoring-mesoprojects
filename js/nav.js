@@ -478,3 +478,134 @@ function switchSprintTab(tab) {
     goStep('planning');
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN + LANDING ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+function doLogin() {
+  var user = (document.getElementById('login-user')?.value || '').trim().toLowerCase();
+  var pass = (document.getElementById('login-pass')?.value || '').trim();
+  var errEl = document.getElementById('login-error');
+
+  // Validate
+  if (!user || !pass) {
+    if (errEl) { errEl.textContent = 'Introduce usuario y contraseña'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (user !== 'admin' || pass !== '1234') {
+    if (errEl) { errEl.textContent = 'Usuario o contraseña incorrectos'; errEl.style.display = 'block'; }
+    // Shake animation
+    var panel = document.getElementById('login-panel');
+    if (panel) {
+      panel.style.animation = 'loginShake .4s ease';
+      setTimeout(function(){ panel.style.animation = ''; }, 400);
+    }
+    return;
+  }
+
+  if (errEl) errEl.style.display = 'none';
+
+  // Fade out landing
+  var landing = document.getElementById('landing');
+  if (landing) {
+    landing.style.transition = 'opacity .4s ease';
+    landing.style.opacity = '0';
+    setTimeout(function() {
+      enterApp();
+    }, 400);
+  } else {
+    enterApp();
+  }
+}
+
+// Landing canvas: animated particles + constellation lines
+function initLandingCanvas() {
+  var canvas = document.getElementById('landing-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Particles
+  var NUM = 60;
+  var particles = [];
+  for (var i = 0; i < NUM; i++) {
+    particles.push({
+      x:   Math.random() * canvas.width,
+      y:   Math.random() * canvas.height,
+      r:   Math.random() * 1.5 + 0.3,
+      vx:  (Math.random() - .5) * .35,
+      vy:  (Math.random() - .5) * .35,
+      a:   Math.random() * .7 + .2,
+    });
+  }
+
+  var gold = [196, 151, 74];
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw lines between close particles
+    for (var i = 0; i < particles.length; i++) {
+      for (var j = i + 1; j < particles.length; j++) {
+        var dx = particles[i].x - particles[j].x;
+        var dy = particles[i].y - particles[j].y;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 130) {
+          var opacity = (1 - dist/130) * .3;
+          ctx.strokeStyle = 'rgba('+gold[0]+','+gold[1]+','+gold[2]+','+opacity+')';
+          ctx.lineWidth = .6;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles
+    particles.forEach(function(p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+gold[0]+','+gold[1]+','+gold[2]+','+p.a+')';
+      ctx.fill();
+
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// Update landing ADO status indicator
+function updateLandingAdoStatus(state, msg) {
+  var el = document.getElementById('landing-ado-status');
+  if (!el) return;
+  var colors = { ok:'#4CAF50', error:'#FF6B6B', syncing:'#C4974A', idle:'rgba(255,255,255,.3)' };
+  var col = colors[state] || colors.idle;
+  el.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:'+col+';'
+    +(state==='syncing'?'animation:pulseGlow 1s infinite':'')+'"></div>'
+    +'<span style="color:'+col+'">'+msg+'</span>';
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', function() {
+  initLandingCanvas();
+  // Auto-focus login
+  setTimeout(function(){
+    var u = document.getElementById('login-user');
+    if (u) u.focus();
+  }, 300);
+});

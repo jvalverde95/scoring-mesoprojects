@@ -1503,3 +1503,28 @@ tr:hover .port-row-reeval,
 @media (max-width: 700px) {
   .planning-kpi-strip { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* ── Landing / Login animations ─────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(1.15); }
+}
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes loginShake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-10px); }
+  40%     { transform: translateX(10px); }
+  60%     { transform: translateX(-6px); }
+  80%     { transform: translateX(6px); }
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#landing { animation: fadeInUp .5s ease; }
+#login-panel { animation: fadeInUp .6s ease .1s both; }

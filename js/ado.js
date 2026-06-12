@@ -395,6 +395,7 @@ async function adoAutoSync(silent) {
   }
 
   adoSyncStatusBar('syncing', 'Buscando query "'+ADO_AUTO_QUERY_NAME+'"...');
+  if (typeof updateLandingAdoStatus === 'function') updateLandingAdoStatus('syncing', 'Conectando con Azure DevOps…');
 
   try {
     // Step 1: list all queries to find the one by name
@@ -499,6 +500,7 @@ async function adoAutoSync(silent) {
 
   } catch(err) {
     adoSyncStatusBar('error', '✗ '+err.message);
+    if (typeof updateLandingAdoStatus === 'function') updateLandingAdoStatus('error', '✗ ADO: '+err.message.substring(0,40));
     if (!silent) toast('✗ ADO sync: '+err.message);
     console.error('[ADO auto-sync]', err);
   }

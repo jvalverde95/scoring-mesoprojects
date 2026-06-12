@@ -479,7 +479,7 @@ function applyProjects(projects, filename) {
   portfolioData = projects.map(p => {
     const proj = computeProj(p);
     const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
-    proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
+    proj.horas = excelHoras ?? prevHoras[p.nom] ?? p.horas ?? null;  // p.horas = ADO OriginalEstimate
     proj._dvId = null;  // will be set by upsert
     proj._selected = false;
     return proj;
