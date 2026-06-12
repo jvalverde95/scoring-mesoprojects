@@ -463,6 +463,9 @@ function renderWikiThresholds() {
    ═══════════════════════════════════════════════════════════════ */
 function renderDashboardAnalytics() {
   if (!portfolioData || !portfolioData.length) return;
+  // Guard: only render charts when the dashboard step is visible (prevents Chart.js resize loop)
+  const stepEl = document.getElementById('step-dashboard');
+  const stepVisible = stepEl && stepEl.classList.contains('on');
   const set = (id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
 
   // Horas totales cartera
@@ -506,7 +509,7 @@ function renderDashboardAnalytics() {
   }
 
   // ── Mini-chart 1: histograma de scores ──
-  if (typeof Chart !== 'undefined') {
+  if (typeof Chart !== 'undefined' && stepVisible) {
     const histEl = document.getElementById('dash-hist');
     if (histEl) {
       destroyC('dash-hist');

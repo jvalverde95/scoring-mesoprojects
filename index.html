@@ -297,7 +297,7 @@
 
     <div class="lnav-divider"></div>
 
-    <div class="lnav-group-label">Análisis</div>
+    <div class="lnav-group-label">Analítica</div>
     <div class="lnav-group">
       <div class="lnav-item" id="nav-sum" onclick="goStep('summary')" title="Resumen">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
@@ -1327,13 +1327,17 @@
 
   <!-- ── Mini-charts analíticos ── -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <div class="dash-mini" style="min-height:170px">
+    <div class="dash-mini">
       <div class="dm-lbl" style="margin-bottom:8px">Distribución de scores</div>
-      <canvas id="dash-hist" height="120"></canvas>
+      <div style="position:relative;height:130px">
+        <canvas id="dash-hist"></canvas>
+      </div>
     </div>
-    <div class="dash-mini" style="min-height:170px">
+    <div class="dash-mini">
       <div class="dm-lbl" style="margin-bottom:8px">Horas por área (top 6)</div>
-      <canvas id="dash-area-hours" height="120"></canvas>
+      <div style="position:relative;height:130px">
+        <canvas id="dash-area-hours"></canvas>
+      </div>
     </div>
   </div>
 
