@@ -938,20 +938,18 @@ function renderBenchmark(proj) {
 
 function loadIntoEval(idx) {
   const p=portfolioData[idx]; if(!p)return;
-  // Navigate to eval screen first
-  if(typeof goStep==='function') goStep('eval');
+  // Navigate to the WIZARD (step-0) — that's where the criterion sliders live
+  if(typeof goStep==='function') goStep(0);
   setTimeout(function(){
     document.getElementById('f-name').value=p.nom;
     if(p.reqDate)document.getElementById('f-req').value=p.reqDate;
     if(p.regDate)document.getElementById('f-reg').value=p.regDate;
     const areaEl=document.getElementById('f-area');
     if(areaEl && p.area){
-      // Try exact match first
       let matched=false;
       for(let i=0;i<areaEl.options.length;i++){
         if(areaEl.options[i].value===p.area){areaEl.selectedIndex=i;matched=true;break;}
       }
-      // Try partial match
       if(!matched){
         for(let i=0;i<areaEl.options.length;i++){
           if(areaEl.options[i].value.includes(p.area)||p.area.includes(areaEl.options[i].value)){
@@ -968,13 +966,25 @@ function loadIntoEval(idx) {
       const bp=document.getElementById('bp-'+c.id);if(bp)bp.innerHTML=boostPreview(c);
     }));
     upd();
-    // Show project edit banner at top of eval
-    renderEvalProjectBanner(p);
-    renderBenchmark(p);
-    // Scroll to top of eval
-    const evalEl=document.getElementById('step-eval');
-    if(evalEl) evalEl.scrollIntoView({behavior:'smooth',block:'start'});
-    toast('"'+p.nom.substring(0,30)+'" cargado en evaluación');
+    // Re-eval banner inside the wizard: save + back actions, always visible context
+    const notice=document.getElementById('reeval-notice');
+    if(notice){
+      notice.style.display='flex';
+      notice.innerHTML=
+        '<span style="font-size:14px">↺</span>'
+        +'<div style="flex:1;min-width:200px">'
+          +'<b>Re-evaluando:</b> '+p.nom.substring(0,55)
+          +' <span style="color:#888">· score actual '+(p.sf||0).toFixed(2)+'</span>'
+        +'</div>'
+        +'<button onclick="saveManualToPortfolio();document.getElementById(\'reeval-notice\').style.display=\'none\';goStep(\'eval\')" '
+          +'style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;border:none;'
+          +'background:#087B50;color:#fff;cursor:pointer">✓ Guardar y volver</button>'
+        +'<button onclick="document.getElementById(\'reeval-notice\').style.display=\'none\';goStep(\'eval\')" '
+          +'style="padding:7px 12px;font-size:10px;font-weight:600;border-radius:7px;'
+          +'border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">Cancelar</button>';
+    }
+    if(typeof renderBenchmark==='function') renderBenchmark(p);
+    toast('"'+p.nom.substring(0,30)+'" cargado · ajusta los sliders y pulsa Guardar');
   }, 150);
 }
 
