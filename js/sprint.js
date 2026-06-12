@@ -11,8 +11,27 @@ function loadDevTeam() {
     if (saved) devTeam = JSON.parse(saved);
   } catch(_) {}
   if (!devTeam.length) {
-    // Default: one developer
-    devTeam = [{ name: 'Desarrollador 1', corto: 2, medio: 1, largo: 1 }];
+    // Equipo por defecto: Marc y Julio (largos+medios), Carlos (cortos + 1 mediano)
+    // Horario tipo: L-V manana y tarde, viernes solo manana
+    const schedLM = {  // Marc y Julio: manana largo, tarde medio
+      L:[{start:'08:00',end:'13:00',pool:'largo'},{start:'14:00',end:'17:00',pool:'medio'}],
+      M:[{start:'08:00',end:'13:00',pool:'largo'},{start:'14:00',end:'17:00',pool:'medio'}],
+      X:[{start:'08:00',end:'13:00',pool:'largo'},{start:'14:00',end:'17:00',pool:'medio'}],
+      J:[{start:'08:00',end:'13:00',pool:'largo'},{start:'14:00',end:'17:00',pool:'medio'}],
+      V:[{start:'08:00',end:'14:00',pool:'largo'}]
+    };
+    const schedC = {   // Carlos: manana corto, tarde medio
+      L:[{start:'08:00',end:'13:00',pool:'corto'},{start:'14:00',end:'17:00',pool:'medio'}],
+      M:[{start:'08:00',end:'13:00',pool:'corto'},{start:'14:00',end:'17:00',pool:'medio'}],
+      X:[{start:'08:00',end:'13:00',pool:'corto'},{start:'14:00',end:'17:00',pool:'medio'}],
+      J:[{start:'08:00',end:'13:00',pool:'corto'},{start:'14:00',end:'17:00',pool:'medio'}],
+      V:[{start:'08:00',end:'14:00',pool:'corto'}]
+    };
+    devTeam = [
+      { name:'Marc',   corto:0, medio:1, largo:1, schedule: JSON.parse(JSON.stringify(schedLM)) },
+      { name:'Julio',  corto:0, medio:1, largo:1, schedule: JSON.parse(JSON.stringify(schedLM)) },
+      { name:'Carlos', corto:2, medio:1, largo:0, schedule: JSON.parse(JSON.stringify(schedC)) },
+    ];
   }
 }
 
