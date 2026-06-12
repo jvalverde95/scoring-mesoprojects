@@ -37,8 +37,13 @@ export default async function handler(req, res) {
         'Content-Type':  'application/json',
       },
     };
-    if (method === 'POST' && req.body) {
+    // Forward body for POST and PATCH
+    if ((method === 'POST' || method === 'PATCH') && req.body) {
       opts.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    }
+    // ADO Work Item updates require application/json-patch+json
+    if (method === 'PATCH') {
+      opts.headers['Content-Type'] = 'application/json-patch+json';
     }
 
     const adoRes = await fetch(url, opts);

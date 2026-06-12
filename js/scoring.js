@@ -718,6 +718,21 @@ function renderPortfolio() {
       </td>
       <td style="text-align:center;">${renderPoolTag(pool)}</td>
       <td><button class="load-btn" onclick="loadIntoEval(${realIdx})">Evaluar →</button></td>
+      <td style="text-align:center;white-space:nowrap">
+        ${p.adoId ? `<button
+          id="ado-write-btn-${p.adoId}"
+          onclick="event.stopPropagation();adoSyncProject('${p.nom.replace(/'/g,'\\')}')"
+          title="Guardar Score ${p.sf.toFixed(2)} en ADO\nCampo: ${p.adoType==='Task'?'MPGTaskScore':'MPGScore'}\nWork Item: ${p.adoId}"
+          style="padding:3px 9px;font-size:9px;font-weight:700;border-radius:5px;cursor:pointer;
+            border:1px solid ${p._adoSynced?'#087B50':'rgba(24,72,160,.4)'};
+            background:${p._adoSynced?'#ECF8F3':'rgba(24,72,160,.07)'};
+            color:${p._adoSynced?'#087B50':'#1848A0'};
+            transition:all .15s"
+          onmouseover="this.style.background='#1848A0';this.style.color='#fff';this.style.borderColor='#1848A0'"
+          onmouseout="this.style.background='${p._adoSynced?'#ECF8F3':'rgba(24,72,160,.07)'  }';this.style.color='${p._adoSynced?'#087B50':'#1848A0'}';this.style.borderColor='${p._adoSynced?'#087B50':'rgba(24,72,160,.4)'}'"
+          >${p._adoSynced ? '✓ ADO' : '↑ ADO'}</button>`
+         : '<span style="font-size:9px;color:#CCC">sin ADO</span>'}
+      </td>
     `;
     tbody.appendChild(tr);
   });

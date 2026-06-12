@@ -531,3 +531,134 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 800);
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   WRITE-BACK: Guardar scoring en Azure DevOps
+   
+   Campos según tipo de work item:
+   • Requirement → Custom.MPGScore
+   • Task        → Custom.MPGTaskScore
+   
+   API: PATCH _apis/wit/workitems/{id}?api-version=7.1
+   Content-Type: application/json-patch+json
+   Body: [{"op":"add","path":"/fields/Custom.MPGScore","value":8.75}]
+   ═══════════════════════════════════════════════════════════════ */
+
+// Field ref names per work item type
+const ADO_SCORE_FIELDS = {
+  'Requirement': 'Custom.MPGScore',
+  'Task':        'Custom.MPGTaskScore',
+};
+// Fallback for unknown types
+const ADO_SCORE_FIELD_DEFAULT = 'Custom.MPGScore';
+
+function adoScoreField(workItemType) {
+  if (!workItemType) return ADO_SCORE_FIELD_DEFAULT;
+  // Case-insensitive match
+  const t = workItemType.trim().toLowerCase();
+  for (const [k,v] of Object.entries(ADO_SCORE_FIELDS)) {
+    if (k.toLowerCase() === t) return v;
+  }
+  return ADO_SCORE_FIELD_DEFAULT;
+}
+
+// ── Write score for a single work item ───────────────────────
+async function adoWriteScore(adoId, workItemType, score, pool, autoP) {
+  const {org, project, pat} = _cfgAdoCreds();
+  if (!org || !project) throw new Error('Configura organización y proyecto ADO en ⚙ Config');
+
+  const field = adoScoreField(workItemType);
+  const scoreVal = Math.round(score * 100) / 100; // 2 decimal places
+
+  // Build JSON Patch document
+  const patchOps = [
+    { op: 'add', path: '/fields/' + field, value: scoreVal },
+  ];
+
+  const path = `_apis/wit/workitems/${adoId}?api-version=7.1`;
+  const res = await adoProxy(org, project, path, pat, 'PATCH', patchOps);
+
+  if (res.status === 401) throw new Error('PAT sin permisos de escritura (401). Crea un PAT con scope "Work Items: Read & Write".');
+  if (res.status === 400) {
+    const body = await res.json().catch(()=>({}));
+    // Field not found → try to diagnose
+    const msg = body.message || body.error || JSON.stringify(body).substring(0,120);
+    throw new Error(`Campo "${field}" no encontrado (400). ${msg}`);
+  }
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>'');
+    throw new Error(`Error ${res.status} al actualizar ${adoId}: ${txt.substring(0,100)}`);
+  }
+
+  return await res.json();
+}
+
+// ── Sync a single project to ADO ─────────────────────────────
+async function adoSyncProject(nom) {
+  const p = portfolioData.find(function(x){ return x.nom === nom; });
+  if (!p) { toast('Proyecto no encontrado'); return; }
+  if (!p.adoId) { toast('Este proyecto no tiene ID de ADO'); return; }
+
+  const btnId = 'ado-write-btn-' + p.adoId;
+  const btn   = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Guardando…'; }
+
+  try {
+    await adoWriteScore(p.adoId, p.adoType, p.sf || 0, getPool(p), p.autoP);
+    toast('✓ Score ' + (p.sf||0).toFixed(2) + ' guardado en ADO · ' + p.nom.substring(0,30));
+    if (btn) { btn.textContent = '✓ Guardado'; btn.style.background = '#087B50'; }
+    // Mark as synced
+    p._adoSynced = true;
+    p._adoSyncedAt = new Date().toISOString();
+    setTimeout(function(){
+      if (btn) { btn.disabled=false; btn.textContent='↑ ADO'; btn.style.background=''; }
+    }, 3000);
+  } catch(err) {
+    toast('✗ ' + err.message);
+    if (btn) { btn.disabled=false; btn.textContent='↑ ADO'; btn.style.background='#CC1F26'; }
+    setTimeout(function(){ if(btn) btn.style.background=''; }, 2000);
+    console.error('[adoSyncProject]', err);
+  }
+}
+
+// ── Sync ALL projects to ADO ──────────────────────────────────
+async function adoSyncAllScores() {
+  const eligible = portfolioData.filter(function(p){ return p.adoId && (p.sf||0) > 0; });
+  if (!eligible.length) { toast('No hay proyectos con ID ADO y score calculado'); return; }
+
+  const btn = document.getElementById('ado-sync-all-btn');
+  if (btn) { btn.disabled=true; btn.textContent='⟳ Sincronizando…'; }
+
+  adoSyncStatusBar('syncing', 'Guardando scores en ADO…');
+
+  let ok=0, errors=[];
+  for (const p of eligible) {
+    try {
+      await adoWriteScore(p.adoId, p.adoType, p.sf||0, getPool(p), p.autoP);
+      p._adoSynced = true;
+      p._adoSyncedAt = new Date().toISOString();
+      ok++;
+    } catch(err) {
+      errors.push(p.adoId + ': ' + err.message.substring(0,60));
+    }
+    // Small delay to avoid rate-limiting
+    await new Promise(function(r){ setTimeout(r, 120); });
+  }
+
+  adoSyncStatusBar('ok', '✓ ' + ok + '/' + eligible.length + ' scores guardados en ADO', ok);
+
+  if (errors.length) {
+    console.error('[adoSyncAll errors]', errors);
+    toast('⚠ ' + ok + ' OK · ' + errors.length + ' errores — ver consola');
+  } else {
+    toast('✓ ' + ok + ' scores guardados en ADO');
+  }
+
+  if (btn) {
+    btn.disabled  = false;
+    btn.textContent = '✓ ' + ok + '/' + eligible.length + ' sincronizados';
+    setTimeout(function(){ btn.textContent='↑ Guardar todos en ADO'; }, 3000);
+  }
+
+  if (typeof renderPortfolio === 'function') renderPortfolio();
+}

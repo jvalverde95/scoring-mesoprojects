@@ -1443,6 +1443,15 @@
     <button onclick="exportPortfolioExcel()" class="export-excel-btn" style="font-size:9px;padding:7px 14px">
       ↓ Exportar Excel
     </button>
+      <button onclick="adoSyncAllScores()" id="ado-sync-all-btn"
+        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
+               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;
+               cursor:pointer;transition:all .15s"
+        onmouseover="this.style.background='#1848A0';this.style.color='#fff'"
+        onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'"
+        title="Guarda el score de TODOS los proyectos en Azure DevOps (campos MPGScore / MPGTaskScore)">
+        ↑ Guardar todos en ADO
+      </button>
       <button onclick="exportCarteraConPlanning()"
         style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
                border:none;background:#1848A0;color:#fff;cursor:pointer;
@@ -2333,7 +2342,7 @@
               <th>#</th><th>proyecto</th><th>área</th>
               <th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>D5</th><th>D6</th>
               <th>base</th><th>aging</th><th>final</th>
-              <th>clasificación</th><th>reg.</th><th>horas</th><th>pool</th><th></th>
+              <th>clasificación</th><th>reg.</th><th>horas</th><th>pool</th><th></th><th title="Sincronizar score → Azure DevOps" style="font-size:9px;white-space:nowrap">ADO ↑</th>
             </tr></thead>
             <tbody id="port-tbody"></tbody>
           </table>
