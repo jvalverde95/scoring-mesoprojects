@@ -2041,3 +2041,135 @@ function exportCarteraConPlanning() {
   toast(`✓ Cartera exportada · ${portfolioData.length} proyectos · formato importación`);
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT CARTERA EN FORMATO PLANTILLA (idéntico al Excel de carga)
+   Descarga la plantilla, inyecta los datos de portfolioData,
+   ajusta la fórmula de Aging por proyecto y genera el Excel.
+   ═══════════════════════════════════════════════════════════════ */
+function exportCarteraPlantilla() {
+  if (!portfolioData || !portfolioData.length) {
+    toast('Sin proyectos para exportar'); return;
+  }
+
+  toast('⏳ Preparando Excel…');
+
+  // Fetch the template xlsx from same origin
+  fetch('./plantilla_carga.xlsx')
+    .then(function(res) {
+      if (!res.ok) throw new Error('No se encontró la plantilla (plantilla_carga.xlsx)');
+      return res.arrayBuffer();
+    })
+    .then(function(buffer) {
+      var wb = XLSX.read(buffer, {type:'array', cellFormula:true, cellDates:true, bookVBA:false});
+      var ws = wb.Sheets['📊 Cartera'];
+      if (!ws) throw new Error('Hoja "📊 Cartera" no encontrada en plantilla');
+
+      // Sort projects by score desc (same order as app)
+      var sorted = portfolioData.slice().sort(function(a,b){
+        return (b.sf||0) - (a.sf||0);
+      });
+
+      // Column mapping (1-indexed = col numbers in spreadsheet):
+      // A=1  B=2  C=3  D=4  E=5  F=6  G=7  H=8  I=9  J=10  K=11
+      // L=12  M=13  N=14  O=15  P=16  Q=17  R=18  S=19  T=20  U=21
+      // V=22  W=23  X=24  Y=25  Z=26  AA=27  AB=28  AM=39  AN=40
+
+      // Criterion order mapping: scores object keys → column positions
+      // F=R.legal  G=PRL  H=Reput.  I=Reg.  J=Consejo  K=Int.
+      // L=I+D  M=Urg.  N=Ingr.  O=Ahorro  P=ROI  Q=Cal.
+      // R=TRL  S=Integr.  T=Esc.  U=GDPR  V=Cap.IT  W=Cambio
+      // X=TtV  Y=Emp.  Z=ESG  AA=Form.  AB=D1_score(manual in some rows)
+      // The criterion IDs in app match the column letter positions
+      var CRIT_COL = {}; // map crit_id → col letter
+      // Build from CRIT_IDS array (defined globally in scoring.js)
+      var letters = ['F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','AA'];
+      if (typeof CRIT_IDS !== 'undefined') {
+        CRIT_IDS.forEach(function(id, i) { if (letters[i]) CRIT_COL[id] = letters[i]; });
+      }
+
+      function setCell(colLetter, row, value, formula) {
+        var addr = colLetter + row;
+        if (!ws[addr]) ws[addr] = {};
+        if (formula) {
+          ws[addr].t = 'n'; ws[addr].f = formula; delete ws[addr].v;
+        } else {
+          ws[addr].v = value;
+          ws[addr].t = (value === null || value === undefined || value === '') ? 's'
+            : typeof value === 'number' ? 'n' : 's';
+          delete ws[addr].f;
+        }
+      }
+
+      sorted.forEach(function(p, i) {
+        var row = 6 + i;
+
+        // Parse reqDate → year, month, day for Aging formula
+        var reqDate = String(p.reqDate || '');
+        var y = 2025, mo = 1, da = 1;
+        // Formats: DD/MM/YYYY or YYYY-MM-DD
+        var mDate = reqDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        var mDate2 = reqDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (mDate)  { da=parseInt(mDate[1]); mo=parseInt(mDate[2]); y=parseInt(mDate[3]); }
+        if (mDate2) { y=parseInt(mDate2[1]); mo=parseInt(mDate2[2]); da=parseInt(mDate2[3]); }
+
+        // A: row number
+        setCell('A', row, i+1);
+        // B: name
+        setCell('B', row, p.nom || '');
+        // C: area
+        setCell('C', row, p.area || '');
+        // D: sponsor
+        setCell('D', row, p.sponsor || '');
+        // E: reqDate
+        setCell('E', row, reqDate);
+
+        // Criteria scores: F through AA (columns 6-27)
+        var crit_scores = CRIT_IDS || [];
+        crit_scores.forEach(function(id, ci) {
+          var letter = letters[ci];
+          if (!letter) return;
+          var val = Math.round(p.scores && p.scores[id] !== undefined ? p.scores[id] : 5);
+          setCell(letter, row, val);
+        });
+
+        // AM: horas
+        setCell('AM', row, p.horas || '');
+
+        // Formula columns: AB-AK, AN
+        // These use the template formulas adapted for the current row
+        // Adapt them from row 6 formula by replacing row number
+        var formulaCols = ['AB','AC','AD','AE','AF','AG','AH','AJ','AK','AL','AN'];
+        formulaCols.forEach(function(col) {
+          var templateAddr = col + '6';
+          var templateCell = ws[templateAddr];
+          if (templateCell && templateCell.f) {
+            // Replace row references: number after letter(s) = 6 → row
+            var newFormula = templateCell.f.replace(
+              /([A-Z]{1,2})6\b/g,
+              function(match, colRef) { return colRef + row; }
+            );
+            setCell(col, row, null, newFormula);
+          }
+        });
+
+        // AI: Aging formula with correct DATE for this project
+        var agingFormula = "=MIN(1+MAX(0,TODAY()-DATE("+y+","+mo+","+da+"))/365*'⚙ Parámetros'!B33,'⚙ Parámetros'!B34)";
+        setCell('AI', row, null, agingFormula);
+      });
+
+      // Update sheet range
+      var lastRow = 5 + sorted.length;
+      var origRef = ws['!ref'] || 'A1:AN199';
+      ws['!ref'] = 'A1:AN' + Math.max(lastRow, 199);
+
+      // Write and download
+      var date = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, 'nexus_cartera_' + date + '.xlsx');
+      toast('✓ Cartera exportada · ' + sorted.length + ' proyectos · formato plantilla con fórmulas');
+    })
+    .catch(function(err) {
+      console.error('Export error:', err);
+      toast('✗ Error exportando: ' + err.message + '. Asegúrate de que plantilla_carga.xlsx está en el servidor.');
+    });
+}
