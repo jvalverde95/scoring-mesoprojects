@@ -94,7 +94,11 @@ function adoMapToProject(wi) {
   const descRaw=f['System.Description']||'';
   const desc=descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
   const areaPath=f['System.AreaPath']||'';
-  const area=(areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim()||'Sin área';
+  const areaFromPath=(areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim();
+  // Prefer MPG prefix decode (e.g. MPG-LOG-001 → Almacén y Logística)
+  const area = (typeof mpgDecodeArea==='function' ? mpgDecodeArea(f['System.Title']||'') : null)
+             || areaFromPath
+             || 'Sin área';
   const tags=(f['System.Tags']||'').split(';').map(t=>t.trim()).filter(Boolean);
   let reqDate=null;
   const cd=f['System.CreatedDate'];

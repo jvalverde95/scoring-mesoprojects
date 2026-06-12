@@ -17,7 +17,7 @@ function renderPemBody(){
     return `<div class="pem-dim"><div class="pem-dim-hd"><div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;background:${DT[di]};color:${DC[di]};font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center">${d.id}</span><div><div style="font-size:11px;font-weight:600;color:var(--ink)">${d.nom}</div><div style="font-size:8px;color:var(--ink4)">Peso: ${Math.round(d.peso*100)}%</div></div></div><div class="pem-dim-score" id="pem-ds-${d.id}" style="color:${scColorHex(ds)}">${ds.toFixed(1)}</div></div><div class="pem-criteria">${crits}</div></div>`;
   }).join('');
   const body=document.getElementById('pem-body'); if(!body) return;
-  body.innerHTML=`<div class="pem-row"><div class="pem-field"><div class="pem-label">Nombre</div><input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}" oninput="portfolioData[${_pemIdx}].nom=this.value"/></div><div class="pem-field"><div class="pem-label">Área</div><input class="pem-inp" type="text" value="${p.area||''}" oninput="portfolioData[${_pemIdx}].area=this.value"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Sponsor</div><input class="pem-inp" type="text" value="${p.sponsor||''}" oninput="portfolioData[${_pemIdx}].sponsor=this.value"/></div><div class="pem-field"><div class="pem-label">Horas estimadas</div><input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas" oninput="pemSetHoras(${_pemIdx},this.value)"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Fecha de solicitud</div><input class="pem-inp" type="date" value="${p.reqDate||''}" oninput="portfolioData[${_pemIdx}].reqDate=this.value"/></div><div class="pem-field"><div class="pem-label">Clasificación</div><div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et}</div></div></div><div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>${dimSliders}`;
+  body.innerHTML=`<div class="pem-row"><div class="pem-field"><div class="pem-label">Nombre</div><input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}" oninput="portfolioData[${_pemIdx}].nom=this.value"/></div><div class="pem-field"><div class="pem-label">Área</div><input class="pem-inp" type="text" value="${p.area||''}" list="mpg-area-list" oninput="portfolioData[${_pemIdx}].area=this.value"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Sponsor</div><input class="pem-inp" type="text" value="${p.sponsor||''}" oninput="portfolioData[${_pemIdx}].sponsor=this.value"/></div><div class="pem-field"><div class="pem-label">Horas estimadas</div><input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas" oninput="pemSetHoras(${_pemIdx},this.value)"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Fecha de solicitud</div><input class="pem-inp" type="date" value="${p.reqDate||''}" oninput="portfolioData[${_pemIdx}].reqDate=this.value"/></div><div class="pem-field"><div class="pem-label">Clasificación</div><div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et}</div></div></div><div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>${dimSliders}`;
 }
 function pemSetScore(projIdx,critId,val,valSpan,dimIdx){
   const v=parseInt(val);
@@ -140,3 +140,24 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof renderDashboard === 'function') renderDashboard();
 
 });
+
+
+// Build area datalist once
+(function() {
+  if (document.getElementById('mpg-area-list')) return;
+  var dl = document.createElement('datalist');
+  dl.id = 'mpg-area-list';
+  var areas = [
+    'Backoffice y Ventas','Planificación','Proyectos','Solicitudes de compra',
+    'Finanzas','Almacén y Logística','Intercompany','Calidad',
+    'Operativa general / Multidepartamento','I+D','Recursos Humanos','Compras',
+    'Polonia ventas','Producción','Oficina técnica - Códigos',
+    'Equipos y aparatología','GMAO','Otros'
+  ];
+  areas.forEach(function(a){
+    var opt = document.createElement('option');
+    opt.value = a;
+    dl.appendChild(opt);
+  });
+  document.body.appendChild(dl);
+})();

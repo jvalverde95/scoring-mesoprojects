@@ -1528,3 +1528,242 @@ tr:hover .port-row-reeval,
 }
 #landing { animation: fadeInUp .5s ease; }
 #login-panel { animation: fadeInUp .6s ease .1s both; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS 4.0 — MODERNIZATION LAYER
+   Design system refresh: tokens, depth, motion, focus, density
+   Applied app-wide on top of existing rules (no HTML changes)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Refined radii — softer, modern */
+  --r:8px!important;--rl:14px!important;
+  /* Layered shadow system */
+  --sh-xs:0 1px 2px rgba(16,16,16,.05);
+  --sh-sm:0 1px 3px rgba(16,16,16,.06),0 4px 12px rgba(16,16,16,.04);
+  --sh-md:0 2px 6px rgba(16,16,16,.07),0 8px 24px rgba(16,16,16,.06);
+  --sh-lg:0 4px 12px rgba(16,16,16,.09),0 16px 48px rgba(16,16,16,.08);
+  --sh:var(--sh-sm)!important;
+  /* Focus ring */
+  --ring:0 0 0 3px rgba(196,151,74,.25);
+}
+
+/* ── Global polish ── */
+body{font-size:13px;letter-spacing:-.005em}
+::selection{background:rgba(196,151,74,.25)}
+
+/* Modern thin scrollbars */
+*{scrollbar-width:thin;scrollbar-color:#D8D8D8 transparent}
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-thumb{background:#D8D8D8;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:#BBB;background-clip:content-box}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* ── Cards: more depth, larger radius, hover lift ── */
+.cfg-section,.c-card,.sd-box,.sum-radar,.port-wrap,.chart-panel,.pool-panel,.ib,.dim-mini-list,.qstat{
+  border-radius:var(--rl)!important;
+  box-shadow:var(--sh-sm)!important;
+  transition:box-shadow .25s ease,transform .25s ease!important;
+}
+.c-card:hover,.qstat:hover,.sd-box:hover{
+  box-shadow:var(--sh-md)!important;
+}
+
+/* ── Buttons: modern sizing, smooth states ── */
+button{transition:all .18s cubic-bezier(.4,0,.2,1)!important}
+button:active{transform:scale(.97)}
+.cfg-apply{
+  border-radius:9px!important;
+  font-weight:700!important;
+  letter-spacing:.01em!important;
+  box-shadow:var(--sh-xs)!important;
+}
+.cfg-apply:hover{box-shadow:var(--sh-sm)!important;filter:brightness(1.08)}
+.load-btn{border-radius:7px!important;font-weight:600!important}
+.export-excel-btn{border-radius:8px!important}
+
+/* ── Inputs: modern focus rings ── */
+input[type="text"],input[type="number"],input[type="password"],input[type="date"],select,textarea{
+  border-radius:8px!important;
+  transition:border-color .18s,box-shadow .18s!important;
+}
+input[type="text"]:focus,input[type="number"]:focus,input[type="password"]:focus,
+input[type="date"]:focus,select:focus,textarea:focus{
+  border-color:var(--g)!important;
+  box-shadow:var(--ring)!important;
+  outline:none!important;
+}
+input[type="range"]{accent-color:var(--g)}
+input[type="checkbox"]{accent-color:var(--g);border-radius:4px}
+
+/* ── Tables: airy rows, hover highlight, sticky header polish ── */
+table{border-collapse:separate!important;border-spacing:0!important}
+thead th{
+  font-size:9px!important;letter-spacing:.08em!important;text-transform:uppercase!important;
+  color:#888!important;font-weight:700!important;
+  background:#FAFAF9!important;
+  border-bottom:1.5px solid #ECECEC!important;
+  padding:10px 8px!important;
+  position:sticky;top:0;z-index:5;
+}
+tbody td{
+  padding:9px 8px!important;
+  border-bottom:1px solid #F3F3F1!important;
+}
+tbody tr{transition:background .12s ease}
+tbody tr:hover{background:#FBF8F2!important}
+
+/* ── Left nav: glass effect on hover, active indicator bar ── */
+.lnav-item{
+  border-radius:10px!important;margin:2px 8px!important;
+  transition:all .2s cubic-bezier(.4,0,.2,1)!important;
+}
+.lnav-item:hover{background:rgba(255,255,255,.07)!important}
+.lnav-item.active{
+  background:rgba(196,151,74,.14)!important;
+  box-shadow:inset 3px 0 0 var(--g)!important;
+}
+
+/* ── Top bar: subtle gradient + blur ── */
+#bar{
+  background:linear-gradient(180deg,#0A0A0A,#060606)!important;
+  border-bottom:1px solid rgba(196,151,74,.12)!important;
+}
+.bar-badge{border-color:rgba(196,151,74,.3)!important}
+
+/* ── Pills / badges modernized ── */
+.cls-badge,.aging-badge,.rank,.ado-badge{
+  border-radius:20px!important;
+  font-weight:700!important;
+  letter-spacing:.02em!important;
+}
+
+/* ── Modals: bigger radius, deeper shadow, backdrop blur ── */
+.ado-overlay,.modal-overlay,#proj-edit-overlay,#ai-overlay{
+  backdrop-filter:blur(6px)!important;
+  background:rgba(8,8,8,.5)!important;
+}
+.ado-modal,.modal-box,.proj-edit-box,.ai-modal{
+  border-radius:18px!important;
+  box-shadow:var(--sh-lg)!important;
+  border:1px solid rgba(0,0,0,.06)!important;
+}
+
+/* ── Toast: pill, slide-in ── */
+#toast{
+  border-radius:12px!important;
+  box-shadow:var(--sh-lg)!important;
+  font-weight:600!important;
+  backdrop-filter:blur(8px)!important;
+}
+
+/* ── Progress / sliders in wizard ── */
+.prog{background:#FAFAF9!important;border-bottom:1px solid #EFEFEF!important}
+
+/* ── Section titles: tighter, modern ── */
+.s-title{font-size:21px!important;letter-spacing:-.02em!important}
+.cfg-sec-title{letter-spacing:-.015em!important}
+
+/* ── Charts panel ── */
+.chart-panel{border:1px solid #EFEFEF!important}
+
+/* ── Smooth page transitions ── */
+.step{animation:stepFadeIn .3s ease}
+@keyframes stepFadeIn{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── Empty states ── */
+#port-empty{
+  border:2px dashed #E5E5E5!important;border-radius:var(--rl)!important;
+  padding:40px!important;text-align:center!important;color:#AAA!important;
+}
+
+/* ── Gantt container polish ── */
+#plan-calendar>div{border-radius:var(--rl)!important}
+
+/* ── Print friendliness ── */
+@media print{
+  #bar,#lnav,.wiz-nav-bar{display:none!important}
+  .step{display:block!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS 4.1 — TYPOGRAPHY SCALE + BUTTON SYSTEM (estandarización)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Type scale: una sola familia, tamaños fijos ── */
+:root{
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --fs-xxl:24px; --fs-xl:20px; --fs-lg:16px; --fs-md:13px;
+  --fs-sm:11px;  --fs-xs:10px; --fs-xxs:9px;
+}
+html,body,button,input,select,textarea{font-family:var(--font)!important}
+
+/* Jerarquía de títulos unificada */
+.s-title{font-size:var(--fs-xl)!important;font-weight:800!important;letter-spacing:-.02em!important;color:var(--ink)!important}
+.s-sub{font-size:var(--fs-sm)!important;font-weight:400!important;color:#8A8A8A!important;letter-spacing:0!important}
+.cfg-sec-title{font-size:var(--fs-lg)!important;font-weight:700!important}
+.cfg-sec-sub{font-size:var(--fs-sm)!important;color:#999!important}
+label{font-size:var(--fs-xxs)!important;font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:#999!important}
+
+/* Números grandes (KPIs/scores) — tabular para alineación */
+.wh-score,.sh-score,.c-val,.sd-val,.pi-score,.dml-val,.qstat-val,
+[id^="kpi-"],[id^="ck-"]{
+  font-variant-numeric:tabular-nums!important;
+  letter-spacing:-.02em!important;
+}
+
+/* ── Sistema de botones: 3 niveles consistentes ── */
+/* Nivel 1 - primario (acciones principales): fondo sólido */
+.cfg-apply{
+  font-size:var(--fs-xs)!important;
+  padding:8px 16px!important;
+  min-height:32px!important;
+}
+/* Nivel 2 - secundario (cfg-reset): outline */
+.cfg-apply.cfg-reset{
+  background:#fff!important;border:1.5px solid #DEDEDE!important;color:#555!important;
+}
+.cfg-apply.cfg-reset:hover{border-color:var(--g)!important;color:var(--g)!important;background:#FDFBF6!important}
+/* Nivel 3 - terciario (load-btn y similares): ghost */
+.load-btn{
+  font-size:var(--fs-xxs)!important;padding:5px 12px!important;
+  background:transparent!important;border:1px solid #E2E2E2!important;color:#666!important;
+}
+.load-btn:hover{border-color:var(--ink)!important;color:var(--ink)!important;background:#FAFAFA!important}
+
+/* Toolbar groups: separación visual entre grupos de acciones */
+.export-excel-btn{
+  background:#fff!important;border:1.5px solid #087B50!important;color:#087B50!important;
+}
+.export-excel-btn:hover{background:#087B50!important;color:#fff!important}
+
+/* Chart tabs estandarizados */
+.ctab{
+  font-size:var(--fs-xs)!important;font-weight:600!important;
+  padding:7px 16px!important;border-radius:8px!important;
+  border:1.5px solid transparent!important;
+  transition:all .18s!important;
+}
+.ctab.on{background:var(--ink)!important;color:#fff!important}
+.ctab:not(.on){background:#F5F5F3!important;color:#777!important}
+.ctab:not(.on):hover{background:#ECECEA!important;color:var(--ink)!important}
+
+/* KPI cards del dashboard: bordes coherentes */
+[id^="kpi-"]{font-weight:800!important}
+
+/* ── Densidad de tablas coherente ── */
+td,th{font-size:var(--fs-sm)!important}
+thead th{font-size:var(--fs-xxs)!important}
+
+/* ── Analytics row nueva ── */
+.dash-mini{
+  background:#fff;border:1px solid #EFEFEF;border-radius:12px;
+  padding:12px 14px;box-shadow:var(--sh-xs);
+  display:flex;flex-direction:column;gap:2px;
+}
+.dash-mini .dm-val{font-size:19px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.dash-mini .dm-lbl{font-size:8.5px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.08em}
+.dash-mini .dm-sub{font-size:9px;color:#888}

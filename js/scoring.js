@@ -1,3 +1,37 @@
+
+/* ═══════════════════════════════════════════════════════════════
+   MPG AREA MAPPING — decode area from work item name prefix
+   e.g. "MPG-LOG-001 ..." → "Almacén y Logística"
+   ═══════════════════════════════════════════════════════════════ */
+const MPG_AREA_MAP = {
+  'VTA':  'Backoffice y Ventas',
+  'PLN':  'Planificación',
+  'PROY': 'Proyectos',
+  'SOL':  'Solicitudes de compra',
+  'FIN':  'Finanzas',
+  'LOG':  'Almacén y Logística',
+  'INTC': 'Intercompany',
+  'CAL':  'Calidad',
+  'GEN':  'Operativa general / Multidepartamento',
+  'IDI':  'I+D',
+  'RRHH': 'Recursos Humanos',
+  'COM':  'Compras',
+  'VENT': 'Polonia ventas',
+  'PRO':  'Producción',
+  'OFT':  'Oficina técnica - Códigos',
+  'EBD':  'Equipos y aparatología',
+  'MAN':  'GMAO',
+};
+
+function mpgDecodeArea(title) {
+  // Title format: "MPG-{CODE}-{num} ..." or "{CODE}-{num} ..."
+  if (!title) return null;
+  const m = title.match(/^(?:MPG-)?([A-Z]{2,5})-/i);
+  if (!m) return null;
+  const code = m[1].toUpperCase();
+  return MPG_AREA_MAP[code] || null;
+}
+
 /* ── Global state — declared first so all modules can access ─ */
 let _dvCfg = { url:'', tenant:'', clientId:'', secret:'', _serverManaged: false };
 let _dvToken = null, _dvTokenExp = 0;
@@ -477,6 +511,10 @@ function applyProjects(projects, filename) {
   Object.assign(prevHoras, _savedHoras);
 
   portfolioData = projects.map(p => {
+    // Auto-detect area from MPG prefix if not set
+    if (!p.area && typeof mpgDecodeArea === 'function') {
+      p.area = mpgDecodeArea(p.nom) || p.area || '';
+    }
     const proj = computeProj(p);
     const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
     proj.horas = excelHoras ?? prevHoras[p.nom] ?? p.horas ?? null;  // p.horas = ADO OriginalEstimate
@@ -900,22 +938,87 @@ function renderBenchmark(proj) {
 
 function loadIntoEval(idx) {
   const p=portfolioData[idx]; if(!p)return;
-  document.getElementById('f-name').value=p.nom;
-  if(p.reqDate)document.getElementById('f-req').value=p.reqDate;
-  if(p.regDate)document.getElementById('f-reg').value=p.regDate;
-  if(document.getElementById('f-area') && p.area) document.getElementById('f-area').value=p.area;
-  DIMS.forEach(d=>d.criterios.forEach(c=>{
-    const v=p.scores[c.id]||5; c.val=v;
-    const sl=document.getElementById('sl-'+c.id);if(sl)sl.value=v;
-    const cv=document.getElementById('cv-'+c.id);if(cv){cv.textContent=v;cv.style.color=scColorHex(v);}
-    const cb=document.getElementById('cb-'+c.id);if(cb)cb.textContent='boost: '+sigmoidBoost(v,c.C0,c.B0,c.A0,c.C,c.B,c.A).toFixed(2)+'×';
-    const bp=document.getElementById('bp-'+c.id);if(bp)bp.innerHTML=boostPreview(c);
-  }));
-  upd();
-  // Render benchmark AFTER upd() so dim scores are fresh
-  renderBenchmark(p);
-  document.getElementById('bench-panel').scrollIntoView({behavior:'smooth',block:'start'});
-  toast(`"${p.nom}" cargado · comparativa activada`);
+  // Navigate to eval screen first
+  if(typeof goStep==='function') goStep('eval');
+  setTimeout(function(){
+    document.getElementById('f-name').value=p.nom;
+    if(p.reqDate)document.getElementById('f-req').value=p.reqDate;
+    if(p.regDate)document.getElementById('f-reg').value=p.regDate;
+    const areaEl=document.getElementById('f-area');
+    if(areaEl && p.area){
+      // Try exact match first
+      let matched=false;
+      for(let i=0;i<areaEl.options.length;i++){
+        if(areaEl.options[i].value===p.area){areaEl.selectedIndex=i;matched=true;break;}
+      }
+      // Try partial match
+      if(!matched){
+        for(let i=0;i<areaEl.options.length;i++){
+          if(areaEl.options[i].value.includes(p.area)||p.area.includes(areaEl.options[i].value)){
+            areaEl.selectedIndex=i;break;
+          }
+        }
+      }
+    }
+    DIMS.forEach(d=>d.criterios.forEach(c=>{
+      const v=p.scores[c.id]||5; c.val=v;
+      const sl=document.getElementById('sl-'+c.id);if(sl)sl.value=v;
+      const cv=document.getElementById('cv-'+c.id);if(cv){cv.textContent=v;cv.style.color=scColorHex(v);}
+      const cb=document.getElementById('cb-'+c.id);if(cb)cb.textContent='boost: '+sigmoidBoost(v,c.C0,c.B0,c.A0,c.C,c.B,c.A).toFixed(2)+'×';
+      const bp=document.getElementById('bp-'+c.id);if(bp)bp.innerHTML=boostPreview(c);
+    }));
+    upd();
+    // Show project edit banner at top of eval
+    renderEvalProjectBanner(p);
+    renderBenchmark(p);
+    // Scroll to top of eval
+    const evalEl=document.getElementById('step-eval');
+    if(evalEl) evalEl.scrollIntoView({behavior:'smooth',block:'start'});
+    toast('"'+p.nom.substring(0,30)+'" cargado en evaluación');
+  }, 150);
+}
+
+function renderEvalProjectBanner(p) {
+  const banner=document.getElementById('eval-project-banner');
+  if(!banner) return;
+  if(!p){banner.style.display='none';return;}
+  const pool=typeof getPool==='function'?getPool(p):'';
+  const poolColors={S:'#C07800',M:'#1848A0',L:'#087B50'};
+  const col=poolColors[pool]||'#888';
+  banner.style.display='block';
+  banner.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div style="width:8px;height:40px;border-radius:3px;background:'+col+'"></div>'
+      +'<div>'
+        +'<div style="font-size:11px;font-weight:700;color:#111">'+p.nom.substring(0,60)+'</div>'
+        +'<div style="font-size:9px;color:#888;margin-top:2px">'
+          +(p.area||'Sin área')+' · '+(p.adoType||'Manual')+' · '+(p.adoId?'ADO #'+p.adoId:'sin ID')
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="text-align:center;padding:6px 12px;background:#F7F7F5;border-radius:6px">'
+        +'<div style="font-size:16px;font-weight:800;color:'+(typeof scColorHex==="function"?scColorHex(p.sf||0):"#111")+'">'+( p.sf||0).toFixed(2)+'</div>'
+        +'<div style="font-size:8px;color:#AAA;text-transform:uppercase">Score actual</div>'
+      +'</div>'
+      +'<button onclick="saveManualToPortfolio();renderEvalProjectBanner(null)" '
+        +'style="padding:8px 16px;font-size:10px;font-weight:700;border-radius:7px;'
+        +'border:none;background:#087B50;color:#fff;cursor:pointer">'
+        +'✓ Guardar evaluación'
+      +'</button>'
+      +(p.adoId?('<span style="display:inline-block">'+'<button id="eval-banner-ado-btn" style="padding:8px 12px;font-size:10px;font-weight:700;border-radius:7px;border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer">↑ ADO</button></span>')  :'')
+
+
+
+
+    +'</div>'
+    +'</div>';
+  // Wire ADO button onclick (can't use inline quotes safely)
+  if(p.adoId){
+    const adoBtn=document.getElementById('eval-banner-ado-btn');
+    if(adoBtn){ const _nom=p.nom; adoBtn.onclick=function(){ adoSyncProject(_nom); }; }
+  }
 }
 
 /* ── CHARTS ─────────────────────────────────────────── */
@@ -2187,4 +2290,95 @@ function exportCarteraPlantilla() {
       console.error('Export error:', err);
       toast('✗ Error exportando: ' + err.message + '. Asegúrate de que plantilla_carga.xlsx está en el servidor.');
     });
+}
+
+
+function autoDetectArea(name) {
+  var area = typeof mpgDecodeArea === 'function' ? mpgDecodeArea(name) : null;
+  if (!area) return;
+  var sel = document.getElementById('f-area');
+  if (!sel) return;
+  // Set select to matching option
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === area) {
+      sel.selectedIndex = i;
+      break;
+    }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   EVAL SCREEN — project selector + pending list
+   ═══════════════════════════════════════════════════════════════ */
+
+function renderEvalScreen() {
+  // Populate project selector
+  const sel = document.getElementById('eval-project-select');
+  if (sel) {
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Selecciona un proyecto de la cartera —</option>';
+    // Sort by score desc
+    const sorted = portfolioData.slice().sort(function(a,b){ return (b.sf||0)-(a.sf||0); });
+    sorted.forEach(function(p, i) {
+      const realIdx = portfolioData.indexOf(p);
+      const pool    = typeof getPool === 'function' ? getPool(p) : '';
+      const poolLbl = {S:'⚡ Corto',M:'◉ Medio',L:'▣ Largo'}[pool] || '';
+      const synced  = p._adoSynced ? ' ✓ADO' : '';
+      const opt     = document.createElement('option');
+      opt.value     = realIdx;
+      opt.textContent = (p.sf||0).toFixed(1) + ' · ' + p.nom.substring(0,50)
+        + (p.area ? ' ['+p.area+']' : '') + (poolLbl ? ' '+poolLbl : '') + synced;
+      if (String(realIdx) === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  // Pending list: projects with score = 0 or all criteria at default (5)
+  const pendingEl = document.getElementById('eval-pending-list');
+  if (pendingEl) {
+    const pending = portfolioData.filter(function(p){
+      return !p.sf || p.sf < 1 ||
+        (p.scores && CRIT_IDS.every(function(cid){ return (p.scores[cid]||5) === 5; }));
+    });
+    if (!pending.length) {
+      pendingEl.innerHTML = '<span style="color:#087B50">✓ Todos los proyectos evaluados</span>';
+    } else {
+      pendingEl.innerHTML = '<span style="color:#C07800">⚠ '+ pending.length +' proyectos sin evaluar — haz clic para evaluar</span>: '
+        + pending.slice(0,5).map(function(p){
+            const ri = portfolioData.indexOf(p);
+            return '<a href="#" onclick="event.preventDefault();evalSelectProject('+ri+')" '
+              +'style="color:#1848A0;margin-left:6px">'+p.nom.substring(0,25)+'</a>';
+          }).join(', ')
+        + (pending.length > 5 ? ' y ' + (pending.length-5) + ' más…' : '');
+    }
+  }
+}
+
+function evalSelectProject(idxStr) {
+  const idx = parseInt(idxStr);
+  if (isNaN(idx) || idx < 0 || idx >= portfolioData.length) return;
+  // Update selector UI
+  const sel = document.getElementById('eval-project-select');
+  if (sel) sel.value = idx;
+  // Load into eval wizard (step-0)
+  loadIntoEval(idx);
+}
+
+function openAiModalFromEval() {
+  // Open the AI evaluator modal with all portfolio items
+  const adoItems = portfolioData.map(function(p){
+    // Reconstruct a minimal ADO-like item so openAiModal can process it
+    return { id: p.adoId||0, fields: {
+      'System.Id':    p.adoId||0,
+      'System.Title': p.nom,
+      'System.WorkItemType': p.adoType||'Manual',
+      'System.AreaPath': p.area||'',
+      'System.Description': p.adoDesc||'',
+      'System.Tags': (p.adoTags||[]).join('; '),
+      'System.CreatedDate': p.reqDate||new Date().toISOString(),
+      'Microsoft.VSTS.Scheduling.OriginalEstimate': p.horas||null,
+    }, _proj: p };
+  });
+  if (typeof openAiModal === 'function') openAiModal(adoItems);
 }

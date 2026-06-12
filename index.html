@@ -462,17 +462,31 @@
       <div class="fg">
         <div class="ff" style="grid-column:1/-1">
           <label>nombre del proyecto</label>
-          <input type="text" id="f-name" placeholder="Nombre del proyecto..." oninput="upd()">
+          <input type="text" id="f-name" placeholder="Nombre del proyecto..." oninput="upd();autoDetectArea(this.value)">
         </div>
         <div class="ff">
           <label>área promotora</label>
           <select id="f-area" onchange="upd()">
-            <option value="">Selecciona área...</option>
-            <option>Producción y calidad</option><option>Regulatorio y compliance</option>
-            <option>I+D y laboratorio</option><option>Supply chain y logística</option>
-            <option>Ventas y marketing</option><option>RRHH y organización</option>
-            <option>Finanzas y control</option><option>Transversal / corporativo</option>
-          </select>
+  <option value="">— Selecciona área —</option>
+  <option value="Backoffice y Ventas">VTA · Backoffice y Ventas</option>
+  <option value="Planificación">PLN · Planificación</option>
+  <option value="Proyectos">PROY · Proyectos</option>
+  <option value="Solicitudes de compra">SOL · Solicitudes de compra</option>
+  <option value="Finanzas">FIN · Finanzas</option>
+  <option value="Almacén y Logística">LOG · Almacén y Logística</option>
+  <option value="Intercompany">INTC · Intercompany</option>
+  <option value="Calidad">CAL · Calidad</option>
+  <option value="Operativa general / Multidepartamento">GEN · Operativa general / Multidepartamento</option>
+  <option value="I+D">IDI · I+D</option>
+  <option value="Recursos Humanos">RRHH · Recursos Humanos</option>
+  <option value="Compras">COM · Compras</option>
+  <option value="Polonia ventas">VENT · Polonia ventas</option>
+  <option value="Producción">PRO · Producción</option>
+  <option value="Oficina técnica - Códigos">OFT · Oficina técnica - Códigos</option>
+  <option value="Equipos y aparatología">EBD · Equipos y aparatología</option>
+  <option value="GMAO">MAN · GMAO</option>
+  <option value="Otros">Otros</option>
+</select>
         </div>
         <div class="ff">
           <label>tipo de proyecto</label>
@@ -1277,6 +1291,52 @@
     </div>
   </div>
 
+  <!-- ── Analytics row: KPIs avanzados ── -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px">
+    <div class="dash-mini">
+      <div class="dm-lbl">Horas cartera</div>
+      <div class="dm-val" id="kpi2-hours">0h</div>
+      <div class="dm-sub" id="kpi2-hours-sub">—</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Mediana score</div>
+      <div class="dm-val" id="kpi2-median">—</div>
+      <div class="dm-sub" id="kpi2-median-sub">p50 de la cartera</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Sync ADO</div>
+      <div class="dm-val" id="kpi2-synced">0%</div>
+      <div class="dm-sub" id="kpi2-synced-sub">scores guardados</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Aging activo</div>
+      <div class="dm-val" id="kpi2-aging">0</div>
+      <div class="dm-sub">proyectos con boost &gt;1×</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Áreas</div>
+      <div class="dm-val" id="kpi2-areas">0</div>
+      <div class="dm-sub" id="kpi2-areas-sub">—</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Fin de cola</div>
+      <div class="dm-val" id="kpi2-queue" style="font-size:15px">—</div>
+      <div class="dm-sub">próx. fecha libre global</div>
+    </div>
+  </div>
+
+  <!-- ── Mini-charts analíticos ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="dash-mini" style="min-height:170px">
+      <div class="dm-lbl" style="margin-bottom:8px">Distribución de scores</div>
+      <canvas id="dash-hist" height="120"></canvas>
+    </div>
+    <div class="dash-mini" style="min-height:170px">
+      <div class="dm-lbl" style="margin-bottom:8px">Horas por área (top 6)</div>
+      <canvas id="dash-area-hours" height="120"></canvas>
+    </div>
+  </div>
+
   <!-- Middle: Pool bars + Top5 + Horas -->
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
 
@@ -1438,95 +1498,75 @@
 
 <!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->
 <div class="step" id="step-eval">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <div class="s-title" style="margin:0">Evaluación</div>
-    <button onclick="exportPortfolioExcel()" class="export-excel-btn" style="font-size:9px;padding:7px 14px">
-      ↓ Exportar Excel
-    </button>
+
+  <!-- ── Sticky toolbar ── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:30;
+    background:#fff;padding:10px 0 8px;border-bottom:1px solid #EBEBEB;margin-bottom:14px">
+    <div>
+      <div class="s-title" style="margin:0">Evaluación de Proyectos</div>
+      <div class="s-sub" style="margin:0">Puntúa criterio a criterio · guarda en cartera · sincroniza con ADO</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button onclick="openNewProjectModal()" class="cfg-apply"
+        style="background:#087B50;font-size:10px;padding:7px 14px;border-radius:7px">
+        + Nuevo proyecto
+      </button>
+      <button onclick="openAiModalFromEval()" class="cfg-apply"
+        style="background:#742774;font-size:10px;padding:7px 14px;border-radius:7px">
+        ⚡ Auto-evaluar todos
+      </button>
       <button onclick="adoSyncAllScores()" id="ado-sync-all-btn"
         style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
-               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;
-               cursor:pointer;transition:all .15s"
+               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer"
         onmouseover="this.style.background='#1848A0';this.style.color='#fff'"
-        onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'"
-        title="Guarda el score de TODOS los proyectos en Azure DevOps (campos MPGScore / MPGTaskScore)">
+        onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'">
         ↑ Guardar todos en ADO
       </button>
-      <button onclick="exportCarteraConPlanning()"
-        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
-               border:none;background:#1848A0;color:#fff;cursor:pointer;
-               transition:background .15s"
-        onmouseover="this.style.background='#0f3480'"
-        onmouseout="this.style.background='#1848A0'"
-        title="Exporta la cartera en formato importación con fechas de planning">
-        ↓ Cartera + Planning
-      </button>
-      <button onclick="exportCarteraPlantilla()"
-        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
-               border:none;background:#087B50;color:#fff;cursor:pointer;
-               transition:background .15s"
-        onmouseover="this.style.background='#065c3c'"
-        onmouseout="this.style.background='#087B50'"
-        title="Exporta en formato exacto de la plantilla con fórmulas de scoring">
-        ↓ Plantilla + Fórmulas
-      </button>
-  </div>
-  <div class="s-sub">Puntúa proyectos automáticamente o de forma manual · el resultado va directo a los pools</div>
-
-  <!-- Evaluación masiva -->
-  <div class="cfg-section" style="margin-bottom:16px">
-    <div class="cfg-sec-title">Evaluación automática (AI rules)</div>
-    <div class="cfg-sec-sub">Evalúa automáticamente todos los proyectos cargados usando las reglas del modelo</div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
-      <button class="cfg-apply" style="background:#742774" onclick="openAiModalFromEval()">
-        ⚡ Evaluar todos automáticamente
-      </button>
-      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3)">
-        <span>Horas masivo:</span>
-        <select id="eval-horas-masivo" class="cfg-inp" style="width:100px;padding:4px 8px;font-size:10px">
-          <option value="">— sin horas —</option>
-          <option value="8">8h</option>
-          <option value="16">16h</option>
-          <option value="40">40h</option>
-          <option value="80">80h</option>
-          <option value="160">160h</option>
-        </select>
-        <button class="cfg-apply cfg-reset" onclick="applyBulkHorasEval()" style="font-size:9px;padding:4px 10px">
-          Aplicar a selección
-        </button>
-      </div>
     </div>
   </div>
 
-  <!-- Evaluación manual wizard -->
-  <div class="cfg-section" style="margin-bottom:16px">
-    <div class="cfg-sec-title">Evaluación manual</div>
-    <div class="cfg-sec-sub">Crea un proyecto nuevo y puntúa criterio a criterio con el wizard</div>
-    <button class="cfg-apply" style="margin-top:10px;background:var(--d3)" onclick="startManualEval()">
-      ✏ Nueva evaluación manual
-    </button>
+  <!-- ── Active project banner (shown when a project is loaded) ── -->
+  <div id="eval-project-banner" style="display:none;
+    background:linear-gradient(135deg,#F7F7F5,#fff);
+    border:1.5px solid #EBEBEB;border-radius:10px;
+    padding:12px 16px;margin-bottom:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04)">
   </div>
 
-  <!-- Proyectos sin evaluar -->
-  <div class="cfg-section">
-    <div class="cfg-sec-title">Proyectos pendientes de evaluación</div>
-    <div id="eval-pending-list" style="margin-top:10px;font-size:11px;color:var(--ink3)">
-      Sin proyectos pendientes
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="cfg-apply" onclick="goStep('pools')" style="background:var(--d4)">
-        Ver pools →
+  <!-- ── Project selector: pick from portfolio ── -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">① Seleccionar proyecto para evaluar</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <select id="eval-project-select"
+        style="flex:1;min-width:280px;padding:9px 12px;font-size:11px;
+               border:1.5px solid #DEDEDE;border-radius:7px;background:#fff;
+               font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='#C4974A'" onblur="this.style.borderColor='#DEDEDE'"
+        onchange="evalSelectProject(this.value)">
+        <option value="">— Selecciona un proyecto de la cartera —</option>
+      </select>
+      <button onclick="evalSelectProject(document.getElementById('eval-project-select').value)"
+        style="padding:9px 18px;font-size:10px;font-weight:700;border-radius:7px;
+               border:none;background:#111;color:#fff;cursor:pointer">
+        Cargar →
       </button>
-      <button class="cfg-apply" onclick="goStep('summary')" style="background:var(--ink3)">
-        Ver cartera
+      <button onclick="startManualEval()"
+        style="padding:9px 14px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
+        ✏ Proyecto nuevo
       </button>
     </div>
+    <!-- Quick stats -->
+    <div id="eval-pending-list" style="margin-top:10px;font-size:10px;color:#888"></div>
   </div>
-</div>
 
+  <!-- ── The manual evaluation wizard (existing) ── -->
+  <div id="eval-wizard-wrap">
+    <!-- The wizard content is rendered by the existing scoring engine below -->
+  </div>
 
-<!-- ═══ SPRINT / EN MARCHA ══════════════════════════════════════ -->
-<div class="step" id="step-sprint">
+class="step" id="step-sprint">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
     <div class="s-title" style="margin:0">En marcha</div>
     <button onclick="goStep('planning')"
@@ -2282,7 +2322,44 @@
           style="background:var(--d1t);color:var(--d1);border:1px solid rgba(204,31,38,.25);font-size:9px;padding:5px 12px">
           🗑 Eliminar selección (0)
         </button>
-        <button onclick="exportPortfolioExcel()" class="export-excel-btn">
+        <!-- Export menu (agrupado) -->
+        <div style="position:relative;display:inline-block">
+          <button onclick="const m=document.getElementById('export-menu');m.style.display=m.style.display==='none'?'block':'none';event.stopPropagation()"
+            class="export-excel-btn" style="display:inline-flex;align-items:center;gap:6px">
+            ↓ Exportar <span style="font-size:8px">▾</span>
+          </button>
+          <div id="export-menu" onclick="event.stopPropagation()"
+            style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+                   background:#fff;border:1px solid #E5E5E5;border-radius:12px;
+                   box-shadow:0 8px 32px rgba(0,0,0,.12);padding:6px;min-width:240px">
+            <button onclick="exportPortfolioExcel();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              📄 Excel simple <span style="display:block;font-size:9px;color:#999">Lista plana de la cartera</span>
+            </button>
+            <button onclick="exportCarteraConPlanning();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              📅 Cartera + Planning <span style="display:block;font-size:9px;color:#999">Formato importación + fechas planificadas</span>
+            </button>
+            <button onclick="exportCarteraPlantilla();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              🧮 Plantilla + Fórmulas <span style="display:block;font-size:9px;color:#999">Excel con fórmulas vivas del modelo</span>
+            </button>
+            <div style="height:1px;background:#EFEFEF;margin:4px 8px"></div>
+            <button onclick="adoSyncAllScores();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#1848A0"
+              onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='none'">
+              ↑ Guardar todos en ADO <span style="display:block;font-size:9px;color:#999">Scores → MPGScore / MPGTaskScore</span>
+            </button>
+          </div>
+        </div>
+        <button onclick="exportPortfolioExcel()" class="export-excel-btn" style="display:none">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
             <path d="M14 10v2.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2689,5 +2766,6 @@
     </div>
   </div>
 </div>
+<script id="export-menu-closer">document.addEventListener('click',function(){const m=document.getElementById('export-menu');if(m)m.style.display='none';});</script>
 </body>
 </html>

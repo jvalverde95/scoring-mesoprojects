@@ -287,50 +287,7 @@ function renderProjectsScreen() {
   if (btn) btn.style.display = count > 0 ? 'inline-block' : 'none';
 }
 
-/* ── Eval screen ─────────────────────────────────────────────── */
-function renderEvalScreen() {
-  const noPools = portfolioData.filter(p =>
-    p.horas === null || p.horas === undefined
-  );
-  const el = document.getElementById('eval-pending-list');
-  if (!el) return;
-  if (!portfolioData.length) {
-    el.innerHTML = '<div style="color:var(--ink4)">No hay proyectos cargados — ve a <b>Proyectos</b> primero</div>';
-    return;
-  }
-  if (!noPools.length) {
-    el.innerHTML = '<div style="color:var(--d3)">✓ Todos los proyectos tienen horas estimadas</div>';
-    return;
-  }
-  el.innerHTML = `
-    <div style="color:var(--d4);margin-bottom:8px;font-size:10px">
-      ${noPools.length} proyecto${noPools.length>1?'s':''} sin horas — en pool "Sin estimar"
-    </div>
-    ${noPools.slice(0,5).map(p => `
-      <div style="padding:6px 10px;background:var(--surf);border-radius:6px;margin-bottom:4px;
-        display:flex;justify-content:space-between;align-items:center;font-size:10px">
-        <span style="font-weight:600">${p.nom}</span>
-        <span style="color:${scColorHex(p.sf||0)};font-weight:700">${(p.sf||0).toFixed(1)}</span>
-      </div>
-    `).join('')}
-    ${noPools.length > 5 ? `<div style="font-size:9px;color:var(--ink4);text-align:center">+${noPools.length-5} más</div>` : ''}
-  `;
-}
 
-/* ── openAiModalFromEval — opens AI modal with all unscored/all projects ── */
-function openAiModalFromEval() {
-  // Use all projects in portfolioData that came from ADO (_adoCreds)
-  if (typeof _adoCreds !== 'undefined' && _adoCreds && typeof openAiModal === 'function') {
-    // If we have ADO items cached, open directly
-    if (typeof _aiItems !== 'undefined' && _aiItems.length) {
-      openAiModal(_aiItems);
-      return;
-    }
-  }
-  // Otherwise go to config to load ADO
-  toast('Primero carga proyectos desde Azure DevOps en ⚙ Config → Cargar query');
-  goStep('config');
-}
 
 /* ── applyBulkHorasEval ──────────────────────────────────────── */
 function applyBulkHorasEval() {
@@ -480,6 +437,9 @@ function renderDashboard() {
       alertsEl.style.display='none';
     }
   }
+
+  // Analytics avanzados (fila 2 + mini-charts)
+  if (typeof renderDashboardAnalytics === 'function') renderDashboardAnalytics();
 }
 
 /* ── Wiki: update threshold values from config ──────────────── */
@@ -494,5 +454,99 @@ function renderWikiThresholds() {
     s('wiki-thr-s2', scoreThr.s2);
     s('wiki-thr-s3', scoreThr.s3);
     s('wiki-thr-s4', scoreThr.s4);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD — ANALYTICS AVANZADOS (KPIs fila 2 + mini-charts)
+   Llamado desde renderDashboard vía hook
+   ═══════════════════════════════════════════════════════════════ */
+function renderDashboardAnalytics() {
+  if (!portfolioData || !portfolioData.length) return;
+  const set = (id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+
+  // Horas totales cartera
+  const totalH = portfolioData.reduce((s,p)=>s+(parseFloat(p.horas)||0),0);
+  const withH  = portfolioData.filter(p=>p.horas!=null).length;
+  set('kpi2-hours', totalH>=1000 ? (totalH/1000).toFixed(1)+'k h' : Math.round(totalH)+'h');
+  set('kpi2-hours-sub', withH+'/'+portfolioData.length+' con estimación');
+
+  // Mediana de score
+  const scores = portfolioData.map(p=>p.sf||0).filter(s=>s>0).sort((a,b)=>a-b);
+  const median = scores.length ? scores[Math.floor(scores.length/2)] : 0;
+  set('kpi2-median', median ? median.toFixed(2) : '—');
+
+  // % sincronizado a ADO
+  const withAdo  = portfolioData.filter(p=>p.adoId).length;
+  const synced   = portfolioData.filter(p=>p._adoSynced).length;
+  set('kpi2-synced', withAdo ? Math.round(synced/withAdo*100)+'%' : '—');
+  set('kpi2-synced-sub', synced+'/'+withAdo+' work items');
+
+  // Aging activo (af > 1)
+  const aged = portfolioData.filter(p=>(p.af||1)>1.001).length;
+  set('kpi2-aging', aged);
+
+  // Áreas distintas
+  const areas = {};
+  portfolioData.forEach(p=>{ if(p.area) areas[p.area]=(areas[p.area]||0)+1; });
+  const areaNames = Object.keys(areas);
+  set('kpi2-areas', areaNames.length);
+  const topArea = areaNames.sort((a,b)=>areas[b]-areas[a])[0];
+  set('kpi2-areas-sub', topArea ? 'top: '+topArea.substring(0,18) : '—');
+
+  // Fin de cola global
+  if (typeof planBuildTimeline === 'function' && typeof pShort === 'function') {
+    try {
+      const tl = planBuildTimeline();
+      if (tl.length) {
+        const maxEnd = tl.reduce((mx,t)=>+t.endDate>+mx?t.endDate:mx, new Date());
+        set('kpi2-queue', pShort(maxEnd));
+      } else set('kpi2-queue','—');
+    } catch(e){ set('kpi2-queue','—'); }
+  }
+
+  // ── Mini-chart 1: histograma de scores ──
+  if (typeof Chart !== 'undefined') {
+    const histEl = document.getElementById('dash-hist');
+    if (histEl) {
+      destroyC('dash-hist');
+      const bins = [0,0,0,0,0,0,0,0,0,0]; // 0-1,1-2,...9-10
+      portfolioData.forEach(p=>{
+        const s = Math.min(9, Math.max(0, Math.floor(p.sf||0)));
+        bins[s]++;
+      });
+      chartInst['dash-hist'] = new Chart(histEl, {
+        type:'bar',
+        data:{ labels:['0-1','1-2','2-3','3-4','4-5','5-6','6-7','7-8','8-9','9-10'],
+          datasets:[{ data:bins,
+            backgroundColor:bins.map((_,i)=> i>=8?'#0A5228':i>=6?'#087B50':i>=4?'#C07800':'#CC1F26'),
+            borderRadius:4, barPercentage:.8 }]},
+        options:{ plugins:{legend:{display:false}},
+          scales:{ x:{grid:{display:false},ticks:{font:{size:8}}},
+                   y:{grid:{color:'#F3F3F1'},ticks:{font:{size:8},stepSize:1}} },
+          maintainAspectRatio:false, responsive:true }
+      });
+    }
+
+    // ── Mini-chart 2: horas por área (top 6) ──
+    const areaEl = document.getElementById('dash-area-hours');
+    if (areaEl) {
+      destroyC('dash-area-hours');
+      const areaH = {};
+      portfolioData.forEach(p=>{
+        if(p.area && p.horas) areaH[p.area]=(areaH[p.area]||0)+parseFloat(p.horas);
+      });
+      const top = Object.entries(areaH).sort((a,b)=>b[1]-a[1]).slice(0,6);
+      chartInst['dash-area-hours'] = new Chart(areaEl, {
+        type:'bar',
+        data:{ labels: top.map(t=>t[0].substring(0,16)),
+          datasets:[{ data: top.map(t=>Math.round(t[1])),
+            backgroundColor:'#C4974A', borderRadius:4, barPercentage:.7 }]},
+        options:{ indexAxis:'y', plugins:{legend:{display:false}},
+          scales:{ x:{grid:{color:'#F3F3F1'},ticks:{font:{size:8}}},
+                   y:{grid:{display:false},ticks:{font:{size:9}}} },
+          maintainAspectRatio:false, responsive:true }
+      });
+    }
   }
 }

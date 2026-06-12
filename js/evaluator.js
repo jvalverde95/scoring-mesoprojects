@@ -179,11 +179,16 @@ function _buildManualProject() {
   });
 
   const proj = computeProj({ nom, area, sponsor: '', scores, reqDate, regDate: null });
-  proj.horas     = null;
-  proj.adoId     = null;
-  proj.adoState  = '';
-  proj.adoType   = 'Manual';
-  proj._dvId     = null;
+  // Preserve ADO link if re-evaluating an existing project
+  const existing = portfolioData.find(function(x){ return x.nom === proj.nom; });
+  proj.horas     = existing ? (existing.horas ?? null) : null;
+  proj.adoId     = existing ? (existing.adoId || null) : null;
+  proj.adoState  = existing ? (existing.adoState || '') : '';
+  proj.adoType   = existing ? (existing.adoType || 'Manual') : 'Manual';
+  proj.adoDesc   = existing ? (existing.adoDesc || '') : '';
+  proj.adoRaw    = existing ? (existing.adoRaw || null) : null;
+  proj._adoSynced= false;  // mark as needing re-sync
+  proj._dvId     = existing ? (existing._dvId || null) : null;
   proj._selected = false;
   return proj;
 }
@@ -195,9 +200,18 @@ function saveManualToPortfolio() {
   // Check for duplicate
   const dup = portfolioData.findIndex(p => p.nom === proj.nom);
   if (dup >= 0) {
-    // Update existing
+    // Update existing — preserve fields that the wizard doesn't manage
+    const prev = portfolioData[dup];
     Object.assign(portfolioData[dup], proj);
-    portfolioData[dup].horas = portfolioData[dup].horas;  // preserve hours
+    // Restore non-wizard fields from previous state
+    portfolioData[dup].horas      = prev.horas ?? proj.horas;
+    portfolioData[dup].adoId      = prev.adoId || proj.adoId;
+    portfolioData[dup].adoType    = prev.adoType || proj.adoType;
+    portfolioData[dup].adoState   = prev.adoState || proj.adoState;
+    portfolioData[dup].adoDesc    = prev.adoDesc || proj.adoDesc;
+    portfolioData[dup].adoRaw     = prev.adoRaw  || proj.adoRaw;
+    portfolioData[dup]._dvId      = prev._dvId   || proj._dvId;
+    portfolioData[dup]._adoSynced = false;  // force re-sync after score change
     toast(`✓ "${proj.nom}" actualizado en cartera`);
   } else {
     portfolioData.push(proj);
