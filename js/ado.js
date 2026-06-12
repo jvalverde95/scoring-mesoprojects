@@ -100,23 +100,16 @@ function adoMapToProject(wi) {
   const cd=f['System.CreatedDate'];
   if(cd) reqDate=cd.substring(0,10);
   const scores={}; CRIT_IDS.forEach(cid=>{scores[cid]=5;});
-  // Map hours from whichever estimation field is populated
-  // ADO field names vary by process template (Scrum / Agile / CMMI)
-  const rawHours =
-    f['Microsoft.VSTS.Scheduling.OriginalEstimate'] ||  // Scrum — Original Estimate
-    f['Microsoft.VSTS.Scheduling.StoryPoints']      ||  // Agile — Story Points
-    f['Microsoft.VSTS.Scheduling.Effort']           ||  // CMMI — Effort
-    f['Microsoft.VSTS.Scheduling.Size']             ||  // CMMI — Size
-    null;
-  const horas = rawHours != null ? parseFloat(rawHours) || null : null;
+  // Horas → SOLO OriginalEstimate (campo estándar del proceso Scrum/ADO)
+  // Ignoramos StoryPoints, Effort, Size — son métricas distintas
+  const rawHours = f['Microsoft.VSTS.Scheduling.OriginalEstimate'] ?? null;
+  const horas = rawHours !== null && rawHours !== ''
+    ? parseFloat(rawHours) || null
+    : null;
 
   return {nom:`${wi.id} — ${title}`,area,sponsor,scores,
     horas,                          // ← mapped from ADO estimation field
-    horasSource: rawHours != null   // which ADO field provided the hours
-      ? (f['Microsoft.VSTS.Scheduling.OriginalEstimate'] != null ? 'OriginalEstimate'
-        : f['Microsoft.VSTS.Scheduling.StoryPoints']    != null ? 'StoryPoints'
-        : f['Microsoft.VSTS.Scheduling.Effort']         != null ? 'Effort' : 'Size')
-      : null,
+    horasSource: rawHours !== null ? 'OriginalEstimate' : null,
     reqDate, regDate:null,
     adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
     adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
@@ -457,6 +450,31 @@ async function adoAutoSync(silent) {
     const mapped = allItems.map(wi => adoMapToProject(wi));
     if (typeof applyProjects === 'function') {
       applyProjects(mapped, ADO_AUTO_QUERY_NAME);
+    }
+
+    // ── Auto-score every project using Description + Title keywords ──
+    // Runs ruleScoresCriterios (already in evaluator.js) on each project
+    // then re-computes D1-D6 and final score — no modal, no user interaction
+    if (typeof ruleScoresCriterios === 'function' && typeof computeProj === 'function') {
+      let scored = 0;
+      portfolioData.forEach(function(p) {
+        try {
+          // Apply rule-based criterion scores from Description + Title
+          var critScores = ruleScoresCriterios(p);
+          CRIT_IDS.forEach(function(cid) { p.scores[cid] = critScores[cid]; });
+          // Recompute dimension scores + final score
+          var computed = computeProj(p);
+          Object.assign(p, computed);
+          scored++;
+        } catch(e) { /* skip silently */ }
+      });
+      // Re-render with new scores
+      if (typeof renderPortfolio === 'function') renderPortfolio();
+      if (typeof renderPools     === 'function') renderPools();
+      adoSyncStatusBar('ok',
+        '✓ '+allItems.length+' items · scoring aplicado automáticamente',
+        allItems.length);
+      if (!silent) toast('✓ '+scored+' proyectos puntuados automáticamente desde ADO');
     }
 
     // Save the resolved queryId for manual re-use
