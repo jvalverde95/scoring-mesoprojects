@@ -547,6 +547,9 @@ function initLandingCanvas() {
     });
   }
 
+  // Mezcla de particulas: oro (ambicion) y azul (tecnologia)
+  var palettes = [[196,151,74],[111,168,255],[120,210,225]];
+  particles.forEach(function(p,i){ p.col = palettes[i % 3 === 0 ? 1 : (i % 7 === 0 ? 2 : 0)]; });
   var gold = [196, 151, 74];
 
   function draw() {
@@ -574,7 +577,8 @@ function initLandingCanvas() {
     particles.forEach(function(p) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba('+gold[0]+','+gold[1]+','+gold[2]+','+p.a+')';
+      var pc = p.col || gold;
+      ctx.fillStyle = 'rgba('+pc[0]+','+pc[1]+','+pc[2]+','+p.a+')';
       ctx.fill();
 
       p.x += p.vx; p.y += p.vy;

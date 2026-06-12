@@ -1767,3 +1767,20 @@ thead th{font-size:var(--fs-xxs)!important}
 .dash-mini .dm-val{font-size:19px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 .dash-mini .dm-lbl{font-size:8.5px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.08em}
 .dash-mini .dm-sub{font-size:9px;color:#888}
+
+/* ── Landing épico: auroras, órbitas, escaneo ── */
+@keyframes auroraDrift {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(60px,40px) scale(1.12); }
+  66%     { transform: translate(-40px,60px) scale(.94); }
+}
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes scanBeam {
+  0%   { left:-200px; opacity:0; }
+  10%  { opacity:1; }
+  90%  { opacity:1; }
+  100% { left:calc(100% + 200px); opacity:0; }
+}

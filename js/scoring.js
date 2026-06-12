@@ -1927,9 +1927,14 @@ function landingAdoConnect() {
   setTimeout(() => goStep('config'), 80);
 }
 function goLanding() {
-  document.getElementById('landing').style.display = 'flex';
+  const landing = document.getElementById('landing');
+  landing.style.display = 'flex';
+  landing.style.transition = 'none';   // reset fade-out transition from doLogin
+  landing.style.opacity = '1';         // FIX: doLogin left opacity:0 -> white screen
   document.getElementById('shell').style.display = 'none';
   document.getElementById('bar').style.display = 'none';
+  // Re-init particle canvas (it may have been sized while hidden)
+  if (typeof initLandingCanvas === 'function') setTimeout(initLandingCanvas, 50);
 }
 function triggerExcelUpload() {
   document.getElementById('land-excel-input').click();

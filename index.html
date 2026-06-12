@@ -19,15 +19,48 @@
 
 
 <div id="landing" style="position:fixed;inset:0;z-index:1000;overflow:hidden;
-  background:#050508;font-family:'Inter','Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column">
+  background:linear-gradient(160deg,#101A2E 0%,#16243E 45%,#1C2B4A 100%);
+  font-family:'Inter','Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column">
+
+  <!-- ── Aurora blobs (tecnología/investigación) ── -->
+  <div style="position:absolute;width:560px;height:560px;border-radius:50%;top:-180px;left:-120px;
+    background:radial-gradient(circle,rgba(64,140,255,.22),transparent 65%);
+    filter:blur(40px);animation:auroraDrift 14s ease-in-out infinite;pointer-events:none"></div>
+  <div style="position:absolute;width:640px;height:640px;border-radius:50%;bottom:-220px;right:-160px;
+    background:radial-gradient(circle,rgba(196,151,74,.20),transparent 65%);
+    filter:blur(50px);animation:auroraDrift 18s ease-in-out infinite reverse;pointer-events:none"></div>
+  <div style="position:absolute;width:420px;height:420px;border-radius:50%;top:30%;left:55%;
+    background:radial-gradient(circle,rgba(80,200,220,.12),transparent 60%);
+    filter:blur(45px);animation:auroraDrift 22s ease-in-out infinite;pointer-events:none"></div>
+
+  <!-- ── Anillos orbitales (ambición/exploración) ── -->
+  <div style="position:absolute;top:50%;left:50%;width:780px;height:780px;margin:-390px 0 0 -390px;
+    border:1px solid rgba(196,151,74,.10);border-radius:50%;
+    animation:orbitSpin 60s linear infinite;pointer-events:none">
+    <div style="position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;
+      background:#C4974A;box-shadow:0 0 14px #C4974A"></div>
+  </div>
+  <div style="position:absolute;top:50%;left:50%;width:1080px;height:1080px;margin:-540px 0 0 -540px;
+    border:1px dashed rgba(120,170,255,.08);border-radius:50%;
+    animation:orbitSpin 90s linear infinite reverse;pointer-events:none">
+    <div style="position:absolute;top:50%;right:-3px;width:6px;height:6px;border-radius:50%;
+      background:#6FA8FF;box-shadow:0 0 12px #6FA8FF"></div>
+  </div>
+
+  <!-- ── Haz de escaneo (investigación) ── -->
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+    <div style="position:absolute;top:0;bottom:0;width:180px;
+      background:linear-gradient(90deg,transparent,rgba(140,180,255,.05),transparent);
+      animation:scanBeam 9s ease-in-out infinite"></div>
+  </div>
 
   <!-- ── Animated background ── -->
   <canvas id="landing-canvas" style="position:absolute;inset:0;width:100%;height:100%;opacity:.45"></canvas>
 
   <!-- ── Grid overlay ── -->
   <div style="position:absolute;inset:0;
-    background-image:linear-gradient(rgba(196,151,74,.06) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(196,151,74,.06) 1px,transparent 1px);
+    background-image:linear-gradient(rgba(150,180,230,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(150,180,230,.05) 1px,transparent 1px);
     background-size:48px 48px;pointer-events:none"></div>
 
   <!-- ── Radial glow ── -->
@@ -136,7 +169,7 @@
       </div>
 
       <!-- Right: Login panel -->
-      <div id="login-panel" style="background:rgba(255,255,255,.03);border:1px solid rgba(196,151,74,.2);
+      <div id="login-panel" style="background:rgba(255,255,255,.055);border:1px solid rgba(196,151,74,.2);
         border-radius:16px;padding:36px;backdrop-filter:blur(20px);
         box-shadow:0 0 60px rgba(196,151,74,.08),inset 0 1px 0 rgba(255,255,255,.05)">
 
