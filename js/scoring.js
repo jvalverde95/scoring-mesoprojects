@@ -1930,3 +1930,114 @@ function exportPortfolioExcel() {
   XLSX.writeFile(wb, `mesoestetic_scoring_${new Date().toISOString().split('T')[0]}.xlsx`);
   toast(`✓ ${portfolioData.length} proyectos exportados`);
 }
+
+function exportCarteraConPlanning() {
+  // Export cartera in EXACT same import format + planning dates columns
+  if (!portfolioData.length) { toast('Sin proyectos para exportar'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Build planning timeline for dates
+  const timeline = typeof planBuildTimeline === 'function' ? planBuildTimeline() : [];
+  const tlMap = {};
+  timeline.forEach(t => { tlMap[t.proj.nom] = t; });
+
+  // Same headers as import format + 3 extra planning cols at end
+  const headers = [
+    'ID ADO', 'Nombre', 'Área', 'Sponsor', 'Fecha solicitud', 'Horas estimadas',
+    'Score final', 'Score base', 'Aging factor',
+    'D1 Compliance', 'D2 Estratégico', 'D3 ROI', 'D4 Técnica', 'D5 Implantación', 'D6 Personas',
+    'Clasificación', 'Pool', 'Auto-prioritario',
+    ...CRIT_IDS.map(id => {
+      const dim = DIMS.find(d => d.criterios.some(c => c.id === id));
+      const crit = dim?.criterios.find(c => c.id === id);
+      return crit?.nom || id;
+    }),
+    // Planning columns appended at end
+    '— Dev asignado', '— Inicio planificado', '— Fin planificado', '— Pool planning'
+  ];
+
+  const fmtD = d => d ? new Date(d).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+
+  const rows = portfolioData.map(p => {
+    const t = tlMap[p.nom];
+    return [
+      p.adoId || '',
+      p.nom   || '',
+      p.area  || '',
+      p.sponsor || '',
+      p.reqDate || '',
+      p.horas   ?? '',
+      +(p.sf  || 0).toFixed(3),
+      +(p.sb  || 0).toFixed(3),
+      +(p.af  || 1).toFixed(4),
+      ...((p.dimScores || [0,0,0,0,0,0]).map(d => +d.toFixed(3))),
+      clsf(p.sf || 0).et || '',
+      getPool(p) || '',
+      p.autoP ? 'Sí' : 'No',
+      ...CRIT_IDS.map(id => Math.round(p.scores?.[id] ?? 5)),
+      // Planning data
+      t ? t.devName : '',
+      t ? fmtD(t.startDate) : '',
+      t ? fmtD(t.endDate)   : '',
+      t ? t.pool            : ''
+    ];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Column widths — same as import + extra cols
+  ws['!cols'] = headers.map((h, i) => ({
+    wch: i < 6 ? 18 : i < 9 ? 10 : i < 15 ? 12 : i >= headers.length-4 ? 18 : 14
+  }));
+
+  // Header row style
+  const nH = headers.length;
+  for (let c = 0; c < nH; c++) {
+    const addr = XLSX.utils.encode_cell({r:0, c});
+    if (!ws[addr]) ws[addr] = {v:'', t:'s'};
+    const isPlanning = c >= nH - 4;
+    ws[addr].s = {
+      fill: {fgColor:{rgb: isPlanning ? '1848A0' : '111111'}, patternType:'solid'},
+      font: {color:{rgb:'FFFFFF'}, bold:true, sz:9},
+      alignment: {horizontal:'center', vertical:'center', wrapText:false}
+    };
+  }
+
+  // Data rows: alternate shading + pool color on Pool column
+  const POOL_COL_IDX = headers.indexOf('Pool');
+  const POOL_BG = {S:'FAF5E6', M:'EEF3FC', L:'ECF8F3'};
+  const POOL_FG = {S:'C07800', M:'1848A0', L:'087B50'};
+
+  rows.forEach((row, ri) => {
+    const pool = row[POOL_COL_IDX] || '';
+    const bg   = ri % 2 === 0 ? 'FFFFFF' : 'F9F9F9';
+    row.forEach((_, ci) => {
+      const addr = XLSX.utils.encode_cell({r: ri+1, c: ci});
+      if (!ws[addr]) ws[addr] = {v:'', t:'s'};
+      const isPool    = ci === POOL_COL_IDX;
+      const isName    = ci === 1;
+      const isPlan    = ci >= nH - 4;
+      ws[addr].s = {
+        fill: {fgColor:{rgb: isPool ? (POOL_BG[pool]||'FFFFFF') : (isPlan ? 'EEF3FC' : bg)}, patternType:'solid'},
+        font: {
+          bold: isName || isPool,
+          sz:   9,
+          color:{rgb: isPool ? (POOL_FG[pool]||'333333') : (isPlan ? '1848A0' : '333333')}
+        },
+        alignment: {horizontal: ci < 2 || ci >= 6 ? 'left' : 'center', vertical:'center'},
+        border: {
+          right:  {style:'thin', color:{rgb:'E8E8E8'}},
+          bottom: {style:'thin', color:{rgb:'E8E8E8'}}
+        }
+      };
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, '📊 Cartera');
+
+  const fname = `nexus_cartera_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  toast(`✓ Cartera exportada · ${portfolioData.length} proyectos · formato importación`);
+}
+

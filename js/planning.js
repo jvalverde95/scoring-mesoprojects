@@ -2068,113 +2068,132 @@ function renderNextSlotBanner() {
   if (!el) return;
 
   var timeline = planBuildTimeline();
-  var today = new Date(); today.setHours(0,0,0,0);
+  var today    = new Date(); today.setHours(0,0,0,0);
 
   if (!devTeam || !devTeam.length || !timeline.length) {
-    el.style.display = 'none';
-    return;
+    el.style.display = 'none'; return;
   }
 
-  // For each dev+pool: find the LAST project end (= when queue clears for that dev+pool)
-  // and also the NEXT project starting (= first upcoming project)
-  var cards = [];
-  (devTeam || []).forEach(function(dev) {
-    var wh = pDevHours(dev);
-    ['largo','medio','corto'].forEach(function(pool) {
-      if (!wh[pool]) return;
-      var devPoolTL = timeline
-        .filter(function(t){ return t.devName===dev.name && t.pool===pool; })
-        .sort(function(a,b){ return a.startDate-b.startDate; });
-      if (!devPoolTL.length) return;
+  // ── Global next free date: after ALL queued projects ────────
+  var globalEnd = timeline.reduce(function(mx,t){
+    return +t.endDate > +mx ? t.endDate : mx;
+  }, today);
+  var globalFree    = pNextWork(new Date(globalEnd));
+  var daysUntilFree = Math.max(0, Math.ceil((+globalFree - +today)/86400000));
+  var weeksUntil    = (daysUntilFree/5).toFixed(1);
+  var freeUrgency   = daysUntilFree<=7 ? '#087B50' : daysUntilFree<=30 ? '#C07800' : '#1848A0';
+  var freeBg        = daysUntilFree<=7 ? '#ECF8F3' : daysUntilFree<=30 ? '#FAF5E6' : '#EEF3FC';
+  var freeLabel     = daysUntilFree===0 ? 'Disponible hoy'
+    : daysUntilFree===1 ? 'Mañana'
+    : daysUntilFree<=7  ? 'En '+daysUntilFree+' días'
+    : weeksUntil+' semanas';
 
-      // Next starting project (first one not yet started)
-      var nextProj = devPoolTL.find(function(t){ return +t.startDate > +today; });
-      // Last project end = when queue clears
-      var lastEnd  = devPoolTL[devPoolTL.length-1].endDate;
-      var queueFree = pNextWork(new Date(lastEnd));
-      var totalProjs = devPoolTL.length;
-      var inProgress = devPoolTL.filter(function(t){ return +t.startDate<=+today && +today<+t.endDate; }).length;
+  // ── Per-dev cards ────────────────────────────────────────────
+  var devCards = (devTeam||[]).map(function(dev) {
+    var devTL  = timeline.filter(function(t){return t.devName===dev.name;})
+                         .sort(function(a,b){return a.startDate-b.startDate;});
+    if (!devTL.length) return '';
 
-      cards.push({
-        dev:dev.name, pool:pool, wh:wh[pool],
-        nextProj:nextProj, lastEnd:lastEnd, queueFree:queueFree,
-        totalProjs:totalProjs, inProgress:inProgress
-      });
-    });
-  });
+    var inProgress = devTL.filter(function(t){return +t.startDate<=+today && +today<+t.endDate;});
+    var upcoming   = devTL.filter(function(t){return +t.startDate>+today;});
+    var lastEnd    = devTL.reduce(function(mx,t){return +t.endDate>+mx?+t.endDate:mx;},+today);
+    var devFree    = pNextWork(new Date(lastEnd));
+    var devDays    = Math.max(0,Math.ceil((+devFree-+today)/86400000));
+    var devUrgency = devDays<=7?'#087B50':devDays<=30?'#C07800':'#555';
+    var devBg      = devDays<=7?'#ECF8F3':devDays<=30?'#FAF5E6':'#F7F7F7';
 
-  if (!cards.length) { el.style.display='none'; return; }
+    var inProgHtml = inProgress.length
+      ? inProgress.map(function(t){
+          var col = POOL_COLORS[t.pool];
+          var pct = Math.round(Math.max(0,Math.min(1,(+today-+t.startDate)/(+t.endDate-+t.startDate||1)))*100);
+          return '<div style="margin-bottom:4px;background:#F7F7F7;border-radius:6px;padding:5px 8px">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px">'
+              +'<div style="font-size:9px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">'+t.proj.nom.substring(0,28)+(t.proj.nom.length>28?'…':'')+'</div>'
+              +'<span style="font-size:7px;font-weight:700;padding:1px 5px;border-radius:8px;flex-shrink:0;background:'+POOL_BGS[t.pool]+';color:'+col+';border:1px solid '+col+'">'+t.pool+'</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+              +'<div style="flex:1;height:4px;background:#E8E8E8;border-radius:2px;overflow:hidden">'
+                +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:2px"></div>'
+              +'</div>'
+              +'<span style="font-size:8px;color:'+col+';font-weight:600;white-space:nowrap">'+pct+'%</span>'
+              +'<span style="font-size:8px;color:#AAA;white-space:nowrap">→ '+pShort(t.endDate)+'</span>'
+            +'</div>'
+          +'</div>';
+        }).join('')
+      : '<div style="font-size:9px;color:#AAA;padding:4px 0;font-style:italic">Sin proyectos en curso</div>';
 
-  var html2 = cards.map(function(s) {
-    var col = POOL_COLORS[s.pool];
-    var bg  = POOL_BGS[s.pool];
+    var upcomingHtml = upcoming.slice(0,3).map(function(t,qi){
+      var col = POOL_COLORS[t.pool];
+      return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #F5F5F5">'
+        +'<div style="width:16px;height:16px;border-radius:50%;background:'+col+';color:#fff;'
+          +'font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(qi+1)+'</div>'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:9px;font-weight:600;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.proj.nom.substring(0,24)+(t.proj.nom.length>24?'…':'')+'</div>'
+          +'<div style="font-size:8px;color:#AAA">'+pShort(t.startDate)+' → '+pShort(t.endDate)+'</div>'
+        +'</div>'
+        +'<span style="font-size:7px;font-weight:700;padding:1px 5px;border-radius:8px;flex-shrink:0;background:'+POOL_BGS[t.pool]+';color:'+col+';border:1px solid '+col+'">'+t.pool+'</span>'
+      +'</div>';
+    }).join('') + (upcoming.length > 3
+      ? '<div style="font-size:8px;color:#AAA;padding:4px 0">+'+( upcoming.length-3)+' proyectos más en cola</div>'
+      : '');
 
-    // Days until queue free
-    var daysQFree = Math.max(0, Math.ceil((+s.queueFree - +today)/86400000));
-    var urgencyCol = daysQFree<=7?'#087B50':daysQFree<=30?'#C07800':'#555';
-    var urgencyBg  = daysQFree<=7?'#ECF8F3':daysQFree<=30?'#FAF5E6':'#F5F5F5';
-
-    // Next project info
-    var nextProjHtml = s.nextProj
-      ? '<div style="margin-top:8px;padding:6px 8px;background:#F7F7F7;border-radius:6px;text-align:left">'
-          +'<div style="font-size:8px;color:#AAA;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Próximo proyecto</div>'
-          +'<div style="font-size:9px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">'
-            +s.nextProj.proj.nom.substring(0,22)+(s.nextProj.proj.nom.length>22?'…':'')
+    return '<div style="background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;overflow:hidden;flex:1;min-width:260px;max-width:360px">'
+      // Header
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#FAFAFA;border-bottom:1px solid #F0F0F0">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+          +'<div style="width:28px;height:28px;border-radius:50%;background:#111;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">'+dev.name.charAt(0).toUpperCase()+'</div>'
+          +'<div>'
+            +'<div style="font-size:11px;font-weight:700;color:#111">'+dev.name+'</div>'
+            +'<div style="font-size:8px;color:#AAA">'+devTL.length+' proy · '+inProgress.length+' en curso</div>'
           +'</div>'
-          +'<div style="font-size:8px;color:'+col+';margin-top:1px">Inicio: '+pShort(s.nextProj.startDate)+'</div>'
         +'</div>'
-      : '<div style="margin-top:8px;font-size:9px;color:#087B50;font-weight:600;text-align:center">✓ Sin cola pendiente</div>';
-
-    return '<div style="display:flex;flex-direction:column;align-items:stretch;gap:0;'
-      +'padding:14px;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;'
-      +'border-top:3px solid '+col+';min-width:160px;flex:1;max-width:220px">'
-      // Header: dev + pool
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
-        +'<div style="width:26px;height:26px;border-radius:50%;background:#111;color:#fff;'
-          +'font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-          +s.dev.charAt(0).toUpperCase()
-        +'</div>'
-        +'<div>'
-          +'<div style="font-size:10px;font-weight:700;color:#111">'+s.dev+'</div>'
-          +'<span style="font-size:8px;font-weight:600;padding:1px 6px;border-radius:10px;'
-            +'background:'+bg+';color:'+col+';border:1px solid '+col+'">'+s.pool+' · '+s.wh.toFixed(0)+'h/sem</span>'
+        // Free date chip
+        +'<div style="text-align:right">'
+          +'<div style="font-size:7px;color:#AAA;text-transform:uppercase;letter-spacing:.06em">Libre en</div>'
+          +'<div style="font-size:11px;font-weight:800;color:'+devUrgency+'">'+pShort(devFree)+'</div>'
+          +'<div style="font-size:8px;background:'+devBg+';color:'+devUrgency+';padding:1px 6px;border-radius:8px;font-weight:600">'+( devDays===0?'Hoy':devDays===1?'Mañana':devDays<=7?devDays+'d':Math.ceil(devDays/7)+'sem')+'</div>'
         +'</div>'
       +'</div>'
-      // Queue free date (big)
-      +'<div style="text-align:center;padding:8px;background:'+urgencyBg+';border-radius:8px;margin-bottom:4px">'
-        +'<div style="font-size:8px;color:'+urgencyCol+';text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:2px">'
-          +'Cola libre'
-        +'</div>'
-        +'<div style="font-size:16px;font-weight:800;color:'+urgencyCol+'">'+pShort(s.queueFree)+'</div>'
-        +'<div style="font-size:9px;color:'+urgencyCol+';margin-top:2px">'
-          +(daysQFree===0?'Disponible hoy':daysQFree===1?'Mañana':
-            daysQFree<=7?'En '+daysQFree+' días':
-            daysQFree<=60?'En '+Math.ceil(daysQFree/7)+' sem':pShort(s.queueFree))
-        +'</div>'
+      // In progress
+      +'<div style="padding:8px 12px;border-bottom:1px solid #F0F0F0">'
+        +'<div style="font-size:8px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">🟢 En curso</div>'
+        +inProgHtml
       +'</div>'
-      // Stats row
-      +'<div style="display:flex;gap:4px;margin-bottom:4px">'
-        +'<div style="flex:1;text-align:center;padding:4px;background:#F9F9F9;border-radius:5px">'
-          +'<div style="font-size:13px;font-weight:800;color:#111">'+s.totalProjs+'</div>'
-          +'<div style="font-size:7px;color:#AAA;text-transform:uppercase">en cola</div>'
-        +'</div>'
-        +'<div style="flex:1;text-align:center;padding:4px;background:#F9F9F9;border-radius:5px">'
-          +'<div style="font-size:13px;font-weight:800;color:#1848A0">'+s.inProgress+'</div>'
-          +'<div style="font-size:7px;color:#AAA;text-transform:uppercase">en curso</div>'
-        +'</div>'
+      // Upcoming
+      +'<div style="padding:8px 12px">'
+        +'<div style="font-size:8px;font-weight:700;color:#AAA;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">⏭ Próximos en cola</div>'
+        +(upcomingHtml || '<div style="font-size:9px;color:#AAA;font-style:italic">Sin proyectos pendientes</div>')
       +'</div>'
-      // Next project chip
-      + nextProjHtml
     +'</div>';
-  }).join('');
+  }).filter(Boolean).join('');
 
   el.style.display = 'block';
   el.innerHTML =
-    '<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:11px;font-weight:700;color:#111">⏭ Estado de la cola por desarrollador</span>'
-      +'<span style="font-size:9px;color:#AAA">· "Cola libre" = cuando se acaban todos los proyectos asignados</span>'
+    // Global free date — BIG prominent display
+    '<div style="background:linear-gradient(135deg,'+freeBg+',#fff);border:2px solid '+freeUrgency+';'
+      +'border-radius:12px;padding:16px 20px;margin-bottom:14px;'
+      +'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">'
+      +'<div>'
+        +'<div style="font-size:10px;font-weight:700;color:'+freeUrgency+';text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">'
+          +'📅 Próxima fecha libre en el calendario'
+        +'</div>'
+        +'<div style="font-size:11px;color:#666;max-width:400px">'
+          +'Cuando se completen TODOS los proyectos actualmente en cartera'
+        +'</div>'
+      +'</div>'
+      +'<div style="text-align:right">'
+        +'<div style="font-size:32px;font-weight:900;color:'+freeUrgency+';letter-spacing:-.5px;line-height:1">'
+          +pShort(globalFree)
+        +'</div>'
+        +'<div style="font-size:13px;font-weight:700;color:'+freeUrgency+';margin-top:2px">'+freeLabel+'</div>'
+        +'<div style="font-size:10px;color:#AAA">'+timeline.length+' proyectos · '+globalFree.getFullYear()+'</div>'
+      +'</div>'
     +'</div>'
-    +'<div style="display:flex;gap:10px;flex-wrap:wrap">'+html2+'</div>';
+    // Dev cards
+    +'<div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">'
+      +'Estado por desarrollador'
+    +'</div>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap">'+devCards+'</div>';
 }
 
 
@@ -2422,17 +2441,20 @@ function renderHourlyView(el, timeline) {
             document.body.appendChild(ghost2);
             document.body.style.userSelect = 'none';
 
+            var DAYS_PX = HOUR_PX2 * 8; // pixels per full working day
             function onHourMove(e2) {
-              var deltaH = (e2.clientX - startX) / HOUR_PX2;
-              var nd = new Date(slotStartMs + deltaH*3600000);
+              var deltaPx = e2.clientX - startX;
+              var deltaDays = deltaPx / DAYS_PX;
+              var nd = new Date(slotStartMs + deltaDays*86400000);
               ghost2.textContent = '↔ '+nomForDrag.substring(0,20)+' · '+pShort(nd);
               ghost2.style.left = (e2.clientX+14)+'px';
               ghost2.style.top  = (e2.clientY-20)+'px';
             }
             function onHourUp(e2) {
               ghost2.remove(); document.body.style.userSelect = '';
-              var deltaH = (e2.clientX - startX) / HOUR_PX2;
-              var deltaDays = Math.round(deltaH / 8); // 8 work hours per day
+              var deltaPx = e2.clientX - startX;
+              // Snap to nearest working day (each DAYS_PX pixels = 1 day)
+              var deltaDays = Math.round(deltaPx / DAYS_PX);
               if (deltaDays !== 0) {
                 var ns = pNextWork(new Date(slotStartMs + deltaDays*86400000));
                 ganttDoMove(nomForDrag, devForDrag, ns);
