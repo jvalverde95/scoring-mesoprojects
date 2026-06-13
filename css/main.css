@@ -1784,3 +1784,98 @@ thead th{font-size:var(--fs-xxs)!important}
   90%  { opacity:1; }
   100% { left:calc(100% + 200px); opacity:0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   NEXUS 4.2 — INTERIOR CLARO (eco de la portada, tonos suaves)
+   Paleta slate-azul muy clara con acentos tech; coherente con el landing
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Fondo general: gradiente azul-slate clarísimo */
+body{
+  background:linear-gradient(165deg,#F4F7FC 0%,#EEF2F9 50%,#F5F3FB 100%)!important;
+}
+#shell{ background:transparent!important; }
+#main{ background:transparent!important; }
+
+/* Steps sobre fondo translúcido para dejar ver el degradado */
+#steps-scroll{ background:transparent!important; padding-left:18px!important; padding-right:18px!important; }
+.step{ padding-top:14px!important; }
+
+/* ── Left nav: panel glass claro con borde azulado ── */
+#lnav{
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(244,247,252,.75))!important;
+  backdrop-filter:blur(12px)!important;
+  border-right:1px solid rgba(120,150,200,.16)!important;
+  box-shadow:1px 0 16px rgba(60,90,150,.05)!important;
+}
+.lnav-item{ color:#5A6680!important; }
+.lnav-item:hover{ background:rgba(120,160,230,.10)!important; color:#1C2B4A!important; }
+.lnav-item.active{
+  background:linear-gradient(135deg,rgba(196,151,74,.16),rgba(120,160,230,.10))!important;
+  box-shadow:inset 3px 0 0 var(--g)!important; color:#1C2B4A!important;
+}
+.lnav-group-label{ color:#9DA8C0!important; }
+.lnav-divider{ background:rgba(120,150,200,.18)!important; }
+
+/* ── Cards / sections: blanco con borde azulado suave + sombra fría ── */
+.cfg-section,.c-card,.sd-box,.sum-radar,.port-wrap,.chart-panel,.pool-panel,
+.ib,.dim-mini-list,.qstat,.dash-mini,table{
+  background:rgba(255,255,255,.92)!important;
+  border:1px solid rgba(120,150,200,.14)!important;
+  box-shadow:0 1px 3px rgba(40,70,130,.05),0 6px 20px rgba(40,70,130,.05)!important;
+  backdrop-filter:blur(4px)!important;
+}
+.c-card:hover,.qstat:hover,.sd-box:hover,.dash-mini:hover{
+  box-shadow:0 4px 14px rgba(40,70,130,.10),0 12px 32px rgba(40,70,130,.08)!important;
+  border-color:rgba(120,150,200,.24)!important;
+}
+
+/* ── Top bar: sigue oscura pero con acento azul-oro coherente ── */
+#bar{
+  background:linear-gradient(180deg,#16243E,#101A2E)!important;
+  border-bottom:1px solid rgba(196,151,74,.16)!important;
+}
+
+/* ── Tablas: cabecera azul muy clara ── */
+thead th{
+  background:linear-gradient(180deg,#F0F4FB,#E9EFF8)!important;
+  color:#5A6680!important;border-bottom:1.5px solid rgba(120,150,200,.20)!important;
+}
+tbody tr:hover{ background:rgba(120,160,230,.06)!important; }
+tbody td{ border-bottom:1px solid rgba(120,150,200,.10)!important; }
+
+/* ── Inputs: foco azul-oro ── */
+input:focus,select:focus,textarea:focus{
+  border-color:#6FA8FF!important;
+  box-shadow:0 0 0 3px rgba(111,168,255,.18)!important;
+}
+
+/* ── Botones primarios: leve gradiente ── */
+.cfg-apply:not(.cfg-reset){
+  background:linear-gradient(135deg,#1C2B4A,#16243E)!important;
+  box-shadow:0 2px 8px rgba(28,43,74,.18)!important;
+}
+.cfg-apply:not(.cfg-reset):hover{ filter:brightness(1.15)!important; }
+
+/* ── Section titles: azul tinta ── */
+.s-title{ color:#1C2B4A!important; }
+.cfg-sec-title{ color:#1C2B4A!important; }
+
+/* ── Progress bar zona wizard ── */
+.prog{ background:rgba(255,255,255,.6)!important;border-bottom:1px solid rgba(120,150,200,.16)!important; }
+
+/* ── Modales: glass claro ── */
+.ado-modal,.modal-box,.proj-edit-box,.ai-modal{
+  background:rgba(255,255,255,.97)!important;
+  border:1px solid rgba(120,150,200,.18)!important;
+}
+
+/* ── Toast ── */
+#toast{ background:#16243E!important;color:#fff!important; }
+
+/* Sutil textura de puntos en el fondo del área de scroll (tech) */
+#steps-scroll::before{
+  content:'';position:fixed;inset:72px 0 0 72px;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(rgba(120,150,200,.10) 1px,transparent 1px);
+  background-size:28px 28px;opacity:.5;
+}
