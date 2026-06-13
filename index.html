@@ -2080,6 +2080,70 @@
     </div>
   </div>
 
+  <!-- IA de scoring -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">🤖 IA de evaluación — cómo asigna las notas</div>
+    <div class="cfg-sec-sub">Motor de reglas semánticas que lee cada proyecto y propone una nota (1–10) para los 22 criterios. Funciona sin conexión y sin coste: no envía datos a ningún servicio externo.</div>
+
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Qué lee -->
+      <div style="background:#F7F9FD;border:1px solid rgba(120,150,200,.18);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#1C2B4A;margin-bottom:6px">1. Qué información lee de cada proyecto</div>
+        <div style="font-size:11px;color:#555;line-height:1.6">
+          La IA combina cuatro fuentes de texto en un único bloque que analiza:
+          <div style="font-family:monospace;font-size:10px;background:#fff;border:1px solid #E5E5E5;border-radius:6px;padding:8px;margin:8px 0;color:#1848A0">
+            texto = nombre + descripción (System.Description) + tags + área
+          </div>
+          La <b>descripción de ADO</b> es la fuente más rica: cuanto más detallada esté en Azure DevOps, más precisa es la evaluación. Si un work item no tiene descripción, la IA solo dispone del nombre, los tags y el área.
+        </div>
+      </div>
+
+      <!-- Cómo puntúa -->
+      <div style="background:#F7F9FD;border:1px solid rgba(120,150,200,.18);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#1C2B4A;margin-bottom:6px">2. Cómo decide la nota — léxicos temáticos</div>
+        <div style="font-size:11px;color:#555;line-height:1.6">
+          El motor busca <b>20 grupos de palabras clave</b> (léxicos) dentro del texto. Cada grupo está asociado a una o varias dimensiones. La puntuación sube por <b>intensidad</b>: cuantas más palabras de un grupo aparecen, mayor es la nota de los criterios asociados.
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:10px">
+            <div style="background:#FEF0F1;border-left:3px solid #CC1F26;padding:6px 8px;border-radius:4px"><b>D1 Compliance</b> → legal, GDPR, RGPD, GMP, FDA, normativa, auditoría, PRL, seguridad, trazabilidad, caducidad</div>
+            <div style="background:#FAF6EC;border-left:3px solid #C4974A;padding:6px 8px;border-radius:4px"><b>D2 Estrategia</b> → Consejo, CEO, mandato, internacional, Polonia, I+D, innovación, urgente, plazo</div>
+            <div style="background:#ECF8F3;border-left:3px solid #087B50;padding:6px 8px;border-radius:4px"><b>D3 ROI</b> → ingresos, factura, margen, B2B, ahorro, eficiencia, automatización, ROI, payback, calidad</div>
+            <div style="background:#FAF5E6;border-left:3px solid #C07800;padding:6px 8px;border-radius:4px"><b>D4 Técnica</b> → integración, API, ERP, Dynamics, LIMS, GDPR, escalabilidad, multipaís (vs. simple: campo, filtro, informe)</div>
+            <div style="background:#EEF3FC;border-left:3px solid #1848A0;padding:6px 8px;border-radius:4px"><b>D5 Implantación</b> → quick win, sencillo (sube) vs. integración, migración (baja); gestión del cambio, time-to-value</div>
+            <div style="background:#F4F5F6;border-left:3px solid #5C6570;padding:6px 8px;border-radius:4px"><b>D6 Personas</b> → RRHH, empleado, experiencia, ESG, sostenibilidad, residuo, formación, training</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ejemplo -->
+      <div style="background:#F7F9FD;border:1px solid rgba(120,150,200,.18);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#1C2B4A;margin-bottom:6px">3. Ejemplo</div>
+        <div style="font-size:11px;color:#555;line-height:1.6">
+          Proyecto <i>"MPG-LOG-012 · Integración API aduanas con serialización GMP obligatoria"</i>:
+          <ul style="margin:6px 0 0;padding-left:18px">
+            <li>detecta <b>"aduanas", "serialización", "GMP", "obligatoria"</b> → D1 Compliance alto (≈9)</li>
+            <li>detecta <b>"integración", "API"</b> → D4 técnica compleja (≈5), capacidad interna media</li>
+            <li>el área <b>LOG</b> y el prefijo refuerzan el contexto logístico</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Cómo usarla -->
+      <div style="background:#F7F9FD;border:1px solid rgba(120,150,200,.18);border-radius:10px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#1C2B4A;margin-bottom:6px">4. Cuándo se ejecuta y cómo ajustarla</div>
+        <div style="font-size:11px;color:#555;line-height:1.6">
+          <b>Automática</b> al cargar la app: cada proyecto importado de ADO se puntúa al instante.<br>
+          <b>Manual masiva</b>: en <i>Evaluación → ⚡ Re-evaluar cartera con IA</i> (respeta los proyectos editados a mano) o <i>↻ Forzar todo</i>.<br>
+          <b>Ajuste fino</b>: abre cualquier proyecto en <i>Evaluación</i> y mueve los sliders; al guardar, queda marcado como <b>manual</b> y la IA ya no lo sobrescribe. También puedes usar el asistente de planificación: <i>"prioriza el portal B2B"</i>.
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:#999;font-style:italic;padding:4px 2px">
+        La IA propone un punto de partida razonable y consistente para toda la cartera. La decisión final siempre es del evaluador: ajusta lo que el contexto de negocio requiera.
+      </div>
+    </div>
+  </div>
+
   <!-- 6 Dimensions -->
   <div class="cfg-section" style="margin-bottom:14px">
     <div class="cfg-sec-title">Las 6 dimensiones</div>
