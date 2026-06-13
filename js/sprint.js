@@ -6,12 +6,21 @@
 let devTeam = [];  // [{name, corto, medio, largo}]
 
 function loadDevTeam() {
+  // Version bump: forces the corrected default team to load once,
+  // overriding any stale team saved in the browser from earlier sessions.
+  const TEAM_VERSION = 'v3-2026';
   try {
-    const saved = localStorage.getItem('meso_dev_team');
-    if (saved) devTeam = JSON.parse(saved);
+    const savedVer = localStorage.getItem('meso_dev_team_ver');
+    const saved    = localStorage.getItem('meso_dev_team');
+    if (saved && savedVer === TEAM_VERSION) {
+      devTeam = JSON.parse(saved);
+    } else {
+      devTeam = []; // stale or missing version → rebuild from defaults below
+      localStorage.setItem('meso_dev_team_ver', TEAM_VERSION);
+    }
   } catch(_) {}
   if (!devTeam.length) {
-    // Equipo por defecto: horario 09-14 y 15-17 (viernes solo 09-14)
+    // Equipo por defecto: jornada 09-14 y 15-17 (viernes solo 09-14)
     // Marc y Julio: LARGOS toda la manana, MEDIOS toda la tarde
     const schedLM = {
       L:[{start:'09:00',end:'14:00',pool:'largo'},{start:'15:00',end:'17:00',pool:'medio'}],
@@ -37,7 +46,10 @@ function loadDevTeam() {
 }
 
 function saveDevTeam() {
-  try { localStorage.setItem('meso_dev_team', JSON.stringify(devTeam)); } catch(_){}
+  try {
+    localStorage.setItem('meso_dev_team', JSON.stringify(devTeam));
+    localStorage.setItem('meso_dev_team_ver', 'v3-2026');
+  } catch(_){}
 }
 
 function renderDevRows() {
