@@ -1537,7 +1537,7 @@ function renderChartsStep() {
       data:{datasets:allCls.map(cls=>({label:cls,
         data:portfolioData.filter(p=>clsf(p.sf).et===cls).map(p=>({
           x:+p.dimScores[2].toFixed(2),y:+p.dimScores[0].toFixed(2),
-          r:Math.max(5,p.dimScores[1]*2.5),nom:sn(p),score:p.sf,area:p.area||''})),
+          r:Math.max(5,p.dimScores[1]*2.5),nom:p.nom,score:p.sf,area:p.area||''})),
         backgroundColor:CLS_BG[cls]||'rgba(100,100,100,.6)',
         borderColor:CLS_BORDER[cls]||'#888',borderWidth:1.5}))},
       options:{responsive:true,maintainAspectRatio:false,
@@ -1573,7 +1573,7 @@ function renderChartsStep() {
   } else if (curChart2==='scatter') {
     chart2Inst.scatter = new Chart(canvas, {type:'bubble',
       data:{datasets:[{label:'Proyectos',
-        data:portfolioData.map(p=>({x:+p.dimScores[4].toFixed(2),y:+p.dimScores[2].toFixed(2),r:Math.max(5,p.dimScores[0]*2),nom:sn(p),score:p.sf})),
+        data:portfolioData.map(p=>({x:+p.dimScores[4].toFixed(2),y:+p.dimScores[2].toFixed(2),r:Math.max(5,p.dimScores[0]*2),nom:p.nom,score:p.sf})),
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.5)',borderWidth:1.5}]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -1583,7 +1583,7 @@ function renderChartsStep() {
   } else if (curChart2==='heat') {
     chart2Inst.heat = new Chart(canvas, {type:'bubble',
       data:{datasets:[{label:'Proyectos',
-        data:portfolioData.map(p=>({x:+p.dimScores[0].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.sf*1.5),nom:sn(p),score:p.sf})),
+        data:portfolioData.map(p=>({x:+p.dimScores[0].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.sf*1.5),nom:p.nom,score:p.sf})),
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.4)',borderWidth:1}]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -1593,7 +1593,7 @@ function renderChartsStep() {
   } else if (curChart2==='quad') {
     chart2Inst.quad = new Chart(canvas, {type:'bubble',
       data:{datasets:[{label:'Proyectos',
-        data:portfolioData.map(p=>({x:+p.dimScores[2].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.dimScores[0]*1.8),nom:sn(p),score:p.sf})),
+        data:portfolioData.map(p=>({x:+p.dimScores[2].toFixed(2),y:+p.dimScores[1].toFixed(2),r:Math.max(5,p.dimScores[0]*1.8),nom:p.nom,score:p.sf})),
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.4)',borderWidth:1.5}]},
       options:{responsive:true,maintainAspectRatio:false,

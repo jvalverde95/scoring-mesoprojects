@@ -55,24 +55,85 @@ function ruleScore(p){
   return computeProj(p).sf;
 }
 function ruleScoresCriterios(p){
-  const nom=(p.nom||'').toLowerCase(),desc=(p.adoDesc||'').toLowerCase(),tags=(p.adoTags||[]).join(' ').toLowerCase();
-  const c=nom+' '+desc+' '+tags;
-  const isConsejo=['portal b2b','b2b','magento','dsv','conciliaci'].some(x=>c.includes(x));
-  const isLegal=['reglamento','normativa','legal','gdpr','reach','gmp','fda','obligatori','aduanas','serializ','firma electr'].some(x=>c.includes(x));
-  const isAudit=['auditoría','auditoria','coa','muestreo','military','certificado','calidad','trazabilidad','caducidad','bloqueo'].some(x=>c.includes(x));
-  const isRisk=['siniestro','impago','fraude','crédito concedido'].some(x=>c.includes(x));
-  const isEfic=['eficiencia','optimiz','ahorro','autom','masiv','simplific','agiliz','proceso por lotes','batch'].some(x=>c.includes(x));
-  const isIncome=['factura','cobro','pago','impago','conciliaci','b2b','magento','venta'].some(x=>c.includes(x));
-  const isSimple=['campo','filtro','informe','vista','formulario','alerta','notificación','correo'].some(x=>c.includes(x));
-  const isComplex=['integra','middleware','api','salesforce','dsv','pim','datalake','coptis'].some(x=>c.includes(x));
-  let d1=[isLegal?9:isAudit?8:isRisk?5:2, ['peligro','advertencia','prl','safety','pesada','materia prima'].some(x=>c.includes(x))?9:isAudit?5:2, isRisk?9:isAudit?7:['cliente','factura','error'].some(x=>c.includes(x))?5:2, isLegal?9:isAudit?8:isConsejo?5:2];
-  let d2=[isConsejo?10:['salesforce','coptis','docuware','integra','datalake'].some(x=>c.includes(x))?7:1, ['poland','lituania','international','externo'].some(x=>c.includes(x))?8:1, ['datalake','bi ','analytics','ia ','machine learning'].some(x=>c.includes(x))?8:isConsejo?6:1, isConsejo?9:3];
-  let d3=[isConsejo?9:isIncome?7:2, isEfic?8:isConsejo?6:2, ['conciliaci','impago','crédito'].some(x=>c.includes(x))?9:isIncome?7:isEfic?6:2, ['calidad','coa','caducidad','trazabilidad','muestreo'].some(x=>c.includes(x))?8:['cliente','servicio'].some(x=>c.includes(x))?6:3];
-  let d4=[isSimple?9:isComplex?5:5, isSimple?9:isComplex?5:5, 5, ['gdpr','firma electr','auditoría'].some(x=>c.includes(x))?8:5];
-  let d5=[isSimple?8:isComplex?4:5, 6, isSimple?9:isComplex?3:6];
-  let d6=[['rrhh','empleado','nómina','nomina'].some(x=>c.includes(x))?9:4, ['ecoembes','sostenib','residuo','medioambient'].some(x=>c.includes(x))?8:2, ['formación','training'].some(x=>c.includes(x))?8:5];
-  const all=[...d1,...d2,...d3,...d4,...d5,...d6].map(v=>Math.max(1,Math.min(10,Math.round(v))));
-  const map={};CRIT_IDS.forEach((cid,i)=>{map[cid]=all[i]||5;});return map;
+  // Motor de reglas v2 — análisis semántico ponderado por intensidad de keyword
+  const nom=(p.nom||'').toLowerCase();
+  const desc=(p.adoDesc||'').toLowerCase();
+  const tags=(p.adoTags||[]).join(' ').toLowerCase();
+  const area=(p.area||'').toLowerCase();
+  const c=nom+' '+desc+' '+tags+' '+area;
+
+  // Helper: cuenta cuántas keywords de una lista aparecen, con peso
+  const hits=(arr)=>arr.reduce((n,w)=>n+(c.includes(w)?1:0),0);
+  // Escala: base 2, +inc por cada hit, cap 10
+  const sc=(base,arr,inc)=>{ const h=hits(arr); return Math.max(1,Math.min(10, base + h*(inc||2))); };
+  // Si hay match fuerte → valor alto directo
+  const strong=(val,arr,fallback)=>arr.some(w=>c.includes(w))?val:(fallback!==undefined?fallback:2);
+
+  // ── Léxicos temáticos ──
+  const LEGAL    = ['reglamento','normativa','legal','gdpr','rgpd','reach','gmp','fda','obligatori','aduana','serializ','firma electr','cumplimiento','compliance','sox','iso','sancion'];
+  const PRL      = ['prl','seguridad','salud','riesgo laboral','epi','accidente','peligro','ergonom','prevención','sustancia peligrosa','materia prima','química'];
+  const REPUT    = ['reputacion','imagen','marca','cliente final','queja','reclamación','incidencia crítica','prensa','redes sociales'];
+  const REGUL    = ['regulator','normativa','auditoría','auditoria','certificad','trazabilidad','caducidad','lote','coa','muestreo','validación'];
+  const CONSEJO  = ['consejo','ceo','dirección general','comité','estratégic','mandato','prioridad alta','board','dirección'];
+  const INTL     = ['internacional','polonia','poland','lituania','francia','portugal','export','filial','intercompany','global','multipaís','multipais'];
+  const IDI      = ['i+d','idi','innovación','pipeline','formulación','nuevo producto','laboratorio','coptis','investigación','desarrollo producto'];
+  const URGENT   = ['urgente','inmediato','plazo','deadline','crítico','ventana','campaña','temporada','ya','cuanto antes','bloqueante'];
+  const INGRESOS = ['ingreso','venta','facturación','factura','margen','cobro','b2b','ecommerce','magento','pedido','cliente','revenue'];
+  const AHORRO   = ['ahorro','coste','eficiencia','optimiz','automatiz','reducción','productividad','tiempo','manual','agiliz','simplific','lotes','batch','masiv'];
+  const ROI      = ['roi','payback','retorno','inversión','rentab','beneficio','amortiz'];
+  const CALIDAD  = ['calidad','cero defecto','coa','caducidad','trazabilidad','muestreo','no conformidad','reproceso','merma','control'];
+  const SIMPLE   = ['campo','filtro','informe','vista','formulario','alerta','notificación','correo','listado','reporte','pantalla','botón','etiqueta'];
+  const COMPLEX  = ['integra','middleware','api','salesforce','dsv','pim','datalake','coptis','lims','sincroniz','interfaz','conector','migración','arquitectura'];
+  const ERP      = ['erp','dynamics','d365','sap','navision','business central','lims','crm','sistema'];
+  const SECURITY = ['gdpr','rgpd','firma electr','seguridad','cifrad','acceso','permiso','rol','privacidad','dato personal','ciberseg'];
+  const SCALE    = ['internacional','multipaís','multipais','filial','escalab','global','países','paises','+100'];
+  const CHANGE   = ['cambio','adopción','cultura','formación','usuario','resistencia','proceso nuevo'];
+  const QUICK    = ['rápido','quick win','sencillo','pequeño','simple','inmediato','semana'];
+  const RRHH     = ['rrhh','empleado','nómina','nomina','personal','talento','contratación','onboarding','vacaciones','fichaje'];
+  const ESG      = ['ecoembes','sostenib','residuo','medioambient','reciclaje','huella','co2','energía','esg','verde'];
+  const TRAIN    = ['formación','training','tutorial','manual usuario','capacitación','aprendizaje'];
+  const EMPLEXP  = ['experiencia empleado','satisfacción','bienestar','ergonom','carga de trabajo','clima laboral'];
+
+  // ── D1 · Compliance / Legal / Riesgo ──
+  const c1_1 = strong(9, LEGAL, sc(2,REGUL,2));
+  const c1_2 = strong(9, PRL, 2);
+  const c1_3 = sc(2, REPUT, 2.5);
+  const c1_4 = strong(9, REGUL, strong(7,LEGAL,2));
+
+  // ── D2 · Estratégico ──
+  const c2_1 = strong(10, CONSEJO, sc(1,ERP,1.5));
+  const c2_2 = strong(8, INTL, 1);
+  const c2_3 = strong(8, IDI, 1);
+  const c2_4 = sc(2, URGENT, 2.5);
+
+  // ── D3 · ROI / Valor ──
+  const c3_1 = strong(8, INGRESOS, 2);
+  const c3_2 = strong(8, AHORRO, 2);
+  const c3_3 = strong(7, ROI, hits(AHORRO)>1?6:3);
+  const c3_4 = strong(8, CALIDAD, 3);
+
+  // ── D4 · Técnica / TRL ──
+  const isSimple=hits(SIMPLE)>0, isComplex=hits(COMPLEX)>0;
+  const c4_1 = isSimple?9:isComplex?5:6;                 // madurez (simple=maduro)
+  const c4_2 = strong(8, ERP, isComplex?5:6);            // integración
+  const c4_3 = strong(8, SCALE, 5);                      // escalabilidad
+  const c4_4 = strong(8, SECURITY, 5);                   // GDPR/ciberseg
+
+  // ── D5 · Implantación ──
+  const c5_1 = isSimple?8:isComplex?4:6;                 // capacidad interna
+  const c5_2 = hits(CHANGE)>0?5:7;                        // gestión del cambio
+  const c5_3 = strong(9, QUICK, isSimple?8:isComplex?3:6); // time-to-value
+
+  // ── D6 · Personas / ESG ──
+  const c6_1 = strong(8, EMPLEXP, hits(RRHH)>0?7:4);
+  const c6_2 = strong(8, ESG, 2);
+  const c6_3 = strong(8, TRAIN, isSimple?7:5);
+
+  const vals={c1_1,c1_2,c1_3,c1_4,c2_1,c2_2,c2_3,c2_4,c3_1,c3_2,c3_3,c3_4,
+              c4_1,c4_2,c4_3,c4_4,c5_1,c5_2,c5_3,c6_1,c6_2,c6_3};
+  const map={};
+  CRIT_IDS.forEach(cid=>{ map[cid]=Math.max(1,Math.min(10,Math.round(vals[cid]!=null?vals[cid]:5))); });
+  return map;
 }
 function aiScoreOne(idx){
   const item=_aiScored[idx]; if(!item) return;
@@ -196,6 +257,7 @@ function _buildManualProject() {
 function saveManualToPortfolio() {
   const proj = _buildManualProject();
   if (!proj.nom) { toast('El proyecto no tiene nombre'); return; }
+  proj._manualEval = true;  // marca: editado a mano → protegido en re-evaluación masiva
 
   // Check for duplicate
   const dup = portfolioData.findIndex(p => p.nom === proj.nom);
@@ -339,4 +401,50 @@ function aiTestScore() {
       Score final: <span style="color:${full.sf>=7.5?'var(--d3)':full.sf>=5?'#C07800':'var(--d1)'}">${full.sf.toFixed(2)}</span>
       → <span style="font-size:10px">${clsf(full.sf).et}</span>
     </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RE-EVALUACIÓN MASIVA CON IA — toda la cartera en cualquier momento
+   Aplica ruleScoresCriterios v2 + computeProj a cada proyecto.
+   Respeta proyectos editados manualmente si el usuario lo pide.
+   ═══════════════════════════════════════════════════════════════ */
+function aiReevaluateAll(opts) {
+  opts = opts || {};
+  if (!portfolioData || !portfolioData.length) { toast('No hay proyectos en la cartera'); return; }
+
+  const skipManual = opts.skipManual !== false; // por defecto respeta los marcados manuales
+  let done = 0, skipped = 0;
+
+  portfolioData.forEach(function(p) {
+    if (skipManual && p._manualEval) { skipped++; return; }
+    try {
+      const scores = ruleScoresCriterios(p);
+      CRIT_IDS.forEach(function(cid){ p.scores[cid] = scores[cid]; });
+      const computed = computeProj(p);
+      Object.assign(p, computed);
+      p._aiScored = true;
+      p._aiScoredAt = new Date().toISOString();
+      done++;
+    } catch(e) { console.error('reeval', p.nom, e); }
+  });
+
+  // Persistir y refrescar todas las vistas
+  if (typeof savePortfolio === 'function') savePortfolio();
+  if (typeof renderPortfolio === 'function') renderPortfolio();
+  if (typeof renderPools === 'function') renderPools();
+  if (typeof renderDashboard === 'function') renderDashboard();
+  if (typeof renderChartsStep === 'function') renderChartsStep();
+  if (typeof renderEvalScreen === 'function') renderEvalScreen();
+
+  toast('✓ IA re-evaluó ' + done + ' proyectos' + (skipped ? ' · ' + skipped + ' manuales respetados' : ''));
+}
+
+// Variante: re-evalúa TODO incluyendo los manuales (con confirmación)
+function aiReevaluateAllForce() {
+  if (!portfolioData.length) { toast('No hay proyectos'); return; }
+  const manuals = portfolioData.filter(p=>p._manualEval).length;
+  const msg = manuals
+    ? 'Esto re-evaluará los ' + portfolioData.length + ' proyectos con IA, incluyendo ' + manuals + ' editados manualmente. ¿Continuar?'
+    : 'Re-evaluar los ' + portfolioData.length + ' proyectos con IA?';
+  if (confirm(msg)) aiReevaluateAll({ skipManual: false });
 }
