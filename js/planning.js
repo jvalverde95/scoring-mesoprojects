@@ -1891,131 +1891,145 @@ function _chatAddMsg(role, text) {
 
 function _planChatAnswer(q) {
   var tl = planBuildTimeline();
-  if (!tl.length) return '⚠️ No hay proyectos planificados. Configura el equipo con horario semanal y carga proyectos con horas estimadas.';
-
-  var qLow = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  var qLow = (q||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   var today = new Date(); today.setHours(0,0,0,0);
+  var has = function(){ for(var i=0;i<arguments.length;i++){ if(qLow.indexOf(arguments[i])>=0) return true; } return false; };
 
-  // ── Query: project start date ──────────────────────────────
-  // "¿Cuándo empieza X?" / "inicio de X" / "when does X start"
-  if (/empie|inicia|inicio|start|cuando.*proy|fecha.*proy/.test(qLow)) {
-    // Extract project name fragment
-    var nameHint = qLow
-      .replace(/cuando empie[az]a?|cuando se inicia?|inicio de|fecha de inicio|empie[az]a?|inicia?|inicio|start/g,'')
-      .replace(/el proyecto|proyecto|proy/g,'').trim();
+  // ── PRIORIZAR / cambiar evaluación de un proyecto ──
+  // "prioriza X", "sube X", "marca X como prioritario", "baja X"
+  if (has('prioriz','sube','subir','marca','prioritario','baja','bajar','desprioriz','aumenta','reduce')) {
+    var up = has('prioriz','sube','subir','prioritario','aumenta','marca');
+    var down = has('baja','bajar','desprioriz','reduce');
+    // extraer nombre
+    var hint = qLow.replace(/\b(prioriza|priorizar|sube|subir|baja|bajar|marca|como|prioritario|despriorizar|desprioriza|aumenta|aumentar|reduce|reducir|el|la|proyecto|proy|nota|de)\b/g,' ').replace(/\s+/g,' ').trim();
+    if (hint.length < 2) return '✏️ Dime qué proyecto priorizar. Ej: <em>"prioriza el portal B2B"</em>';
+    var m = portfolioData.filter(function(p){ return p.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(hint); });
+    if (!m.length) return '🔍 No encontré ningún proyecto con "<strong>'+hint+'</strong>".';
+    if (m.length > 1) return '🔍 Hay '+m.length+' proyectos con "<strong>'+hint+'</strong>". Sé más específico:<br>'+m.slice(0,6).map(function(p){return '· '+p.nom;}).join('<br>');
+    var proj = m[0];
+    // Ajustar: subir = poner D1-D3 altos; bajar = reducir
+    var delta = down ? -2 : +2;
+    ['c1_1','c1_4','c2_1','c3_1','c3_3'].forEach(function(cid){
+      proj.scores[cid] = Math.max(1, Math.min(10, (proj.scores[cid]||5) + delta));
+    });
+    var before = (proj.sf||0).toFixed(2);
+    Object.assign(proj, computeProj(proj));
+    proj._manualEval = true;
+    if (typeof renderPortfolio==='function') renderPortfolio();
+    if (typeof renderPools==='function') renderPools();
+    if (typeof renderDashboard==='function') renderDashboard();
+    if (typeof renderCalendar==='function') renderCalendar();
+    return (down?'🔽':'🔼')+' <strong>'+proj.nom+'</strong><br>'
+      +'Score: '+before+' → <strong>'+(proj.sf||0).toFixed(2)+'</strong> · pool '+(getPool(proj)||'—')+'<br>'
+      +'<span style="color:#888;font-size:10px">Evaluación ajustada y planificación recalculada.</span>';
+  }
 
-    if (nameHint.length > 2) {
-      var matches = tl.filter(function(t){
-        return t.proj.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nameHint);
-      });
-      if (matches.length === 0) return '🔍 No encontré ningún proyecto que coincida con "<strong>'+nameHint+'</strong>".<br>Prueba con parte del nombre.';
-      if (matches.length === 1) {
-        var t = matches[0];
-        var started = +t.startDate <= +today;
-        return '📅 <strong>'+t.proj.nom+'</strong><br>'
-          +'Pool: <span style="color:'+POOL_COLORS[t.pool]+'">'+t.pool+'</span> · Dev: '+t.devName+'<br>'
-          +(started?'🟢 <strong>En curso</strong> desde ':'Inicio: <strong>')+pFmt(t.startDate)+(started?'':'</strong>')+'<br>'
-          +'Fin estimado: <strong>'+pFmt(t.endDate)+'</strong><br>'
-          +'Score: '+( t.proj.sf||0).toFixed(2)+' · '+t.totalHours+'h · '+t.weeks+' semanas';
-      }
-      // Multiple matches
-      return '🔍 Encontré '+matches.length+' proyectos con "<strong>'+nameHint+'</strong>":<br>'
-        +matches.map(function(t){
-          return '• <strong>'+t.proj.nom+'</strong> → '+pShort(t.startDate)+' ('+t.devName+' · '+t.pool+')';
-        }).join('<br>');
+  // ── PONER NOTA concreta a un criterio/dimensión ──
+  // "pon D1 a 9 en X", "sube ROI de X a 8"
+  var noteM = qLow.match(/(d[1-6]|roi|compliance|legal|estrateg|tecnic|personas)\D*(\d{1,2})/);
+  if (noteM && has('pon','poner','ajusta','cambia','set')) {
+    var dimMap={d1:0,compliance:0,legal:0,d2:1,estrateg:1,d3:2,roi:2,d4:3,tecnic:3,d5:4,d6:5,personas:5};
+    var di = dimMap[noteM[1]]; var val = Math.max(1,Math.min(10,parseInt(noteM[2])));
+    var hint2 = qLow.replace(/.*\ben\b/,'').replace(/el proyecto|proyecto/g,'').trim();
+    var mm = portfolioData.filter(function(p){return p.nom.toLowerCase().includes(hint2)&&hint2.length>2;});
+    if (mm.length===1 && di!=null) {
+      var pr=mm[0];
+      var dimCrits=DIMS[di].criterios.map(function(c){return c.id;});
+      dimCrits.forEach(function(cid){pr.scores[cid]=val;});
+      Object.assign(pr,computeProj(pr)); pr._manualEval=true;
+      if(typeof renderPortfolio==='function')renderPortfolio();
+      if(typeof renderDashboard==='function')renderDashboard();
+      return '✏️ <strong>'+pr.nom+'</strong> · '+DIMS[di].nom+' = '+val+'<br>Nuevo score: <strong>'+(pr.sf||0).toFixed(2)+'</strong>';
     }
   }
 
-  // ── Query: list by pool ────────────────────────────────────
-  var poolMatch = null;
-  if (/corto|short/.test(qLow)) poolMatch = 'corto';
-  if (/medio|medium|mediano/.test(qLow)) poolMatch = 'medio';
-  if (/larg|long/.test(qLow)) poolMatch = 'largo';
+  if (!tl.length) return '⚠️ No hay proyectos planificados. Configura el equipo con horario semanal y carga proyectos con horas estimadas.';
 
-  if (poolMatch && /list|muestra|todos|ver|proyect/.test(qLow)) {
-    var poolItems = tl.filter(function(t){return t.pool===poolMatch;})
-                      .sort(function(a,b){return a.startDate-b.startDate;});
-    if (!poolItems.length) return 'No hay proyectos <strong>'+poolMatch+'</strong> planificados.';
-    return '📋 Proyectos <strong style="color:'+POOL_COLORS[poolMatch]+'">'+poolMatch+'</strong> ('+poolItems.length+'):<br><br>'
-      +poolItems.map(function(t,i){
-        var started = +t.startDate <= +today && +today < +t.endDate;
-        var done    = +today >= +t.endDate;
-        var icon    = done?'✅':started?'🟢':'⏳';
-        return icon+' <strong>'+t.proj.nom+'</strong><br>'
-          +'&nbsp;&nbsp;'+t.devName+' · '+pShort(t.startDate)+' → '+pShort(t.endDate)
-          +' · '+t.totalHours+'h · score '+(t.proj.sf||0).toFixed(1);
-      }).join('<br><br>');
+  // ── SIGUIENTE proyecto que empieza ── (antes que "inicio" genérico)
+  if (has('siguiente','proximo','next') && has('empie','proyecto','inicia','cola')) {
+    var upcoming = tl.filter(function(t){return +t.startDate > +today;}).sort(function(a,b){return a.startDate-b.startDate;});
+    if (!upcoming.length) return '✅ No hay proyectos pendientes de empezar — todo está en curso o terminado.';
+    var n = upcoming[0];
+    return '⏭ <strong>Siguiente en empezar:</strong><br><strong>'+n.proj.nom+'</strong><br>'
+      +'Dev: '+n.devName+' · pool '+n.pool+'<br>Inicio: <strong>'+pFmt(n.startDate)+'</strong> · fin '+pFmt(n.endDate);
   }
 
-  // ── Query: all projects ────────────────────────────────────
-  if (/todos|all|list|completa|general|planificado/.test(qLow)) {
-    var byPool = {corto:[], medio:[], largo:[]};
-    tl.forEach(function(t){ (byPool[t.pool]||[]).push(t); });
-    var parts = Object.keys(byPool).filter(function(k){return byPool[k].length;}).map(function(pool){
-      return '<br>📦 <strong style="color:'+POOL_COLORS[pool]+'">'+pool.toUpperCase()+'</strong> ('+byPool[pool].length+'):<br>'
-        +byPool[pool].sort(function(a,b){return a.startDate-b.startDate;}).map(function(t){
-          return '&nbsp;• '+t.proj.nom+' → '+pShort(t.startDate)+' ('+t.devName+')';
-        }).join('<br>');
+  // ── LIBRE / disponibilidad por desarrollador ──
+  if (has('libre','dispon','availab') || (has('cuando') && has('dev','desarrollador'))) {
+    var byDev={};
+    tl.forEach(function(t){ if(!byDev[t.devName]||+t.endDate>+byDev[t.devName])byDev[t.devName]=+t.endDate; });
+    var rows = Object.keys(byDev).map(function(d){
+      var free=pNextWork(new Date(byDev[d]));
+      return '👤 <strong>'+d+'</strong>: libre el '+pFmt(free);
     });
-    return '📋 <strong>'+tl.length+' proyectos planificados</strong>:'+parts.join('');
+    if(!rows.length) return 'No hay desarrolladores con proyectos asignados.';
+    return '🗓 <strong>Disponibilidad del equipo:</strong><br>'+rows.join('<br>');
   }
 
-  // ── Query: next project starting ──────────────────────────
-  if (/siguiente|next|proximo|próximo/.test(qLow)) {
-    var upcoming = tl.filter(function(t){return +t.startDate >= +today;})
-                     .sort(function(a,b){return a.startDate-b.startDate;});
-    if (!upcoming.length) return '✅ Todos los proyectos planificados ya han empezado.';
-    var nx = upcoming[0];
-    var daysUntil = Math.ceil((+nx.startDate-+today)/86400000);
-    return '⏭ El próximo proyecto en empezar es:<br><br>'
-      +'<strong>'+nx.proj.nom+'</strong><br>'
-      +'<span style="color:'+POOL_COLORS[nx.pool]+'">'+nx.pool+'</span> · '+nx.devName+'<br>'
-      +'Inicio: <strong>'+pFmt(nx.startDate)+'</strong> (en '+daysUntil+' días)<br>'
-      +'Fin: '+pFmt(nx.endDate)+' · '+nx.totalHours+'h · score '+(nx.proj.sf||0).toFixed(1);
+  // ── CORTOS ──
+  if (has('corto','short')) return _chatListPool(tl,'corto','⚡ Proyectos CORTOS');
+  // ── MEDIOS ──
+  if (has('medio','mediano','medium')) return _chatListPool(tl,'medio','◉ Proyectos MEDIOS');
+  // ── LARGOS ──
+  if (has('larg','long')) return _chatListPool(tl,'largo','▣ Proyectos LARGOS');
+
+  // ── INICIO de un proyecto concreto ──
+  if (has('empie','inicia','inicio','start','cuando')) {
+    var nameHint = qLow.replace(/cuando empie[az]a?|cuando se inicia?|inicio de|fecha de inicio|empie[az]a?|inicia?|inicio|start|cuando/g,'').replace(/el proyecto|proyecto|proy/g,'').trim();
+    if (nameHint.length > 2) {
+      var matches = tl.filter(function(t){return t.proj.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nameHint);});
+      if (matches.length===1){ var t=matches[0]; var started=+t.startDate<=+today;
+        return '📅 <strong>'+t.proj.nom+'</strong><br>Pool '+t.pool+' · Dev '+t.devName+'<br>'
+          +(started?'🟢 En curso desde ':'Inicio: ')+'<strong>'+pFmt(t.startDate)+'</strong><br>Fin: '+pFmt(t.endDate)
+          +'<br>Score '+(t.proj.sf||0).toFixed(2)+' · '+t.totalHours+'h';
+      }
+      if (matches.length>1) return '🔍 '+matches.length+' coinciden con "'+nameHint+'":<br>'+matches.slice(0,8).map(function(t){return '· '+t.proj.nom+' ('+pFmt(t.startDate)+')';}).join('<br>');
+      return '🔍 Sin coincidencias con "<strong>'+nameHint+'</strong>".';
+    }
   }
 
-  // ── Query: dev availability ────────────────────────────────
-  if (/libre|dispon|availability|cuando.*dev|cuando.*ana|cuando.*marc/.test(qLow)) {
-    // Check if a dev name is mentioned
-    var devMatch = (devTeam||[]).find(function(d){
-      return qLow.includes(d.name.toLowerCase().split(' ')[0]);
-    });
-
-    var devList = devMatch ? [devMatch] : devTeam||[];
-    var lines = devList.map(function(dev) {
-      var devTL = tl.filter(function(t){return t.devName===dev.name;});
-      var lastEnd = devTL.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;}, today);
-      var wh = pDevHours(dev);
-      var daysUntil = Math.max(0, Math.ceil((+lastEnd-+today)/86400000));
-      return '<strong>'+dev.name+'</strong>: libre el <strong>'+pFmt(lastEnd)+'</strong>'
-        +' ('+Math.ceil(daysUntil/7)+' sem) · '+devTL.length+' proyectos pendientes';
-    });
-    return '👤 Disponibilidad del equipo:<br><br>'+lines.join('<br>');
+  // ── LISTAR todo ──
+  if (has('list','muestra','todos','ver','completa','general','planificad','cartera')) {
+    var sorted=tl.slice().sort(function(a,b){return a.startDate-b.startDate;});
+    return '📋 <strong>'+sorted.length+' proyectos planificados:</strong><br>'
+      + sorted.slice(0,15).map(function(t){
+          return '<span style="color:'+POOL_COLORS[t.pool]+'">●</span> '+t.proj.nom.substring(0,38)
+            +' <span style="color:#888">'+pFmt(t.startDate)+'→'+pFmt(t.endDate)+'</span>';
+        }).join('<br>')
+      + (sorted.length>15?'<br><span style="color:#888">…y '+(sorted.length-15)+' más</span>':'');
   }
 
-  // ── Query: dev specific projects ──────────────────────────
-  var devNameMatch = (devTeam||[]).find(function(d){
-    return qLow.includes(d.name.toLowerCase().split(' ')[0]);
-  });
-  if (devNameMatch) {
-    var devItems = tl.filter(function(t){return t.devName===devNameMatch.name;})
-                     .sort(function(a,b){return a.startDate-b.startDate;});
-    if (!devItems.length) return '👤 '+devNameMatch.name+' no tiene proyectos asignados.';
-    return '👤 Proyectos de <strong>'+devNameMatch.name+'</strong> ('+devItems.length+'):<br><br>'
-      +devItems.map(function(t){
-        return '<strong>'+t.proj.nom+'</strong><br>'
-          +'&nbsp;&nbsp;<span style="color:'+POOL_COLORS[t.pool]+'">'+t.pool+'</span> · '
-          +pShort(t.startDate)+' → '+pShort(t.endDate)+' · '+t.totalHours+'h';
-      }).join('<br><br>');
+  // ── CUÁNTOS / resumen ──
+  if (has('cuanto','cuantos','total','resumen','estadis')) {
+    var pools={corto:0,medio:0,largo:0}; tl.forEach(function(t){pools[t.pool]++;});
+    var totalH=tl.reduce(function(s,t){return s+t.totalHours;},0);
+    var maxEnd=tl.reduce(function(mx,t){return +t.endDate>+mx?t.endDate:mx;},today);
+    return '📊 <strong>Resumen de planificación:</strong><br>'
+      +'Total: '+tl.length+' proyectos · '+Math.round(totalH)+'h<br>'
+      +'⚡ Cortos: '+pools.corto+' · ◉ Medios: '+pools.medio+' · ▣ Largos: '+pools.largo+'<br>'
+      +'Fin de cola: <strong>'+pFmt(maxEnd)+'</strong>';
   }
 
-  // ── Fallback ───────────────────────────────────────────────
-  return '🤖 Puedo ayudarte con:<br>'
-    +'• <em>"¿Cuándo empieza [nombre]?"</em><br>'
-    +'• <em>"Lista los proyectos cortos/medios/largos"</em><br>'
-    +'• <em>"¿Cuándo está libre [dev]?"</em><br>'
-    +'• <em>"Próximo proyecto"</em><br>'
-    +'• <em>"Todos los proyectos"</em>';
+  // ── AYUDA (fallback) ──
+  return '🤖 <strong>Puedo ayudarte con:</strong><br>'
+    +'• <em>"prioriza el portal B2B"</em> — sube la nota de un proyecto<br>'
+    +'• <em>"baja el proyecto X"</em> — reduce su prioridad<br>'
+    +'• <em>"pon D1 a 9 en X"</em> — fija la nota de una dimensión<br>'
+    +'• <em>"¿cuándo empieza X?"</em> — fecha de un proyecto<br>'
+    +'• <em>"siguiente proyecto"</em> — el próximo en empezar<br>'
+    +'• <em>"¿cuándo está libre cada dev?"</em><br>'
+    +'• <em>"muestra los cortos / medios / largos"</em><br>'
+    +'• <em>"lista todos"</em> · <em>"resumen"</em>';
+}
+
+function _chatListPool(tl, pool, title) {
+  var items = tl.filter(function(t){return t.pool===pool;}).sort(function(a,b){return a.startDate-b.startDate;});
+  if (!items.length) return title+'<br>No hay proyectos en este pool.';
+  return title+' ('+items.length+'):<br>'
+    + items.slice(0,12).map(function(t){
+        return '· '+t.proj.nom.substring(0,36)+' <span style="color:#888">'+pFmt(t.startDate)+'</span>';
+      }).join('<br>')
+    + (items.length>12?'<br><span style="color:#888">…y '+(items.length-12)+' más</span>':'');
 }
 
 // ── renderCalendar override to also update summary ─────────────

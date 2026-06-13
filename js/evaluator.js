@@ -239,11 +239,15 @@ function _buildManualProject() {
     scores[cid] = el ? (parseInt(el.value) || 5) : 5;
   });
 
+  const descBreve = (document.getElementById('f-desc')?.value || '').trim();
   const proj = computeProj({ nom, area, sponsor: '', scores, reqDate, regDate: null });
   // Preserve ADO link if re-evaluating an existing project
   const existing = portfolioData.find(function(x){ return x.nom === proj.nom; });
   proj.horas     = existing ? (existing.horas ?? null) : null;
   proj.adoId     = existing ? (existing.adoId || null) : null;
+  // Descripcion breve: la editada en el wizard, o la de ADO si no se toco
+  proj.descripcion = descBreve || (existing ? (existing.descripcion || existing.adoDesc || '') : '');
+  proj.adoDesc     = descBreve || (existing ? (existing.adoDesc || '') : '');
   proj.adoState  = existing ? (existing.adoState || '') : '';
   proj.adoType   = existing ? (existing.adoType || 'Manual') : 'Manual';
   proj.adoDesc   = existing ? (existing.adoDesc || '') : '';

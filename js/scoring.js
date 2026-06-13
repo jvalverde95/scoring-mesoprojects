@@ -515,6 +515,8 @@ function applyProjects(projects, filename) {
     if (!p.area && typeof mpgDecodeArea === 'function') {
       p.area = mpgDecodeArea(p.nom) || p.area || '';
     }
+    // Reflejar la descripcion de ADO en el campo descripcion breve
+    if (!p.descripcion && p.adoDesc) p.descripcion = p.adoDesc;
     const proj = computeProj(p);
     const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
     proj.horas = excelHoras ?? prevHoras[p.nom] ?? p.horas ?? null;  // p.horas = ADO OriginalEstimate
@@ -942,6 +944,7 @@ function loadIntoEval(idx) {
   if(typeof goStep==='function') goStep(0);
   setTimeout(function(){
     document.getElementById('f-name').value=p.nom;
+    var descEl=document.getElementById('f-desc'); if(descEl) descEl.value = p.adoDesc || p.descripcion || '';
     if(p.reqDate)document.getElementById('f-req').value=p.reqDate;
     if(p.regDate)document.getElementById('f-reg').value=p.regDate;
     const areaEl=document.getElementById('f-area');
