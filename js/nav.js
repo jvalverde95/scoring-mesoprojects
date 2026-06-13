@@ -109,6 +109,9 @@ function switchChart(name, btn) {
   if (btn) btn.classList.add('on');
   if (prefix === 'chart2-') renderCharts2(name);
   else renderCharts();
+
+  // Re-render analytics charts when switching tab (canvas needs visible size)
+  if (typeof renderAnalyticsCharts === 'function') setTimeout(function(){ try{renderAnalyticsCharts();}catch(e){} }, 60);
 }
 
 

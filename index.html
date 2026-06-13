@@ -609,6 +609,7 @@
       <button class="ctab" onclick="switchChart('matrix',this)">Matriz D1×D2</button>
       <button class="ctab" onclick="switchChart('aging',this)">Aging</button>
       <button class="ctab" onclick="switchChart('gaps',this)">Gaps</button>
+      <button class="ctab" onclick="switchChart('corr',this)">Correlaciones</button>
     </div>
 
     <!-- ── RANKING ── -->
@@ -629,6 +630,7 @@
     <!-- ── PERFIL DIMENSIONAL ── -->
     <div class="csec" id="chart2-dims">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Score medio de toda la cartera por dimensión · umbral recomendado: 6.0</div>
+      <div style="position:relative;height:300px;margin:10px 0"><canvas id="cv-dims-radar"></canvas></div>
       <div id="ch-dims-list" style="display:flex;flex-direction:column;gap:10px"></div>
       <div id="ch-dims-insight" class="chart-insight"></div>
     </div>
@@ -643,6 +645,7 @@
     <!-- ── POR ÁREA ── -->
     <div class="csec" id="chart2-areas">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Score medio por área · proyectos entre paréntesis</div>
+      <div style="position:relative;height:320px;margin:10px 0"><canvas id="cv-areas-bars"></canvas></div>
       <div id="ch-areas-table"></div>
       <div id="ch-areas-insight" class="chart-insight"></div>
     </div>
@@ -650,6 +653,7 @@
     <!-- ── DISTRIBUCIÓN ── -->
     <div class="csec" id="chart2-dist">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Número de proyectos por clasificación</div>
+      <div style="position:relative;height:260px;margin:10px 0"><canvas id="cv-dist-pie"></canvas></div>
       <div id="ch-dist-list" style="display:flex;flex-direction:column;gap:8px"></div>
       <div id="ch-dist-insight" class="chart-insight"></div>
     </div>
@@ -664,6 +668,7 @@
     <!-- ── AGING ── -->
     <div class="csec" id="chart2-aging">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Impacto del factor aging · proyectos que ganarán clasificación por antigüedad</div>
+      <div style="position:relative;height:300px;margin:10px 0"><canvas id="cv-aging-scatter"></canvas></div>
       <div id="ch-aging-table"></div>
       <div style="margin-top:12px;font-size:10px;color:var(--ink3)">Proyectos que cambiarán de clasificación en los próximos 90 días:</div>
       <div id="ch-aging-soon" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
@@ -673,7 +678,15 @@
     <!-- ── GAPS ── -->
     <div class="csec" id="chart2-gaps">
       <div style="font-size:10px;color:var(--ink3);margin-bottom:10px">Varianza por criterio — dónde el equipo evalúa de forma más inconsistente</div>
+      <div style="position:relative;height:300px;margin:10px 0"><canvas id="cv-gaps-bars"></canvas></div>
       <div id="ch-gaps-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- ── CORRELACIONES ── -->
+    <div class="csec" id="chart2-corr">
+      <div class="chart-hint" style="font-size:11px;color:#888;margin-bottom:8px">Matriz de correlación entre dimensiones · cómo se relacionan las puntuaciones entre sí (rojo = correlación negativa, verde = positiva)</div>
+      <div style="position:relative;height:340px;margin:10px 0"><canvas id="cv-corr-matrix"></canvas></div>
+      <div id="ch-corr-insight" class="chart-insight"></div>
       <div id="ch-gaps-insight" class="chart-insight"></div>
     </div>
 

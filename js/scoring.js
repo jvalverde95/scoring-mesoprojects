@@ -1601,6 +1601,9 @@ function renderChartsStep() {
         scales:{x:{title:{display:true,text:'D3 — ROI / Valor →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{title:{display:true,text:'D2 — Urgencia Estratégica ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
   }
+
+  // Gráficas comparativas avanzadas (radar, áreas, distribución, varianza, aging, correlación)
+  if (typeof renderAnalyticsCharts === 'function') { try { renderAnalyticsCharts(); } catch(e){ console.error('analytics',e); } }
 }
 
 /* ── POOLS STEP ───────────────────────────────────── */
@@ -2396,4 +2399,193 @@ function openAiModalFromEval() {
     }, _proj: p };
   });
   if (typeof openAiModal === 'function') openAiModal(adoItems);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANALÍTICA AVANZADA — gráficas comparativas con Chart.js
+   Tooltips con NOMBRE COMPLETO · radar dimensional · barras por área ·
+   doughnut distribución · varianza por criterio · scatter aging ·
+   matriz de correlación entre dimensiones
+   ═══════════════════════════════════════════════════════════════ */
+var _anaCharts = {};
+function _anaDestroy(id){ if(_anaCharts[id]){ _anaCharts[id].destroy(); delete _anaCharts[id]; } }
+function _anaFull(p){ return p.nom; }  // nombre COMPLETO para tooltips
+
+// Tooltip común que muestra el nombre completo + multilínea
+function _anaTooltip(extraLines){
+  return {
+    enabled:true,
+    backgroundColor:'rgba(22,36,62,.96)',
+    titleColor:'#fff', bodyColor:'#D8E0F0',
+    titleFont:{size:11,weight:'700'}, bodyFont:{size:10},
+    padding:10, cornerRadius:8, displayColors:false,
+    callbacks: extraLines
+  };
+}
+
+function renderAnalyticsCharts() {
+  if (typeof Chart === 'undefined' || !portfolioData || !portfolioData.length) return;
+  const DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
+  const DCOLS  = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+
+  // ── 1. RADAR dimensional: media cartera vs top-5 vs bottom-5 ──
+  const radarEl = document.getElementById('cv-dims-radar');
+  if (radarEl) {
+    _anaDestroy('dims');
+    const avgDim = i => portfolioData.reduce((s,p)=>s+((p.dimScores&&p.dimScores[i])||0),0)/portfolioData.length;
+    const sorted = portfolioData.slice().sort((a,b)=>(b.sf||0)-(a.sf||0));
+    const top = sorted.slice(0,5), bot = sorted.slice(-5);
+    const avgOf = (arr,i)=>arr.reduce((s,p)=>s+((p.dimScores&&p.dimScores[i])||0),0)/(arr.length||1);
+    _anaCharts.dims = new Chart(radarEl,{
+      type:'radar',
+      data:{ labels:DNAMES, datasets:[
+        {label:'Media cartera', data:[0,1,2,3,4,5].map(avgDim),
+          borderColor:'#1848A0', backgroundColor:'rgba(24,72,160,.12)', borderWidth:2, pointRadius:3},
+        {label:'Top 5', data:[0,1,2,3,4,5].map(i=>avgOf(top,i)),
+          borderColor:'#087B50', backgroundColor:'rgba(8,123,80,.08)', borderWidth:2, pointRadius:3},
+        {label:'Bottom 5', data:[0,1,2,3,4,5].map(i=>avgOf(bot,i)),
+          borderColor:'#CC1F26', backgroundColor:'rgba(204,31,38,.06)', borderWidth:2, pointRadius:3, borderDash:[4,3]},
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:12}},
+          tooltip:_anaTooltip({label:c=>c.dataset.label+': '+c.formattedValue}) },
+        scales:{ r:{ min:0,max:10,ticks:{stepSize:2,font:{size:8},backdropColor:'transparent'},
+          grid:{color:'rgba(120,150,200,.18)'}, pointLabels:{font:{size:9,weight:'600'}} } } }
+    });
+  }
+
+  // ── 2. BARRAS por área × dimensión (apiladas) ──
+  const areasEl = document.getElementById('cv-areas-bars');
+  if (areasEl) {
+    _anaDestroy('areas');
+    const byArea = {};
+    portfolioData.forEach(p=>{ const a=p.area||'Otros'; (byArea[a]=byArea[a]||[]).push(p); });
+    const areaNames = Object.keys(byArea).sort((a,b)=>byArea[b].length-byArea[a].length).slice(0,8);
+    const ds = [0,1,2,3,4,5].map(i=>({
+      label:DNAMES[i], backgroundColor:DCOLS[i], borderRadius:3,
+      data:areaNames.map(a=>{
+        const arr=byArea[a]; return +(arr.reduce((s,p)=>s+((p.dimScores&&p.dimScores[i])||0)*[0.30,0.20,0.20,0.12,0.10,0.08][i],0)/arr.length).toFixed(2);
+      })
+    }));
+    _anaCharts.areas = new Chart(areasEl,{
+      type:'bar',
+      data:{ labels:areaNames.map(a=>a.length>16?a.substring(0,15)+'…':a), datasets:ds },
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{ legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:8}},
+          tooltip:_anaTooltip({
+            title:items=>areaNames[items[0].dataIndex],
+            label:c=>c.dataset.label+': '+c.formattedValue+' pts ponderados'}) },
+        scales:{ x:{stacked:true,grid:{color:'rgba(120,150,200,.12)'},ticks:{font:{size:9}}},
+                 y:{stacked:true,grid:{display:false},ticks:{font:{size:9,weight:'600'}}} } }
+    });
+  }
+
+  // ── 3. DOUGHNUT distribución por clasificación ──
+  const distEl = document.getElementById('cv-dist-pie');
+  if (distEl) {
+    _anaDestroy('dist');
+    const buckets={};
+    portfolioData.forEach(p=>{ const cl=clsf(p.sf||0).et||'—'; buckets[cl]=(buckets[cl]||0)+1; });
+    const labels=Object.keys(buckets);
+    const CLR={'PRIORITARIO ESTRATÉGICO (D1)':'#CC1F26','PRIORITARIO ESTRATÉGICO':'#0A5228',
+      'ALTA PRIORIDAD':'#1848A0','PRIORIDAD MEDIA':'#C07800','PRIORIDAD BAJA':'#5C6570','DESCARTABLE':'#AAB'};
+    _anaCharts.dist = new Chart(distEl,{
+      type:'doughnut',
+      data:{ labels, datasets:[{ data:labels.map(l=>buckets[l]),
+        backgroundColor:labels.map(l=>CLR[l]||'#999'), borderWidth:2, borderColor:'#fff' }]},
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'58%',
+        plugins:{ legend:{position:'right',labels:{font:{size:10},boxWidth:12,padding:10}},
+          tooltip:_anaTooltip({label:c=>c.label+': '+c.parsed+' proyectos ('+Math.round(c.parsed/portfolioData.length*100)+'%)'}) } }
+    });
+  }
+
+  // ── 4. VARIANZA por criterio (barras) ──
+  const gapsEl = document.getElementById('cv-gaps-bars');
+  if (gapsEl && typeof CRIT_IDS!=='undefined') {
+    _anaDestroy('gaps');
+    const stats = CRIT_IDS.map(cid=>{
+      const vals=portfolioData.map(p=>(p.scores&&p.scores[cid])||5);
+      const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+      const variance=vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length;
+      let nom=cid; DIMS.forEach(d=>d.criterios.forEach(c=>{if(c.id===cid)nom=c.nom;}));
+      return {cid,nom,variance:+variance.toFixed(2),mean:+mean.toFixed(1)};
+    }).sort((a,b)=>b.variance-a.variance).slice(0,12);
+    _anaCharts.gaps = new Chart(gapsEl,{
+      type:'bar',
+      data:{ labels:stats.map(s=>s.nom.length>20?s.nom.substring(0,19)+'…':s.nom),
+        datasets:[{ data:stats.map(s=>s.variance), borderRadius:4,
+          backgroundColor:stats.map(s=>s.variance>4?'#CC1F26':s.variance>2?'#C07800':'#087B50') }]},
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{ legend:{display:false},
+          tooltip:_anaTooltip({ title:items=>stats[items[0].dataIndex].nom,
+            label:c=>'Varianza: '+c.formattedValue+' · media: '+stats[c.dataIndex].mean }) },
+        scales:{ x:{grid:{color:'rgba(120,150,200,.12)'},ticks:{font:{size:9}}},
+                 y:{grid:{display:false},ticks:{font:{size:9}}} } }
+    });
+  }
+
+  // ── 5. SCATTER aging: antigüedad (x) × score final (y) ──
+  const agingEl = document.getElementById('cv-aging-scatter');
+  if (agingEl) {
+    _anaDestroy('aging');
+    const pts = portfolioData.map(p=>{
+      const days = p.reqDate ? Math.max(0,(Date.now()-new Date(p.reqDate))/86400000) : 0;
+      return { x:+(days/30).toFixed(1), y:+(p.sf||0).toFixed(2), nom:p.nom, af:p.af||1, area:p.area||'' };
+    });
+    _anaCharts.aging = new Chart(agingEl,{
+      type:'scatter',
+      data:{ datasets:[{ data:pts,
+        backgroundColor:pts.map(pt=>pt.af>1.1?'#CC1F26':pt.af>1.02?'#C07800':'#1848A0'),
+        pointRadius:6, pointHoverRadius:9 }]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:_anaTooltip({
+            title:items=>pts[items[0].dataIndex].nom,
+            label:c=>['Score: '+pts[c.dataIndex].y, 'Antigüedad: '+pts[c.dataIndex].x+' meses',
+                      'Aging: ×'+pts[c.dataIndex].af.toFixed(2), pts[c.dataIndex].area] }) },
+        scales:{ x:{title:{display:true,text:'Antigüedad (meses)',font:{size:9}},grid:{color:'rgba(120,150,200,.12)'},ticks:{font:{size:9}}},
+                 y:{title:{display:true,text:'Score final',font:{size:9}},min:0,max:10,grid:{color:'rgba(120,150,200,.12)'},ticks:{font:{size:9}}} } }
+    });
+  }
+
+  // ── 6. MATRIZ DE CORRELACIÓN entre dimensiones ──
+  const corrEl = document.getElementById('cv-corr-matrix');
+  if (corrEl) {
+    _anaDestroy('corr');
+    const dimVals = i => portfolioData.map(p=>(p.dimScores&&p.dimScores[i])||0);
+    const pearson = (a,b)=>{
+      const n=a.length, ma=a.reduce((x,y)=>x+y,0)/n, mb=b.reduce((x,y)=>x+y,0)/n;
+      let num=0,da=0,db=0;
+      for(let i=0;i<n;i++){ num+=(a[i]-ma)*(b[i]-mb); da+=(a[i]-ma)**2; db+=(b[i]-mb)**2; }
+      return (da&&db)? num/Math.sqrt(da*db) : 0;
+    };
+    const cells=[];
+    for(let i=0;i<6;i++) for(let j=0;j<6;j++){
+      const r = i===j?1:pearson(dimVals(i),dimVals(j));
+      cells.push({x:j,y:5-i,v:+r.toFixed(2),di:i,dj:j});
+    }
+    _anaCharts.corr = new Chart(corrEl,{
+      type:'scatter',
+      data:{ datasets:[{ data:cells.map(c=>({x:c.x,y:c.y})),
+        pointStyle:'rect', pointRadius:24,
+        backgroundColor:cells.map(c=>{
+          const v=c.v; if(v>0) return 'rgba(8,123,80,'+(0.15+v*0.7)+')';
+          return 'rgba(204,31,38,'+(0.15+Math.abs(v)*0.7)+')';
+        }) }]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:_anaTooltip({
+            title:items=>{const c=cells[items[0].dataIndex];return DNAMES[c.di]+' × '+DNAMES[c.dj];},
+            label:c=>'Correlación: '+cells[c.dataIndex].v }) },
+        scales:{
+          x:{min:-0.5,max:5.5,ticks:{stepSize:1,callback:v=>DNAMES[v]?DNAMES[v].split(' ')[0]:'',font:{size:9}},grid:{display:false}},
+          y:{min:-0.5,max:5.5,ticks:{stepSize:1,callback:v=>DNAMES[5-v]?DNAMES[5-v].split(' ')[0]:'',font:{size:9}},grid:{display:false}} } }
+    });
+    // Insight: strongest correlation pair
+    const offdiag=cells.filter(c=>c.di<c.dj);
+    const strong=offdiag.reduce((mx,c)=>Math.abs(c.v)>Math.abs(mx.v)?c:mx,offdiag[0]);
+    const ins=document.getElementById('ch-corr-insight');
+    if(ins&&strong) ins.innerHTML='Relación más fuerte: <b>'+DNAMES[strong.di]+' ↔ '+DNAMES[strong.dj]
+      +'</b> (r='+strong.v+'). '+(strong.v>0.5?'Tienden a puntuar juntas.':strong.v<-0.3?'Tienden a oponerse.':'Relación débil.');
+  }
 }
