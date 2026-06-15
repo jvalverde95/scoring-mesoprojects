@@ -745,10 +745,10 @@ body{font-family:'Inter','DM Sans',system-ui,sans-serif;background:#FFFFFF;color
 .proj-edit-overlay{display:none;position:fixed;inset:0;z-index:700;background:rgba(8,8,8,.75);align-items:center;justify-content:center}
 .proj-edit-overlay.open{display:flex}
 .proj-edit-modal{background:#fff;border-radius:10px;width:100%;max-width:700px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)}
-.pem-hd{background:#fff;padding:16px 20px;border-bottom:1px solid #EBEBEB;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0}
+.pem-hd{background:#fff;padding:16px 20px;border-bottom:1px solid #EBEBEB;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0;flex-shrink:0}
 .pem-title{font-size:14px;font-weight:700;color:#111;letter-spacing:-.01em}
 .pem-score{font-size:22px;font-weight:800;color:#111;letter-spacing:-.02em;text-align:right}
-.pem-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.pem-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1 1 auto;min-height:0}
 .pem-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pem-field{display:flex;flex-direction:column;gap:4px}
 .pem-label{font-size:8px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase}

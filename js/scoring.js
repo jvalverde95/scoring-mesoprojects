@@ -2686,3 +2686,168 @@ function resetAlgoParams() {
 }
 
 document.addEventListener('DOMContentLoaded', function(){ if(typeof loadAlgoParams==='function') loadAlgoParams(); });
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN POR EXCEL — exportar/importar pesos + parámetros boost
+   Al importar, recalcula toda la cartera con los nuevos valores.
+   ═══════════════════════════════════════════════════════════════ */
+function exportConfigExcel() {
+  if (typeof XLSX === 'undefined') { toast('Librería Excel no disponible'); return; }
+  const wb = XLSX.utils.book_new();
+
+  // ── Hoja 1: Pesos por dimensión ──
+  const pesosRows = [['Dimensión','Código','Peso (%)']];
+  DIMS.forEach(function(d){
+    pesosRows.push([d.nom, d.id, Math.round(d.peso*100)]);
+  });
+  pesosRows.push([]);
+  pesosRows.push(['TOTAL','', DIMS.reduce(function(s,d){return s+Math.round(d.peso*100);},0)]);
+  const wsPesos = XLSX.utils.aoa_to_sheet(pesosRows);
+  wsPesos['!cols'] = [{wch:36},{wch:10},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsPesos, 'Pesos');
+
+  // ── Hoja 2: Parámetros del algoritmo (boost) por dimensión ──
+  const boostRows = [['Dimensión','Código','C0 (centro base)','B0 (pendiente base)','A0 (techo base)','C (centro boost)','B (pendiente boost)','A (techo boost)','Boost @ nota 8']];
+  Object.keys(DEF).forEach(function(k){
+    const p = DEF[k];
+    const lbl = (typeof ALGO_DIM_LABELS!=='undefined' && ALGO_DIM_LABELS[k]) ? ALGO_DIM_LABELS[k] : k.toUpperCase();
+    boostRows.push([lbl, k, p.C0, p.B0, p.A0, p.C, p.B, p.A,
+      +sigmoidBoost(8,p.C0,p.B0,p.A0,p.C,p.B,p.A).toFixed(2)]);
+  });
+  const wsBoost = XLSX.utils.aoa_to_sheet(boostRows);
+  wsBoost['!cols'] = [{wch:18},{wch:8},{wch:16},{wch:18},{wch:14},{wch:16},{wch:18},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsBoost, 'Boost');
+
+  // ── Hoja 3: Umbrales (clasificación + pools) ──
+  const thrRows = [['Parámetro','Valor']];
+  const thrS = document.getElementById('thr-s')?.value;
+  const thrM = document.getElementById('thr-m')?.value;
+  if (thrS!=null) thrRows.push(['Umbral pool Corto (horas ≤)', thrS]);
+  if (thrM!=null) thrRows.push(['Umbral pool Medio (horas ≤)', thrM]);
+  const wsThr = XLSX.utils.aoa_to_sheet(thrRows);
+  wsThr['!cols'] = [{wch:34},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsThr, 'Umbrales');
+
+  // ── Hoja 4: Instrucciones ──
+  const info = [
+    ['CONFIGURACIÓN NEXUS — Pesos y Parámetros del Algoritmo'],
+    [''],
+    ['Cómo usar este archivo:'],
+    ['1. Edita los valores en las hojas "Pesos" y "Boost".'],
+    ['2. En la app, ve a Configuración → "Importar configuración (Excel)".'],
+    ['3. Al cargar, la cartera se recalcula automáticamente con los nuevos valores.'],
+    [''],
+    ['Pesos: deben sumar 100. Cada dimensión es un % entre 1 y 99.'],
+    [''],
+    ['Parámetros boost (por dimensión):'],
+    ['  C0, B0, A0 = curva base (gobierna notas bajas).'],
+    ['  C, B, A    = curva de boost (notas altas).'],
+    ['  C = umbral donde se dispara el boost (típico 7-8).'],
+    ['  A = techo de amplificación (a mayor A, más premia notas altas).'],
+    ['  B = pendiente (a mayor B, transición más brusca).'],
+    [''],
+    ['No cambies la columna "Código" (d1..d6, D1..D6): es la clave de mapeo.'],
+  ];
+  const wsInfo = XLSX.utils.aoa_to_sheet(info);
+  wsInfo['!cols'] = [{wch:70}];
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Instrucciones');
+
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'Nexus_Configuracion_'+fecha+'.xlsx');
+  toast('✓ Configuración exportada a Excel');
+}
+
+function importConfigExcel(input) {
+  if (typeof XLSX === 'undefined') { toast('Librería Excel no disponible'); return; }
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      let nPesos = 0, nBoost = 0, nThr = 0;
+
+      // ── Pesos ──
+      if (wb.SheetNames.indexOf('Pesos') >= 0) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Pesos'], {header:1});
+        rows.slice(1).forEach(function(r){
+          const code = (r[1]||'').toString().trim();         // D1..D6
+          const peso = parseFloat(r[2]);
+          if (code && !isNaN(peso) && peso>0) {
+            const d = DIMS.find(function(x){return x.id===code;});
+            if (d) { d.peso = peso/100; nPesos++; }
+          }
+        });
+      }
+
+      // ── Boost params ──
+      if (wb.SheetNames.indexOf('Boost') >= 0) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Boost'], {header:1});
+        rows.slice(1).forEach(function(r){
+          const code = (r[1]||'').toString().trim().toLowerCase();  // d1..d6
+          if (DEF[code]) {
+            const nums = ['C0','B0','A0','C','B','A'].map(function(_,i){return parseFloat(r[2+i]);});
+            if (nums.every(function(v){return !isNaN(v);})) {
+              DEF[code].C0=nums[0]; DEF[code].B0=nums[1]; DEF[code].A0=nums[2];
+              DEF[code].C=nums[3];  DEF[code].B=nums[4];  DEF[code].A=nums[5];
+              nBoost++;
+            }
+          }
+        });
+        // Propagar DEF a los criterios de cada dimensión
+        DIMS.forEach(function(d){
+          const k = d.cls;
+          if (!DEF[k]) return;
+          d.criterios.forEach(function(c){
+            c.C0=DEF[k].C0; c.B0=DEF[k].B0; c.A0=DEF[k].A0;
+            c.C=DEF[k].C;   c.B=DEF[k].B;   c.A=DEF[k].A;
+          });
+        });
+      }
+
+      // ── Umbrales ──
+      if (wb.SheetNames.indexOf('Umbrales') >= 0) {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets['Umbrales'], {header:1});
+        rows.slice(1).forEach(function(r){
+          const label = (r[0]||'').toString().toLowerCase();
+          const val = parseFloat(r[1]);
+          if (isNaN(val)) return;
+          if (label.indexOf('corto')>=0) { const el=document.getElementById('thr-s'); if(el){el.value=val;nThr++;} }
+          if (label.indexOf('medio')>=0) { const el=document.getElementById('thr-m'); if(el){el.value=val;nThr++;} }
+        });
+      }
+
+      // Persistir
+      try { localStorage.setItem('meso_algo_params', JSON.stringify(DEF)); } catch(_){}
+      try { localStorage.setItem('meso_weights', JSON.stringify(DIMS.map(function(d){return {id:d.id,peso:d.peso};}))); } catch(_){}
+
+      // Recalcular toda la cartera
+      if (portfolioData && portfolioData.length) {
+        portfolioData.forEach(function(p){ Object.assign(p, computeProj(p)); });
+      }
+      // Refrescar vistas
+      if (typeof renderWeightEditor==='function') renderWeightEditor();
+      if (typeof renderAlgoParams==='function') renderAlgoParams();
+      if (typeof renderPortfolio==='function') renderPortfolio();
+      if (typeof renderPools==='function') renderPools();
+      if (typeof renderDashboard==='function') renderDashboard();
+      if (typeof renderChartsStep==='function') renderChartsStep();
+
+      toast('✓ Configuración importada · '+nPesos+' pesos, '+nBoost+' dimensiones boost'
+        + (portfolioData&&portfolioData.length ? ' · '+portfolioData.length+' proyectos recalculados' : ''));
+    } catch(err) {
+      console.error('importConfigExcel', err);
+      toast('✗ Error al leer el Excel: '+err.message);
+    }
+    input.value = '';  // permite recargar el mismo archivo
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSavedWeights(){
+  try{
+    var saved=localStorage.getItem('meso_weights');
+    if(saved){ JSON.parse(saved).forEach(function(w){ var d=DIMS.find(function(x){return x.id===w.id;}); if(d&&w.peso)d.peso=w.peso; }); }
+  }catch(_){}
+}
+document.addEventListener('DOMContentLoaded', function(){ if(typeof loadSavedWeights==='function') loadSavedWeights(); });

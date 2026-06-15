@@ -846,6 +846,26 @@
           <button class="cfg-apply" onclick="applyAlgoParams()" style="font-size:10px;padding:8px 16px">✓ Aplicar y recalcular cartera</button>
           <button class="cfg-apply cfg-reset" onclick="resetAlgoParams()" style="font-size:10px;padding:8px 14px">↺ Restaurar valores por defecto</button>
         </div>
+
+        <!-- Exportar / Importar configuración por Excel -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px dashed rgba(120,150,200,.25)">
+          <div style="font-size:11px;font-weight:700;color:#1C2B4A;margin-bottom:8px">Configuración por Excel (pesos + boost)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="cfg-apply" onclick="exportConfigExcel()"
+              style="font-size:10px;padding:8px 16px;background:#fff;border:1.5px solid #087B50;color:#087B50">
+              ↓ Exportar configuración
+            </button>
+            <button class="cfg-apply" onclick="document.getElementById('config-excel-input').click()"
+              style="font-size:10px;padding:8px 16px;background:#fff;border:1.5px solid #1848A0;color:#1848A0">
+              ↑ Importar configuración
+            </button>
+            <input type="file" id="config-excel-input" accept=".xlsx,.xls" style="display:none"
+              onchange="importConfigExcel(this)">
+          </div>
+          <div style="font-size:10px;color:#999;margin-top:6px;font-style:italic">
+            Exporta pesos, parámetros boost y umbrales a Excel. Al importar, la cartera se recalcula automáticamente.
+          </div>
+        </div>
         <div style="font-size:10px;color:#999;margin-top:8px;font-style:italic">Tras aplicar, todos los proyectos de la cartera se recalculan con los nuevos parámetros.</div>
       </div>
 
