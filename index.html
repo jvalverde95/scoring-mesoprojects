@@ -2078,6 +2078,89 @@
         <div style="font-size:10px;color:var(--ink3);margin-top:6px;line-height:1.6">El aging penaliza proyectos que llevan tiempo en cartera sin ejecutarse. Máximo boost del 25% tras ~1.67 años. El score final nunca supera 10.</div>
       </div>
     </div>
+
+      <!-- Ejemplos de amplificación -->
+      <div style="grid-column:1/-1;margin-top:6px">
+        <div style="font-size:12px;font-weight:700;color:#1C2B4A;margin-bottom:4px">3. Ejemplos de amplificación por dimensión</div>
+        <div style="font-size:11px;color:#666;line-height:1.6;margin-bottom:10px">
+          Cada dimensión tiene parámetros propios (C₀, β₀, α₀ para la curva base; C, β, α para la curva de boost). El sistema toma el <b>máximo</b> de ambas curvas (mínimo 1.0). Cuanto mayor es <b>α</b> y <b>β</b>, más se premia una nota alta. <b>C</b> marca el punto donde se "dispara" el boost.
+        </div>
+
+        <div style="overflow-x:auto">
+        <table style="width:100%;font-size:10.5px;border-collapse:collapse">
+          <thead><tr style="background:#F0F4FB">
+            <th style="text-align:left;padding:6px 8px">Dimensión</th>
+            <th style="padding:6px 8px">Parámetros (C₀,β₀,α₀ / C,β,α)</th>
+            <th style="padding:6px 8px">Nota 2</th>
+            <th style="padding:6px 8px">Nota 5</th>
+            <th style="padding:6px 8px">Nota 8</th>
+            <th style="padding:6px 8px">Nota 10</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:5px 8px;border-bottom:1px solid #EEE"><b style="color:#CC1F26">D1 Compliance</b></td>
+              <td style="padding:5px 8px;border-bottom:1px solid #EEE;font-family:monospace;font-size:9px">3,1,2 / 7,2,9</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">1.00×</td><td style="text-align:center;border-bottom:1px solid #EEE">1.60×</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE;color:#CC1F26;font-weight:700">7.20×</td><td style="text-align:center;border-bottom:1px solid #EEE;color:#CC1F26;font-weight:700">8.86×</td></tr>
+            <tr><td style="padding:5px 8px;border-bottom:1px solid #EEE"><b style="color:#C4974A">D2 Estrategia</b></td>
+              <td style="padding:5px 8px;border-bottom:1px solid #EEE;font-family:monospace;font-size:9px">4,1,3 / 8,2,9</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">1.00×</td><td style="text-align:center;border-bottom:1px solid #EEE">2.00×</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">4.50×</td><td style="text-align:center;border-bottom:1px solid #EEE;font-weight:700">8.47×</td></tr>
+            <tr><td style="padding:5px 8px;border-bottom:1px solid #EEE"><b style="color:#087B50">D3 ROI</b></td>
+              <td style="padding:5px 8px;border-bottom:1px solid #EEE;font-family:monospace;font-size:9px">4,1,3 / 8,2,8</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">1.00×</td><td style="text-align:center;border-bottom:1px solid #EEE">2.00×</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">4.00×</td><td style="text-align:center;border-bottom:1px solid #EEE;font-weight:700">7.53×</td></tr>
+            <tr><td style="padding:5px 8px;border-bottom:1px solid #EEE"><b style="color:#C07800">D4 Técnica</b></td>
+              <td style="padding:5px 8px;border-bottom:1px solid #EEE;font-family:monospace;font-size:9px">4,1,3 / 8,1.5,7</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">1.00×</td><td style="text-align:center;border-bottom:1px solid #EEE">2.00×</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">3.50×</td><td style="text-align:center;border-bottom:1px solid #EEE">6.22×</td></tr>
+            <tr><td style="padding:5px 8px;border-bottom:1px solid #EEE"><b style="color:#1848A0">D5 Implantación</b></td>
+              <td style="padding:5px 8px;border-bottom:1px solid #EEE;font-family:monospace;font-size:9px">4,1,3 / 8,1.5,7</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">1.00×</td><td style="text-align:center;border-bottom:1px solid #EEE">2.00×</td>
+              <td style="text-align:center;border-bottom:1px solid #EEE">3.50×</td><td style="text-align:center;border-bottom:1px solid #EEE">6.22×</td></tr>
+            <tr><td style="padding:5px 8px"><b style="color:#5C6570">D6 Personas</b></td>
+              <td style="padding:5px 8px;font-family:monospace;font-size:9px">4,1,2 / 8,1,6</td>
+              <td style="text-align:center">1.00×</td><td style="text-align:center">1.33×</td>
+              <td style="text-align:center">3.00×</td><td style="text-align:center">4.80×</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <!-- Ejemplo desglosado D1 -->
+        <div style="background:#FEF0F1;border:1px solid rgba(204,31,38,.2);border-radius:8px;padding:12px;margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:#CC1F26;margin-bottom:6px">Ejemplo A · D1 Compliance — la curva más agresiva</div>
+          <div style="font-size:10.5px;color:#555;line-height:1.7">
+            Con C=7, β=2, α=9, el boost se dispara a partir de la nota 7 (donde está el punto C). Un criterio legal:
+            <div style="font-family:monospace;font-size:10px;background:#fff;border-radius:6px;padding:8px;margin:6px 0">
+              Nota 7 → boost 4.50×&nbsp;&nbsp;(curva base 1.88, curva boost 4.50 → gana boost)<br>
+              Nota 8 → boost 7.20×&nbsp;&nbsp;(base 1.94, boost 7.20)<br>
+              Nota 10 → boost 8.86×&nbsp;(base 1.98, boost 8.86)
+            </div>
+            Pasar una obligación regulatoria de 7 a 8 casi <b>dobla</b> su contribución (4.50→7.20). Así el modelo fuerza que el compliance crítico domine el ranking.
+          </div>
+        </div>
+
+        <!-- Ejemplo desglosado D6 -->
+        <div style="background:#F4F5F6;border:1px solid rgba(92,101,112,.2);border-radius:8px;padding:12px;margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:#5C6570;margin-bottom:6px">Ejemplo B · D6 Personas — amplificación contenida</div>
+          <div style="font-size:10.5px;color:#555;line-height:1.7">
+            Con α=6 y β=1 (más suaves), la misma nota produce mucho menos boost que en D1:
+            <div style="font-family:monospace;font-size:10px;background:#fff;border-radius:6px;padding:8px;margin:6px 0">
+              Nota 8 → boost 3.00×&nbsp;&nbsp;(vs. 7.20× en D1)<br>
+              Nota 10 → boost 4.80×&nbsp;(vs. 8.86× en D1)
+            </div>
+            Una nota perfecta en "experiencia del empleado" (D6) aporta menos de la mitad que la misma nota en compliance (D1). Es coherente con los pesos del modelo: D1 pesa 30% y D6 solo 8%.
+          </div>
+        </div>
+
+        <!-- Ejemplo umbral C -->
+        <div style="background:#FAF6EC;border:1px solid rgba(196,151,74,.25);border-radius:8px;padding:12px;margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:#9A6E2E;margin-bottom:6px">Ejemplo C · El parámetro C como "umbral de activación"</div>
+          <div style="font-size:10.5px;color:#555;line-height:1.7">
+            En todas las dimensiones la curva de boost está centrada en C=7 (D1) u C=8 (resto). Por debajo de ese punto domina la curva base (suave); por encima, la curva de boost se acelera. Por eso una nota 5 da boost similar en casi todas (≈1.6–2.0×), pero las diferencias explotan en 8–10. <b>El modelo distingue poco entre proyectos mediocres y mucho entre proyectos excelentes.</b>
+          </div>
+        </div>
+      </div>
+
   </div>
 
   <!-- IA de scoring -->
