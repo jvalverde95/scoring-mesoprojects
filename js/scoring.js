@@ -2592,3 +2592,97 @@ function renderAnalyticsCharts() {
       +'</b> (r='+strong.v+'). '+(strong.v>0.5?'Tienden a puntuar juntas.':strong.v<-0.3?'Tienden a oponerse.':'Relación débil.');
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURACIÓN DE PARÁMETROS DEL ALGORITMO (DEF: α, β, C por dimensión)
+   ═══════════════════════════════════════════════════════════════ */
+const DEF_DEFAULTS = {
+  d1:{C0:3,B0:1,A0:2,C:7,B:2,A:9},
+  d2:{C0:4,B0:1,A0:3,C:8,B:2,A:9},
+  d3:{C0:4,B0:1,A0:3,C:8,B:2,A:8},
+  d4:{C0:4,B0:1,A0:3,C:8,B:1.5,A:7},
+  d5:{C0:4,B0:1,A0:3,C:8,B:1.5,A:7},
+  d6:{C0:4,B0:1,A0:2,C:8,B:1,A:6},
+};
+const ALGO_DIM_LABELS = { d1:'D1 Compliance', d2:'D2 Estrategia', d3:'D3 ROI',
+  d4:'D4 Técnica', d5:'D5 Implantación', d6:'D6 Personas' };
+const ALGO_DIM_COLORS = { d1:'#CC1F26', d2:'#C4974A', d3:'#087B50', d4:'#C07800', d5:'#1848A0', d6:'#5C6570' };
+
+function loadAlgoParams() {
+  try {
+    const saved = localStorage.getItem('meso_algo_params');
+    if (saved) {
+      const obj = JSON.parse(saved);
+      Object.keys(obj).forEach(k=>{ if(DEF[k]) Object.assign(DEF[k], obj[k]); });
+    }
+  } catch(_) {}
+}
+
+function renderAlgoParams() {
+  const body = document.getElementById('algo-params-body');
+  if (!body) return;
+  const PARAMS = ['C0','B0','A0','C','B','A'];
+  body.innerHTML = Object.keys(DEF).map(function(k){
+    const p = DEF[k];
+    const boost8 = sigmoidBoost(8, p.C0,p.B0,p.A0,p.C,p.B,p.A).toFixed(2);
+    const cells = PARAMS.map(function(prm){
+      const border = prm==='C' ? 'border-left:2px solid #DDE5F2;' : '';
+      return '<td style="padding:4px 6px;text-align:center;'+border+'">'
+        +'<input type="number" step="0.5" value="'+p[prm]+'" '
+        +'data-dim="'+k+'" data-param="'+prm+'" '
+        +'onchange="updateAlgoParam(this)" '
+        +'style="width:46px;padding:4px 5px;font-size:10px;text-align:center;'
+        +'border:1px solid #DEDEDE;border-radius:5px;font-family:inherit"></td>';
+    }).join('');
+    return '<tr>'
+      +'<td style="padding:6px 8px;font-weight:700;color:'+ALGO_DIM_COLORS[k]+'">'+ALGO_DIM_LABELS[k]+'</td>'
+      +cells
+      +'<td style="padding:6px 8px;text-align:center;font-weight:700;color:'+ALGO_DIM_COLORS[k]+'" id="algo-boost8-'+k+'">'+boost8+'×</td>'
+      +'</tr>';
+  }).join('');
+}
+
+function updateAlgoParam(inp) {
+  const k = inp.dataset.dim, prm = inp.dataset.param;
+  const v = parseFloat(inp.value);
+  if (isNaN(v)) { inp.style.borderColor='#CC1F26'; return; }
+  inp.style.borderColor='#DEDEDE';
+  DEF[k][prm] = v;
+  // Live update the @8 boost preview for this dimension
+  const p = DEF[k];
+  const cell = document.getElementById('algo-boost8-'+k);
+  if (cell) cell.textContent = sigmoidBoost(8, p.C0,p.B0,p.A0,p.C,p.B,p.A).toFixed(2)+'×';
+}
+
+function applyAlgoParams() {
+  // Re-apply DEF params to every criterion in DIMS (criteria inherit dimension params via dp)
+  DIMS.forEach(function(d){
+    const k = d.cls; // 'd1'..'d6'
+    if (!DEF[k]) return;
+    d.criterios.forEach(function(c){
+      c.C0=DEF[k].C0; c.B0=DEF[k].B0; c.A0=DEF[k].A0;
+      c.C=DEF[k].C;   c.B=DEF[k].B;   c.A=DEF[k].A;
+    });
+  });
+  // Persist
+  try { localStorage.setItem('meso_algo_params', JSON.stringify(DEF)); } catch(_){}
+  // Recompute entire portfolio
+  if (portfolioData && portfolioData.length) {
+    portfolioData.forEach(function(p){ Object.assign(p, computeProj(p)); });
+    if (typeof renderPortfolio==='function') renderPortfolio();
+    if (typeof renderPools==='function') renderPools();
+    if (typeof renderDashboard==='function') renderDashboard();
+    if (typeof renderChartsStep==='function') renderChartsStep();
+  }
+  renderAlgoParams();
+  toast('✓ Parámetros aplicados · '+(portfolioData?portfolioData.length:0)+' proyectos recalculados');
+}
+
+function resetAlgoParams() {
+  Object.keys(DEF_DEFAULTS).forEach(function(k){ Object.assign(DEF[k], JSON.parse(JSON.stringify(DEF_DEFAULTS[k]))); });
+  try { localStorage.removeItem('meso_algo_params'); } catch(_){}
+  applyAlgoParams();
+  toast('↺ Parámetros restaurados a valores por defecto');
+}
+
+document.addEventListener('DOMContentLoaded', function(){ if(typeof loadAlgoParams==='function') loadAlgoParams(); });

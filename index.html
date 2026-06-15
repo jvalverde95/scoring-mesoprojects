@@ -821,6 +821,34 @@
         </div>
       </div>
 
+      <!-- Parámetros del algoritmo Sigmoid Boost -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">parámetros del algoritmo (Sigmoid Boost)</div>
+        <div class="cfg-sec-sub">Ajusta las curvas de amplificación por dimensión. <b>C₀,β₀,α₀</b> = curva base (notas bajas). <b>C,β,α</b> = curva de boost (notas altas). C marca dónde se dispara el boost; α el techo; β la pendiente. El sistema toma el máximo de ambas curvas.</div>
+
+        <div style="overflow-x:auto;margin-top:12px">
+        <table style="width:100%;font-size:11px;border-collapse:collapse" id="algo-params-table">
+          <thead><tr style="background:#F0F4FB">
+            <th style="text-align:left;padding:7px 8px">Dimensión</th>
+            <th style="padding:7px 6px" title="Centro curva base">C₀</th>
+            <th style="padding:7px 6px" title="Pendiente curva base">β₀</th>
+            <th style="padding:7px 6px" title="Techo curva base">α₀</th>
+            <th style="padding:7px 6px;border-left:2px solid #DDE5F2" title="Centro curva boost (umbral activación)">C</th>
+            <th style="padding:7px 6px" title="Pendiente curva boost">β</th>
+            <th style="padding:7px 6px" title="Techo curva boost">α</th>
+            <th style="padding:7px 8px" title="Boost resultante a nota 8">@8</th>
+          </tr></thead>
+          <tbody id="algo-params-body"></tbody>
+        </table>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="cfg-apply" onclick="applyAlgoParams()" style="font-size:10px;padding:8px 16px">✓ Aplicar y recalcular cartera</button>
+          <button class="cfg-apply cfg-reset" onclick="resetAlgoParams()" style="font-size:10px;padding:8px 14px">↺ Restaurar valores por defecto</button>
+        </div>
+        <div style="font-size:10px;color:#999;margin-top:8px;font-style:italic">Tras aplicar, todos los proyectos de la cartera se recalculan con los nuevos parámetros.</div>
+      </div>
+
       <!-- Umbrales de scoring -->
       <div class="cfg-section">
         <div class="cfg-sec-title">umbrales de clasificación</div>
