@@ -389,8 +389,17 @@ let _savedHoras     = {};
 function parseExcelBuffer(buffer) {
   const wb = XLSX.read(buffer, {type:'array', cellDates:true, raw:true, cellNF:false});
 
+  // ── Si el Excel trae configuración embebida (Pesos/Boost/Umbrales), aplicarla ──
+  // Así las notas se recalculan con la MISMA configuración que las generó.
+  if (typeof _readConfigSheets === 'function') {
+    try {
+      const cfgApplied = _readConfigSheets(wb);
+      if (cfgApplied) { window._cfgFromImport = true; }
+    } catch(e){ console.error('config import', e); }
+  }
+
   // Sheet priority — support our modelo + legacy formats
-  const PREF = ['📊 Cartera','Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
+  const PREF = ['📊 Cartera','Cartera','Carga Herramienta','Carga de Proyectos','Ranking Proyectos','Sheet1','Hoja1'];
   let sn = wb.SheetNames[0];
   for (const p of PREF) { if (wb.SheetNames.includes(p)) { sn=p; break; } }
   _liveSheetName = sn;
@@ -400,6 +409,14 @@ function parseExcelBuffer(buffer) {
   // ── Detect sheet format ────────────────────────────────────────────────
   const isModelo  = sn === '📊 Cartera';
   const isRanking = sn === 'Ranking Proyectos';
+  // Formato propio exportado por la app (exportPortfolioExcel):
+  //   cabecera fila 1, F=Horas, S..AN (idx 18-39)=22 criterios
+  let isAppExport = false;
+  if (sn === 'Cartera' && raw.length > 1) {
+    const h = raw[0] || [];
+    isAppExport = String(h[5]||'').toLowerCase().indexOf('horas') >= 0
+               && String(h[18]||'').length > 3;  // col S = primer criterio
+  }
 
   // ── Find header row and data start ────────────────────────────────────
   // Look for row where col B looks like a project name (length > 5, not a header label)
@@ -411,8 +428,8 @@ function parseExcelBuffer(buffer) {
     if (!b || b.length < 4) continue;
     if (/^(nombre|proyecto|name|nº|#|rank|columna|título)/i.test(b)) continue;
     // Data row: col B = project name + either criteria cols (integers 1-10) or score col has float
-    const hasCriteria = isModelo
-      ? (typeof raw[r][5] === 'number')   // modelo: col F = first criterion
+    const hasCriteria = (isModelo || isAppExport)
+      ? (typeof raw[r][5] === 'number')   // modelo: col F crit / appExport: col F horas
       : [3,4,5,6,7].some(c => { const v=Number(raw[r][c]); return Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v); });
     if (hasCriteria || b.length > 8) { dataStart = r; break; }
   }
@@ -450,7 +467,24 @@ function parseExcelBuffer(buffer) {
 
     const scores = {};
 
-    if (isModelo) {
+    if (isAppExport) {
+      // ── Formato propio de la app: F=Horas, S..AN (idx 18-39)=22 criterios ──
+      let nValid = 0;
+      CRIT_IDS.forEach(function(cid, j){
+        const v = parseFloat(row[18 + j]);
+        const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? Math.round(v) : 5;
+        scores[cid] = s;
+        if (Number.isFinite(v) && v >= 1 && v <= 10) nValid++;
+      });
+      // Horas en columna F (idx 5)
+      const horasApp = parseFloat(row[5]);
+      if (Number.isFinite(horasApp) && horasApp > 0) scores.__horas = horasApp;
+      if (nValid < 4) {
+        // Sin criterios válidos: intenta al menos conservar las horas y saltar a media
+        if (!(Number.isFinite(horasApp) && horasApp > 0)) continue;
+      }
+
+    } else if (isModelo) {
       // ── mesoestetic_scoring_modelo.xlsx ────────────────────────────────
       // Cols F-AA (idx 5-26) = 22 criteria in order
       // Col AJ (idx 35) = pre-computed Score Final (use as reference, but recalc in app)
@@ -554,8 +588,12 @@ function loadExcel(inp) {
   const reader=new FileReader();
   reader.onload=e=>{
     try {
+      window._cfgFromImport = false;
       const projects=parseExcelBuffer(e.target.result);
       applyProjects(projects, file.name);
+      if (window._cfgFromImport) {
+        toast('⚙ Configuración (pesos + boost) restaurada desde el Excel · notas recalculadas');
+      }
       const ei=document.getElementById('ib-info');
       const withSponsor=portfolioData.filter(p=>p.sponsor).length;
       const withHoras=portfolioData.filter(p=>p.horas!=null).length;
@@ -2077,6 +2115,7 @@ function exportPortfolioExcel() {
   ws2['!cols'] = [{wch:28},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
 
+  _appendConfigSheets(wb);  // la config viaja con la cartera
   XLSX.writeFile(wb, `mesoestetic_scoring_${new Date().toISOString().split('T')[0]}.xlsx`);
   toast(`✓ ${portfolioData.length} proyectos exportados`);
 }
@@ -2187,6 +2226,7 @@ function exportCarteraConPlanning() {
   XLSX.utils.book_append_sheet(wb, ws, '📊 Cartera');
 
   const fname = `nexus_cartera_${new Date().toISOString().split('T')[0]}.xlsx`;
+  _appendConfigSheets(wb);  // la config viaja con la cartera
   XLSX.writeFile(wb, fname);
   toast(`✓ Cartera exportada · ${portfolioData.length} proyectos · formato importación`);
 }
@@ -2315,7 +2355,8 @@ function exportCarteraPlantilla() {
 
       // Write and download
       var date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, 'nexus_cartera_' + date + '.xlsx');
+      _appendConfigSheets(wb);  // la config viaja con la cartera
+  XLSX.writeFile(wb, 'nexus_cartera_' + date + '.xlsx');
       toast('✓ Cartera exportada · ' + sorted.length + ' proyectos · formato plantilla con fórmulas');
     })
     .catch(function(err) {
@@ -2862,3 +2903,101 @@ function loadSavedWeights(){
   }catch(_){}
 }
 document.addEventListener('DOMContentLoaded', function(){ if(typeof loadSavedWeights==='function') loadSavedWeights(); });
+
+/* ═══════════════════════════════════════════════════════════════
+   CONFIG EMBEBIDA EN LA CARTERA — viaja con cada export/import
+   _appendConfigSheets(wb)  → añade hojas Pesos/Boost/Umbrales a un libro
+   _readConfigSheets(wb)    → lee esas hojas si existen y aplica la config
+   ═══════════════════════════════════════════════════════════════ */
+function _appendConfigSheets(wb) {
+  if (typeof XLSX === 'undefined') return;
+  try {
+    // Hoja Pesos
+    const pesos = [['Dimensión','Código','Peso (%)']];
+    DIMS.forEach(function(d){ pesos.push([d.nom, d.id, Math.round(d.peso*100)]); });
+    const wsP = XLSX.utils.aoa_to_sheet(pesos);
+    wsP['!cols']=[{wch:36},{wch:10},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, wsP, '⚙ Pesos');
+
+    // Hoja Boost (parámetros sigmoid por dimensión)
+    const boost = [['Dimensión','Código','C0','B0','A0','C','B','A']];
+    Object.keys(DEF).forEach(function(k){
+      const p=DEF[k];
+      const lbl=(typeof ALGO_DIM_LABELS!=='undefined'&&ALGO_DIM_LABELS[k])?ALGO_DIM_LABELS[k]:k.toUpperCase();
+      boost.push([lbl,k,p.C0,p.B0,p.A0,p.C,p.B,p.A]);
+    });
+    const wsB = XLSX.utils.aoa_to_sheet(boost);
+    wsB['!cols']=[{wch:18},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb, wsB, '⚙ Boost');
+
+    // Hoja Umbrales
+    const thr = [['Parámetro','Valor']];
+    const thrS=document.getElementById('thr-s')?.value, thrM=document.getElementById('thr-m')?.value;
+    if(thrS!=null) thr.push(['Umbral pool Corto (horas <)', thrS]);
+    if(thrM!=null) thr.push(['Umbral pool Medio (horas <)', thrM]);
+    const wsT = XLSX.utils.aoa_to_sheet(thr);
+    wsT['!cols']=[{wch:34},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, wsT, '⚙ Umbrales');
+  } catch(e){ console.error('_appendConfigSheets', e); }
+}
+
+function _readConfigSheets(wb) {
+  // Devuelve true si encontró y aplicó configuración
+  if (typeof XLSX === 'undefined' || !wb || !wb.SheetNames) return false;
+  let applied = false;
+
+  // Pesos
+  if (wb.SheetNames.indexOf('⚙ Pesos') >= 0) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets['⚙ Pesos'], {header:1});
+    rows.slice(1).forEach(function(r){
+      const code=(r[1]||'').toString().trim();
+      const peso=parseFloat(r[2]);
+      if(code && !isNaN(peso) && peso>0){
+        const d=DIMS.find(function(x){return x.id===code;});
+        if(d){ d.peso=peso/100; applied=true; }
+      }
+    });
+  }
+  // Boost
+  if (wb.SheetNames.indexOf('⚙ Boost') >= 0) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets['⚙ Boost'], {header:1});
+    rows.slice(1).forEach(function(r){
+      const code=(r[1]||'').toString().trim().toLowerCase();
+      if(DEF[code]){
+        const nums=['C0','B0','A0','C','B','A'].map(function(_,i){return parseFloat(r[2+i]);});
+        if(nums.every(function(v){return !isNaN(v);})){
+          DEF[code].C0=nums[0];DEF[code].B0=nums[1];DEF[code].A0=nums[2];
+          DEF[code].C=nums[3]; DEF[code].B=nums[4]; DEF[code].A=nums[5];
+          applied=true;
+        }
+      }
+    });
+    // Propagar a los criterios
+    DIMS.forEach(function(d){
+      const k=d.cls; if(!DEF[k])return;
+      d.criterios.forEach(function(c){
+        c.C0=DEF[k].C0;c.B0=DEF[k].B0;c.A0=DEF[k].A0;c.C=DEF[k].C;c.B=DEF[k].B;c.A=DEF[k].A;
+      });
+    });
+  }
+  // Umbrales
+  if (wb.SheetNames.indexOf('⚙ Umbrales') >= 0) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets['⚙ Umbrales'], {header:1});
+    rows.slice(1).forEach(function(r){
+      const label=(r[0]||'').toString().toLowerCase();
+      const val=parseFloat(r[1]);
+      if(isNaN(val))return;
+      if(label.indexOf('corto')>=0){const el=document.getElementById('thr-s');if(el){el.value=val;applied=true;}}
+      if(label.indexOf('medio')>=0){const el=document.getElementById('thr-m');if(el){el.value=val;applied=true;}}
+    });
+  }
+
+  if (applied) {
+    // Persistir la config aplicada
+    try { localStorage.setItem('meso_algo_params', JSON.stringify(DEF)); } catch(_){}
+    try { localStorage.setItem('meso_weights', JSON.stringify(DIMS.map(function(d){return {id:d.id,peso:d.peso};}))); } catch(_){}
+    if (typeof renderWeightEditor==='function') renderWeightEditor();
+    if (typeof renderAlgoParams==='function') renderAlgoParams();
+  }
+  return applied;
+}
