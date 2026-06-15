@@ -464,6 +464,8 @@ async function adoAutoSync(silent) {
       let scored = 0;
       portfolioData.forEach(function(p) {
         try {
+          // Respetar proyectos importados de Excel o evaluados a mano
+          if (p._fromExcel || p._manualEval) { return; }
           // Apply rule-based criterion scores from Description + Title
           var critScores = ruleScoresCriterios(p);
           CRIT_IDS.forEach(function(cid) { p.scores[cid] = critScores[cid]; });

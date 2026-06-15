@@ -497,7 +497,15 @@ function parseExcelBuffer(buffer) {
       if (nValid < 4) continue;
     }
 
-    projects.push({nom, area, sponsor, scores, reqDate, regDate: null});
+    // Extraer horas del marcador __horas y limpiarlo de scores (no es un criterio)
+    var _horas = (scores.__horas != null) ? scores.__horas : null;
+    if (scores.__horas != null) delete scores.__horas;
+    projects.push({nom, area, sponsor, scores, reqDate, regDate: null,
+      horas: _horas,
+      _fromExcel: true,        // marca: viene de Excel
+      _manualEval: true,       // respeta sus notas en re-evaluaciones IA
+      _excelScores: Object.assign({}, scores)  // copia de seguridad de las notas del Excel
+    });
   }
 
   if (!projects.length) throw new Error('Sin proyectos válidos en "' + sn + '"');
@@ -518,8 +526,11 @@ function applyProjects(projects, filename) {
     // Reflejar la descripcion de ADO en el campo descripcion breve
     if (!p.descripcion && p.adoDesc) p.descripcion = p.adoDesc;
     const proj = computeProj(p);
-    const excelHoras = (p.scores && p.scores.__horas != null) ? p.scores.__horas : null;
-    proj.horas = excelHoras ?? prevHoras[p.nom] ?? p.horas ?? null;  // p.horas = ADO OriginalEstimate
+    // Horas: Excel directo (p.horas) > marcador legacy __horas > previas > ADO
+    const excelHoras = (p.horas != null) ? p.horas : ((p.scores && p.scores.__horas != null) ? p.scores.__horas : null);
+    proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
+    // Preservar flags de Excel
+    if (p._fromExcel) { proj._fromExcel = true; proj._manualEval = true; }
     proj._dvId = null;  // will be set by upsert
     proj._selected = false;
     return proj;
