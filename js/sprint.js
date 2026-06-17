@@ -266,7 +266,10 @@ function renderSprintScreen() {
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))"
         title="${p.nom}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-          ${tag}
+          <div style="display:flex;gap:4px;align-items:center">
+            ${tag}
+            ${_prioBadge(p.adoPriority)}
+          </div>
           <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif">
             ${(p.sf||0).toFixed(1)}
           </span>
@@ -304,6 +307,8 @@ function renderSprintScreen() {
   setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, cap.corto));
   setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, cap.medio));
   setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, cap.largo));
+
+  if (typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();
 }
 
 /* ── Projects screen update ─────────────────────────────────── */
@@ -584,4 +589,98 @@ function renderDashboardAnalytics() {
       });
     }
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRIORIDAD ADO — badge + análisis de discrepancias
+   Microsoft.VSTS.Common.Priority (1=máxima … 4=mínima) → p.adoPriority
+   ═══════════════════════════════════════════════════════════════ */
+function _prioBadge(prio) {
+  const p = parseInt(prio) || 3;
+  const styles = {
+    1: { bg:'#CC1F26', txt:'P1' },
+    2: { bg:'#C07800', txt:'P2' },
+    3: { bg:'#5C6570', txt:'P3' },
+    4: { bg:'#AAB2C0', txt:'P4' },
+  };
+  const s = styles[p] || styles[3];
+  return '<span style="font-size:8px;background:'+s.bg+';color:#fff;padding:2px 6px;'
+    +'border-radius:20px;font-weight:700" title="Prioridad ADO '+p+'">'+s.txt+'</span>';
+}
+
+function renderPriorityAnalysis() {
+  const cont = document.getElementById('priority-analysis');
+  if (!cont) return;
+  if (!portfolioData || !portfolioData.length) { cont.innerHTML = ''; return; }
+
+  const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
+  const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
+  const cap  = getDevCapacity();
+
+  // Cuáles están "en marcha" ahora (top por score según capacidad)
+  const sorted = portfolioData.filter(p=>p.horas!=null).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const cortos = sorted.filter(p=>p.horas<thrS);
+  const medios = sorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
+  const largos = sorted.filter(p=>p.horas>=thrM);
+  const enMarcha = new Set([
+    ...cortos.slice(0,cap.corto),
+    ...medios.slice(0,cap.medio),
+    ...largos.slice(0,cap.largo),
+  ].map(p=>p.nom));
+
+  // Proyectos prioridad 1 en ADO
+  const p1 = portfolioData.filter(p=>parseInt(p.adoPriority)===1);
+
+  // Discrepancias
+  const p1NoMarcha = p1.filter(p=>!enMarcha.has(p.nom));         // P1 pero NO en marcha (deberían estar)
+  const marchaNoP1 = portfolioData.filter(p=>enMarcha.has(p.nom) && parseInt(p.adoPriority)!==1); // en marcha pero NO P1
+
+  const row = (p, extra) => {
+    const cl = clsf(p.sf||0);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'
+      +'padding:7px 10px;background:#fff;border:1px solid rgba(120,150,200,.14);border-radius:7px;margin-bottom:5px;'
+      +'cursor:pointer" onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom===\''+p.nom.replace(/'/g,"\\'")+'\')))" title="'+p.nom+'">'
+      +'<div style="display:flex;align-items:center;gap:6px;min-width:0">'
+        +_prioBadge(p.adoPriority)
+        +'<span style="font-size:10px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px">'+p.nom+'</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">'
+        +'<span style="font-size:9px;color:#888">'+(p.horas||0)+'h</span>'
+        +'<span style="font-size:11px;font-weight:800;color:'+scColorHex(p.sf||0)+'">'+(p.sf||0).toFixed(1)+'</span>'
+        +(extra||'')
+      +'</div></div>';
+  };
+
+  let html = '';
+
+  // Resumen
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'
+    +'<div class="dash-mini"><div class="dm-lbl">Prioridad 1 en ADO</div><div class="dm-val">'+p1.length+'</div></div>'
+    +'<div class="dash-mini"><div class="dm-lbl">En marcha ahora</div><div class="dm-val">'+enMarcha.size+'</div></div>'
+    +'<div class="dash-mini"><div class="dm-lbl">Discrepancias</div><div class="dm-val" style="color:'+((p1NoMarcha.length||marchaNoP1.length)?'#CC1F26':'#087B50')+'">'+(p1NoMarcha.length+marchaNoP1.length)+'</div></div>'
+    +'</div>';
+
+  // P1 que deberían estar en marcha pero no lo están
+  html += '<div style="margin-bottom:16px">'
+    +'<div style="font-size:12px;font-weight:700;color:#CC1F26;margin-bottom:8px">⚠ Prioridad 1 en ADO que NO están en marcha ('+p1NoMarcha.length+')</div>';
+  if (p1NoMarcha.length) {
+    html += '<div style="font-size:10px;color:#888;margin-bottom:8px">Estos proyectos están marcados como máxima prioridad en ADO pero no están entre los activos. Deberían entrar en marcha.</div>';
+    html += p1NoMarcha.map(p=>row(p,'<span style="font-size:8px;background:#CC1F26;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">DEBERÍA ENTRAR</span>')).join('');
+  } else {
+    html += '<div style="font-size:11px;color:#087B50;padding:8px 0">✓ Todos los proyectos prioridad 1 están en marcha.</div>';
+  }
+  html += '</div>';
+
+  // En marcha que NO son P1
+  html += '<div>'
+    +'<div style="font-size:12px;font-weight:700;color:#C07800;margin-bottom:8px">⚑ En marcha pero NO son Prioridad 1 ('+marchaNoP1.length+')</div>';
+  if (marchaNoP1.length) {
+    html += '<div style="font-size:10px;color:#888;margin-bottom:8px">Estos proyectos están activos pero en ADO no tienen prioridad máxima. Revisa si deberían ceder el puesto.</div>';
+    html += marchaNoP1.map(p=>row(p,'<span style="font-size:8px;background:#C07800;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">REVISAR</span>')).join('');
+  } else {
+    html += '<div style="font-size:11px;color:#087B50;padding:8px 0">✓ Todos los proyectos en marcha son prioridad 1.</div>';
+  }
+  html += '</div>';
+
+  cont.innerHTML = html;
 }
