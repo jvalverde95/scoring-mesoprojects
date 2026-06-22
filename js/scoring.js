@@ -534,8 +534,12 @@ function parseExcelBuffer(buffer) {
     // Extraer horas del marcador __horas y limpiarlo de scores (no es un criterio)
     var _horas = (scores.__horas != null) ? scores.__horas : null;
     if (scores.__horas != null) delete scores.__horas;
+    // Extraer el ID de ADO del inicio del nombre si existe (formato "854 — MPG-...")
+    var _adoIdMatch = String(nom).match(/^\s*(\d{2,7})\s*[—\-–]/);
+    var _adoId = _adoIdMatch ? parseInt(_adoIdMatch[1]) : null;
     projects.push({nom, area, sponsor, scores, reqDate, regDate: null,
       horas: _horas,
+      adoId: _adoId,           // recuperado del nombre → permite re-sincronizar a ADO
       _fromExcel: true,        // marca: viene de Excel
       _manualEval: true,       // respeta sus notas en re-evaluaciones IA
       _excelScores: Object.assign({}, scores)  // copia de seguridad de las notas del Excel
@@ -547,12 +551,13 @@ function parseExcelBuffer(buffer) {
 }
 
 /* Apply projects to app, preserving horas */
-function applyProjects(projects, filename) {
+function applyProjects(projects, filename, mergeMode) {
   const prevHoras = {};
   portfolioData.forEach(p => { if (p.horas!=null) prevHoras[p.nom]=p.horas; });
   Object.assign(prevHoras, _savedHoras);
 
-  portfolioData = projects.map(p => {
+  // Procesa cada proyecto entrante (calcula score, horas, flags)
+  const incoming = projects.map(p => {
     // Auto-detect area from MPG prefix if not set
     if (!p.area && typeof mpgDecodeArea === 'function') {
       p.area = mpgDecodeArea(p.nom) || p.area || '';
@@ -565,11 +570,37 @@ function applyProjects(projects, filename) {
     proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
     // Preservar flags de Excel
     if (p._fromExcel) { proj._fromExcel = true; proj._manualEval = true; }
-    proj._dvId = null;  // will be set by upsert
+    proj._dvId = null;
     proj._selected = false;
+    if (proj.horas === undefined) proj.horas = null;
     return proj;
   });
-  portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
+
+  if (mergeMode && portfolioData.length) {
+    // ── MERGE: actualiza coincidencias (por adoId o nombre), conserva el resto ──
+    const keyOf = function(p){ return p.adoId != null ? ('id:'+p.adoId) : ('nom:'+(p.nom||'').trim().toLowerCase()); };
+    const idx = {};
+    portfolioData.forEach(function(p,i){ idx[keyOf(p)] = i; });
+    let updated = 0, added = 0;
+    incoming.forEach(function(np){
+      const k = keyOf(np);
+      if (idx[k] !== undefined) {
+        portfolioData[idx[k]] = np;   // sobrescribe el que coincide
+        updated++;
+      } else {
+        portfolioData.push(np);        // nuevo → se añade
+        idx[k] = portfolioData.length - 1;
+        added++;
+      }
+    });
+    portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
+    window._mergeStats = { updated: updated, added: added, kept: portfolioData.length - updated - added };
+  } else {
+    // ── REPLACE: reemplaza toda la cartera (carga desde ADO o Excel sin merge) ──
+    portfolioData = incoming;
+    portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
+    window._mergeStats = null;
+  }
 
   renderPortfolio(); renderPools();
   const el=document.getElementById('portfolio'); if(el) el.style.display='block';
@@ -579,7 +610,12 @@ function applyProjects(projects, filename) {
   try { renderCharts(); } catch(_) {}
   if (typeof renderDashboard === 'function') renderDashboard();
 
-  toast(`✓ ${portfolioData.length} proyectos cargados · exporta a Excel cuando quieras`);
+  if (window._mergeStats) {
+    const m = window._mergeStats;
+    toast('✓ Excel fusionado · '+m.updated+' actualizados, '+m.added+' nuevos, '+m.kept+' conservados');
+  } else {
+    toast('✓ '+portfolioData.length+' proyectos cargados · exporta a Excel cuando quieras');
+  }
 }
 
 /* One-time file input load */
@@ -590,7 +626,7 @@ function loadExcel(inp) {
     try {
       window._cfgFromImport = false;
       const projects=parseExcelBuffer(e.target.result);
-      applyProjects(projects, file.name);
+      applyProjects(projects, file.name, true);  // Excel = merge (no borra los que no vienen)
       if (window._cfgFromImport) {
         toast('⚙ Configuración (pesos + boost) restaurada desde el Excel · notas recalculadas');
       }
@@ -634,7 +670,7 @@ async function refreshLiveExcel(force=false) {
     _liveLastMod=mod;
     const buf=await file.arrayBuffer();
     const projects=parseExcelBuffer(buf);
-    applyProjects(projects, file.name);
+    applyProjects(projects, file.name, true);  // Excel = merge
     const ts=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     const ei=document.getElementById('ib-info');
     if(ei) ei.textContent='🔴 Live · '+portfolioData.length+' proyectos · "'+_liveSheetName+'" · '+ts;

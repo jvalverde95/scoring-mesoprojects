@@ -629,8 +629,16 @@ async function adoSyncProject(nom) {
 
 // ── Sync ALL projects to ADO ──────────────────────────────────
 async function adoSyncAllScores() {
+  const conId    = portfolioData.filter(function(p){ return p.adoId; });
   const eligible = portfolioData.filter(function(p){ return p.adoId && (p.sf||0) > 0; });
-  if (!eligible.length) { toast('No hay proyectos con ID ADO y score calculado'); return; }
+  if (!eligible.length) {
+    if (!conId.length) {
+      toast('Ningún proyecto tiene ID de ADO. Carga proyectos desde ADO, o usa un Excel exportado por la app (el nombre debe empezar por el nº de work item).');
+    } else {
+      toast('Hay '+conId.length+' proyectos con ID ADO pero sin score > 0. Evalúalos primero.');
+    }
+    return;
+  }
 
   const btn = document.getElementById('ado-sync-all-btn');
   if (btn) { btn.disabled=true; btn.textContent='⟳ Sincronizando…'; }
