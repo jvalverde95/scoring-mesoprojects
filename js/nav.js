@@ -4,6 +4,8 @@ let previousStep = null;
 const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary'];
 
 function goStep(t) {
+  if (window._sharedViewLocked) return;  // vista compartida: navegación bloqueada
+
   // Track where we're coming FROM (needed to detect manual eval → summary)
   previousStep = currentStep;
 
@@ -622,11 +624,38 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function(){
   try {
     if (typeof loadSprintSnapshotFromURL === 'function' && loadSprintSnapshotFromURL()) {
-      // Es un enlace compartido: entrar directo a la vista En Marcha (solo lectura)
-      setTimeout(function(){
-        if (typeof enterApp === 'function') enterApp();
-        if (typeof goStep === 'function') goStep('sprint');
-      }, 300);
+      // Es un enlace compartido: MODO BLOQUEADO de solo lectura, sin acceso al resto de la web
+      setTimeout(function(){ enterSharedViewMode(); }, 200);
     }
   } catch(e) { console.error('snapshot init', e); }
 });
+
+// Activa una vista aislada: solo la pantalla En Marcha, sin navegación ni otras opciones
+function enterSharedViewMode() {
+  // Ocultar landing
+  const landing = document.getElementById('landing');
+  if (landing) landing.style.display = 'none';
+  // Mostrar shell pero ocultar TODA la navegación
+  const shell = document.getElementById('shell');
+  if (shell) shell.style.display = 'block';
+  const lnav = document.getElementById('lnav');
+  if (lnav) lnav.style.display = 'none';            // sin menú lateral
+  const bar = document.getElementById('bar');
+  if (bar) bar.style.display = 'none';              // sin barra superior
+  // Quitar margen que dejaba sitio al menú lateral
+  const scroll = document.getElementById('steps-scroll');
+  if (scroll) { scroll.style.marginLeft = '0'; scroll.style.left = '0'; scroll.style.width = '100%'; }
+  // Ocultar el botón de compartir (los directores no re-comparten)
+  document.querySelectorAll('[onclick*="shareSprintSnapshot"]').forEach(function(b){
+    const wrap = b.closest('div'); if (wrap) wrap.style.display = 'none'; else b.style.display='none';
+  });
+  // Mostrar SOLO el step de En Marcha, ocultar el resto
+  document.querySelectorAll('.step').forEach(function(s){
+    s.classList.remove('on');
+    if (s.id === 'step-sprint') s.classList.add('on');
+  });
+  // Renderizar la vista de snapshot (solo lectura)
+  if (typeof renderSprintSnapshotView === 'function') renderSprintSnapshotView();
+  // Bloquear navegación por si algún control intentara cambiar de pantalla
+  window._sharedViewLocked = true;
+}

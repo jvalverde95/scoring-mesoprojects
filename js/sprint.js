@@ -628,8 +628,7 @@ function _prioBadge(prio) {
 }
 
 function renderPriorityAnalysis() {
-  const conts = [document.getElementById('priority-analysis'),
-                 document.getElementById('priority-analysis-summary')].filter(Boolean);
+  const conts = [document.getElementById('priority-analysis-summary')].filter(Boolean);
   if (!conts.length) return;
   if (!portfolioData || !portfolioData.length) { conts.forEach(function(c){c.innerHTML='';}); return; }
 
@@ -838,16 +837,6 @@ function renderSprintSnapshotView() {
       +col('▣ Largos', largos, '#087B50')
     +'</div>';
 
-  // Análisis de prioridad sobre el snapshot
-  const p1 = snap.projects.filter(p=>parseInt(p.adoPriority)===1);
-  const p1NoMarcha = p1.filter(p=>!enMarcha.has(p.nom));
-  const marchaNoP1 = snap.projects.filter(p=>enMarcha.has(p.nom)&&parseInt(p.adoPriority)!==1);
-  const pa = document.getElementById('priority-analysis');
-  if (pa) {
-    const rowP=(p,tag,tagColor)=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#fff;border:1px solid rgba(120,150,200,.14);border-radius:7px;margin-bottom:5px" title="'+p.nom+'"><div style="display:flex;align-items:center;gap:6px;min-width:0">'+_prioBadge(p.adoPriority)+'<span style="font-size:10px;color:#333">'+p.nom+'</span></div><span style="font-size:8px;background:'+tagColor+';color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">'+tag+'</span></div>';
-    pa.innerHTML = '<div style="font-size:12px;font-weight:700;color:#CC1F26;margin-bottom:8px">⚠ Prioridad 1 que NO están en marcha ('+p1NoMarcha.length+')</div>'
-      +(p1NoMarcha.length?p1NoMarcha.map(p=>rowP(p,'DEBERÍA ENTRAR','#CC1F26')).join(''):'<div style="font-size:11px;color:#087B50;padding:6px 0">✓ Todos los P1 están en marcha.</div>')
-      +'<div style="font-size:12px;font-weight:700;color:#C07800;margin:14px 0 8px">⚑ En marcha pero NO son P1 ('+marchaNoP1.length+')</div>'
-      +(marchaNoP1.length?marchaNoP1.map(p=>rowP(p,'REVISAR','#C07800')).join(''):'<div style="font-size:11px;color:#087B50;padding:6px 0">✓ Todos los activos son P1.</div>');
-  }
+  // (análisis de prioridad NO se muestra en el snapshot)
+
 }
