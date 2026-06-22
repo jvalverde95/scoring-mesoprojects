@@ -226,6 +226,23 @@ function renderSprintScreen() {
 
   // Lookup de fechas de inicio esperadas desde la planificación
   var _startDates = {};
+  // Tooltip enriquecido para las tarjetas (descripción, notas por dimensión, fechas, horas)
+  var _DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
+  var _liveTip = function(p, active){
+    var pf=function(d){ if(!d)return '—'; var x=new Date(d); return x.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); };
+    var t = p.nom + '\n────────────────\n';
+    t += 'Score: ' + (p.sf||0).toFixed(1) + '  ·  ' + ((clsf(p.sf||0).et)||'') + '\n';
+    t += 'Área: ' + (p.area||'—') + '  ·  Prioridad ADO: P' + (p.adoPriority||3) + '\n';
+    t += 'Horas: ' + (p.horas||0) + 'h\n';
+    t += 'Inicio: ' + pf(_startDates[p.nom]) + (p.reqDate ? '  ·  Solicitado: ' + pf(p.reqDate) : '') + '\n';
+    if (p.dimScores && p.dimScores.length) {
+      t += '────────────────\n';
+      t += p.dimScores.map(function(d,i){ return _DNAMES[i] + ': ' + (+d).toFixed(1); }).join('\n') + '\n';
+    }
+    var desc = (p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim();
+    if (desc) t += '────────────────\n' + desc.substring(0,400);
+    return t.replace(/"/g,'&quot;');
+  };
   try {
     if (typeof planBuildTimeline === 'function') {
       planBuildTimeline().forEach(function(t){
@@ -276,6 +293,7 @@ function renderSprintScreen() {
     return `
       <div style="padding:10px 12px;background:#fff;border-radius:8px;border:${border};
         cursor:pointer;opacity:${opacity};margin-bottom:6px"
+        title="${_liveTip(p, isActive)}"
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))"
         title="${p.nom}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
@@ -721,7 +739,10 @@ function _buildSprintSnapshot() {
   } catch(e){}
   const projects = portfolioData.filter(p=>p.horas!=null).map(function(p){
     return { nom:p.nom, sf:+(p.sf||0).toFixed(2), horas:p.horas, area:p.area||'',
-      adoPriority:p.adoPriority||3, start:startDates[p.nom]||null };
+      adoPriority:p.adoPriority||3, start:startDates[p.nom]||null,
+      desc:(p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim().substring(0,400),
+      dims:(p.dimScores||[]).map(function(d){return +(+d).toFixed(1);}),
+      reqDate:p.reqDate||null };
   });
   return {
     v: 1,
@@ -790,10 +811,26 @@ function renderSprintSnapshotView() {
   ].map(p=>p.nom));
 
   const pf = (ms)=>{ if(!ms) return '—'; const d=new Date(ms); return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); };
+  const DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
+  const pf2 = (ms)=>{ if(!ms) return '—'; const d=new Date(ms); return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); };
+  const tipOf = (p, active)=>{
+    let t = p.nom + '\n';
+    t += '────────────────\n';
+    t += 'Score: ' + p.sf.toFixed(1) + '  ·  ' + (clsf(p.sf).et||'') + '\n';
+    t += 'Área: ' + (p.area||'—') + '  ·  Prioridad ADO: P' + (p.adoPriority||3) + '\n';
+    t += 'Horas: ' + p.horas + 'h  ·  ' + (active?'En marcha':'Próximo') + '\n';
+    t += 'Inicio: ' + pf2(p.start) + (p.reqDate ? '  ·  Solicitado: ' + pf2(+new Date(p.reqDate)) : '') + '\n';
+    if (p.dims && p.dims.length) {
+      t += '────────────────\n';
+      t += p.dims.map(function(d,i){ return DNAMES[i] + ': ' + d; }).join('\n') + '\n';
+    }
+    if (p.desc) { t += '────────────────\n' + p.desc; }
+    return t;
+  };
   const card = (p, active)=>{
     const cl = clsf(p.sf);
     return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
-      +(active?'2px solid var(--d3)':'1px dashed var(--b2)')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+p.nom+'">'
+      +(active?'2px solid var(--d3)':'1px dashed var(--b2)')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
         +'<div style="display:flex;gap:4px;align-items:center">'
           +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
@@ -801,7 +838,7 @@ function renderSprintSnapshotView() {
         +'</div>'
         +'<span style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
       +'</div>'
-      +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:3px" title="'+p.nom+'">'+p.nom+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:3px">'+p.nom+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
         +'<span style="font-size:9px;color:var(--ink3)">'+(p.area||'—')+'</span>'
         +'<span style="font-size:9px;color:var(--ink3)">'+p.horas+'h</span>'
@@ -816,10 +853,10 @@ function renderSprintSnapshotView() {
     const active = arr.filter(p=>enMarcha.has(p.nom));
     const next = arr.filter(p=>!enMarcha.has(p.nom));
     return '<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+active.length+')</div>'
+      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
       +active.map(p=>card(p,true)).join('')
-      +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola</div>':'')
-      +next.slice(0,5).map(p=>card(p,false)).join('')
+      +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola ('+next.length+')</div>':'')
+      +next.map(p=>card(p,false)).join('')   // TODOS los de la cola, sin recortar
       +'</div>';
   };
 
