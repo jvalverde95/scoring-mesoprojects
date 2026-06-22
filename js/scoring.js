@@ -832,6 +832,13 @@ function renderPortfolio() {
       : `<span title="Solo local" style="color:var(--ink4);font-size:10px">○</span>`;
     const tr=document.createElement('tr');
     tr.className=hide?'hidden':'';
+    tr.style.cursor='pointer';
+    tr.title='Clic para evaluación rápida';
+    tr.addEventListener('click', function(ev){
+      // No abrir si el clic fue en un control interactivo (checkbox, input horas, botones)
+      if (ev.target.closest('input,button,a,select')) return;
+      openProjectEdit(realIdx);
+    });
     tr.innerHTML=`
       <td style="text-align:center;width:32px;">
         <input type="checkbox" style="width:13px;height:13px;accent-color:var(--d1);cursor:pointer"
