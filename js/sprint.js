@@ -221,6 +221,16 @@ function syncThrInputs() {
 
 /* ── Sprint screen rendering ─────────────────────────────────── */
 function renderSprintScreen() {
+  // Lookup de fechas de inicio esperadas desde la planificación
+  var _startDates = {};
+  try {
+    if (typeof planBuildTimeline === 'function') {
+      planBuildTimeline().forEach(function(t){
+        if (t.proj && t.proj.nom) _startDates[t.proj.nom] = t.startDate;
+      });
+    }
+  } catch(e){}
+
   updateDevCapSummary();
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
   const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
@@ -278,11 +288,17 @@ function renderSprintScreen() {
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">
           ${p.nom}
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:9px;color:var(--ink3)">${p.area||'—'}</span>
           <span style="font-size:8px;padding:2px 6px;border-radius:20px;
             background:${cl.bg||'var(--surf)'};color:${cl.c||'var(--ink3)'}">${cl.et||'—'}</span>
           <span style="font-size:9px;color:var(--ink3)">${p.horas}h</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">
+          <span style="font-size:8px;color:var(--ink4)">${isActive?'🟢 Inicio:':'📅 Inicio est.:'}</span>
+          <span style="font-size:9px;font-weight:700;color:${isActive?'var(--d3)':'var(--ink3)'}">
+            ${_startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—'}
+          </span>
         </div>
       </div>`;
   };
@@ -609,9 +625,10 @@ function _prioBadge(prio) {
 }
 
 function renderPriorityAnalysis() {
-  const cont = document.getElementById('priority-analysis');
-  if (!cont) return;
-  if (!portfolioData || !portfolioData.length) { cont.innerHTML = ''; return; }
+  const conts = [document.getElementById('priority-analysis'),
+                 document.getElementById('priority-analysis-summary')].filter(Boolean);
+  if (!conts.length) return;
+  if (!portfolioData || !portfolioData.length) { conts.forEach(function(c){c.innerHTML='';}); return; }
 
   const thrS = parseInt(document.getElementById('thr-s')?.value) || 10;
   const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
@@ -682,5 +699,5 @@ function renderPriorityAnalysis() {
   }
   html += '</div>';
 
-  cont.innerHTML = html;
+  conts.forEach(function(c){ c.innerHTML = html; });
 }

@@ -412,10 +412,16 @@ function parseExcelBuffer(buffer) {
   // Formato propio exportado por la app (exportPortfolioExcel):
   //   cabecera fila 1, F=Horas, S..AN (idx 18-39)=22 criterios
   let isAppExport = false;
+  let _appHorasCol = -1, _appCrit0Col = -1;
   if (sn === 'Cartera' && raw.length > 1) {
-    const h = raw[0] || [];
-    isAppExport = String(h[5]||'').toLowerCase().indexOf('horas') >= 0
-               && String(h[18]||'').length > 3;  // col S = primer criterio
+    const h = (raw[0] || []).map(function(x){ return String(x||'').toLowerCase().trim(); });
+    // Localiza columnas por NOMBRE de cabecera (robusto ante cambios de orden)
+    _appHorasCol = h.findIndex(function(x){ return x.indexOf('horas') >= 0; });
+    // El primer criterio: busca la cabecera del primer criterio real, o 'c1_1', o 'riesgo legal'
+    const crit0 = (typeof DIMS!=='undefined' && DIMS[0] && DIMS[0].criterios[0])
+      ? String(DIMS[0].criterios[0].nom||'').toLowerCase() : '';
+    _appCrit0Col = h.findIndex(function(x){ return (crit0 && x===crit0) || x==='c1_1' || x.indexOf('riesgo legal')>=0; });
+    isAppExport = _appHorasCol >= 0 && _appCrit0Col >= 0;
   }
 
   // ── Find header row and data start ────────────────────────────────────
@@ -428,8 +434,9 @@ function parseExcelBuffer(buffer) {
     if (!b || b.length < 4) continue;
     if (/^(nombre|proyecto|name|nº|#|rank|columna|título)/i.test(b)) continue;
     // Data row: col B = project name + either criteria cols (integers 1-10) or score col has float
+    const _probeCol = isAppExport ? _appHorasCol : 5;
     const hasCriteria = (isModelo || isAppExport)
-      ? (typeof raw[r][5] === 'number')   // modelo: col F crit / appExport: col F horas
+      ? (typeof raw[r][_probeCol] === 'number')   // modelo: col F crit / appExport: col horas
       : [3,4,5,6,7].some(c => { const v=Number(raw[r][c]); return Number.isFinite(v)&&v>=1&&v<=10&&Number.isInteger(v); });
     if (hasCriteria || b.length > 8) { dataStart = r; break; }
   }
@@ -468,16 +475,15 @@ function parseExcelBuffer(buffer) {
     const scores = {};
 
     if (isAppExport) {
-      // ── Formato propio de la app: F=Horas, S..AN (idx 18-39)=22 criterios ──
+      // ── Formato propio de la app: columnas localizadas por cabecera ──
       let nValid = 0;
       CRIT_IDS.forEach(function(cid, j){
-        const v = parseFloat(row[18 + j]);
+        const v = parseFloat(row[_appCrit0Col + j]);
         const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? Math.round(v) : 5;
         scores[cid] = s;
         if (Number.isFinite(v) && v >= 1 && v <= 10) nValid++;
       });
-      // Horas en columna F (idx 5)
-      const horasApp = parseFloat(row[5]);
+      const horasApp = parseFloat(row[_appHorasCol]);
       if (Number.isFinite(horasApp) && horasApp > 0) scores.__horas = horasApp;
       if (nValid < 4) {
         // Sin criterios válidos: intenta al menos conservar las horas y saltar a media
@@ -2093,7 +2099,7 @@ function exportPortfolioExcel() {
 
   // Main sheet: one row per project
   const headers = [
-    'ID ADO', 'Nombre', 'Área', 'Sponsor', 'Fecha solicitud', 'Horas estimadas',
+    'ID ADO', 'Nombre', 'Área', 'Sponsor', 'Descripción', 'Fecha solicitud', 'Horas estimadas',
     'Score final', 'Score base', 'Aging factor',
     'D1 Compliance', 'D2 Estratégico', 'D3 ROI', 'D4 Técnica', 'D5 Implantación', 'D6 Personas',
     'Clasificación', 'Pool', 'Auto-prioritario',
@@ -2109,6 +2115,7 @@ function exportPortfolioExcel() {
     p.nom   || '',
     p.area  || '',
     p.sponsor || '',
+    (p.descripcion || p.adoDesc || '').toString().replace(/\s+/g,' ').trim(),
     p.reqDate || '',
     p.horas   ?? '',
     +(p.sf  || 0).toFixed(3),

@@ -49,7 +49,8 @@ function goStep(t) {
     if (typeof previousStep === 'number' && previousStep >= 1 && previousStep <= 6) {
       if (typeof addManualEvalToPool === 'function') addManualEvalToPool();
     }
-  } else if (NAV_PAGES.includes(t)) {
+  
+    if(typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();} else if (NAV_PAGES.includes(t)) {
     const panel = document.getElementById('step-' + t);
     if (panel) panel.classList.add('on');
     const navEl = document.getElementById('nav-' + t);
