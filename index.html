@@ -8,6 +8,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Nexus · Project Intelligence Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+<!-- Overlay para copiar enlace de snapshot manualmente -->
+<div id="snapshot-link-overlay" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(8,8,8,.7);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;padding:24px;max-width:560px;width:90%">
+    <div style="font-size:15px;font-weight:800;color:#1C2B4A;margin-bottom:8px">🔗 Enlace para compartir</div>
+    <div style="font-size:12px;color:#666;margin-bottom:14px">Copia este enlace y envíalo a los directores. Al abrirlo verán la vista En Marcha tal cual está ahora.</div>
+    <input id="snapshot-link-input" type="text" readonly onclick="this.select()"
+      style="width:100%;padding:10px;font-size:11px;border:1px solid #DEDEDE;border-radius:8px;font-family:monospace;box-sizing:border-box">
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('snapshot-link-input').select();document.execCommand('copy');toast('Enlace copiado')" class="cfg-apply" style="font-size:11px;padding:8px 16px;background:#16243E;color:#fff;border:none;border-radius:8px">Copiar</button>
+      <button onclick="document.getElementById('snapshot-link-overlay').style.display='none'" class="cfg-apply cfg-reset" style="font-size:11px;padding:8px 16px">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="css/main.css">
@@ -1674,6 +1689,13 @@
 <div class="step" id="step-sprint">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
     <div class="s-title" style="margin:0">En marcha</div>
+  <div style="display:flex;gap:8px;margin:8px 0 16px">
+    <button onclick="shareSprintSnapshot()" class="cfg-apply"
+      style="font-size:11px;padding:8px 16px;background:#16243E;color:#fff;border:none;border-radius:8px;cursor:pointer">
+      🔗 Compartir vista con directores
+    </button>
+    <span style="font-size:10px;color:#999;align-self:center">Genera un enlace de solo lectura que verán igual desde cualquier PC</span>
+  </div>
     <button onclick="goStep('planning')"
       style="padding:6px 14px;font-size:10px;font-weight:600;border-radius:6px;
              border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer;

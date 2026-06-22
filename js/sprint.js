@@ -221,6 +221,9 @@ function syncThrInputs() {
 
 /* ── Sprint screen rendering ─────────────────────────────────── */
 function renderSprintScreen() {
+  // Si venimos de un enlace compartido, mostrar la vista de solo lectura
+  if (window._sprintSnapshot) { renderSprintSnapshotView(); return; }
+
   // Lookup de fechas de inicio esperadas desde la planificación
   var _startDates = {};
   try {
@@ -285,7 +288,7 @@ function renderSprintScreen() {
           </span>
         </div>
         <div style="font-size:10px;font-weight:700;color:var(--ink);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px" title="${p.nom}">
           ${p.nom}
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -435,7 +438,7 @@ function renderDashboard() {
         const c=(p.sf||0)>=8?'#087B50':(p.sf||0)>=6.5?'#C07800':'#CC1F26';
         return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--b);cursor:pointer" onclick="goStep('summary')">
           <div style="font-size:11px;font-weight:700;color:var(--ink4);width:16px;flex-shrink:0">${i+1}</div>
-          <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nom}</div>
+          <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nom}">${p.nom}</div>
           <div style="font-size:13px;font-weight:900;color:${c};font-family:'Playfair Display',serif">${(p.sf||0).toFixed(1)}</div>
         </div>`;
       }).join('');
@@ -700,4 +703,151 @@ function renderPriorityAnalysis() {
   html += '</div>';
 
   conts.forEach(function(c){ c.innerHTML = html; });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SNAPSHOT COMPARTIBLE DE "EN MARCHA"
+   Genera un enlace con el estado actual codificado (sin servidor).
+   Al abrirlo, los directores ven exactamente esa foto, desde cualquier PC.
+   ═══════════════════════════════════════════════════════════════ */
+function _buildSprintSnapshot() {
+  // Captura mínima necesaria para reconstruir la vista En Marcha
+  const cap = getDevCapacity();
+  const thr = getThr();
+  const startDates = {};
+  try {
+    if (typeof planBuildTimeline === 'function') {
+      planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom) startDates[t.proj.nom]=+t.startDate; });
+    }
+  } catch(e){}
+  const projects = portfolioData.filter(p=>p.horas!=null).map(function(p){
+    return { nom:p.nom, sf:+(p.sf||0).toFixed(2), horas:p.horas, area:p.area||'',
+      adoPriority:p.adoPriority||3, start:startDates[p.nom]||null };
+  });
+  return {
+    v: 1,
+    ts: Date.now(),
+    title: 'En Marcha — mesoestetic',
+    cap: cap, thr: { s:thr.s, m:thr.m },
+    projects: projects,
+  };
+}
+
+function shareSprintSnapshot() {
+  if (!portfolioData || !portfolioData.length) { toast('No hay proyectos para compartir'); return; }
+  try {
+    const snap = _buildSprintSnapshot();
+    const json = JSON.stringify(snap);
+    // Comprime con encodeURIComponent + base64 (unicode-safe)
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    const url = location.origin + location.pathname + '#marcha=' + b64;
+    // Copia al portapapeles
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function(){
+        toast('🔗 Enlace copiado · compártelo con los directores ('+snap.projects.length+' proyectos)');
+      }, function(){ _showSnapshotLink(url); });
+    } else {
+      _showSnapshotLink(url);
+    }
+  } catch(e) { console.error('snapshot', e); toast('✗ No se pudo generar el enlace: '+e.message); }
+}
+
+function _showSnapshotLink(url) {
+  // Fallback: muestra el enlace en un prompt para copiar manualmente
+  const ov = document.getElementById('snapshot-link-overlay');
+  const inp = document.getElementById('snapshot-link-input');
+  if (ov && inp) { inp.value = url; ov.style.display='flex'; inp.select(); }
+  else { window.prompt('Copia este enlace para compartir:', url); }
+}
+
+// Lee el snapshot del hash de la URL (si existe) al cargar la página
+function loadSprintSnapshotFromURL() {
+  const h = location.hash || '';
+  const m = h.match(/[#&]marcha=([^&]+)/);
+  if (!m) return false;
+  try {
+    const json = decodeURIComponent(escape(atob(m[1])));
+    const snap = JSON.parse(json);
+    if (!snap || !snap.projects) return false;
+    window._sprintSnapshot = snap;   // marca modo "vista compartida"
+    return true;
+  } catch(e) { console.error('snapshot load', e); return false; }
+}
+
+// Renderiza la vista de solo lectura del snapshot (para directores)
+function renderSprintSnapshotView() {
+  const snap = window._sprintSnapshot;
+  if (!snap) return;
+  const cont = document.getElementById('sprint-tab');
+  if (!cont) return;
+
+  const thrS = snap.thr.s, thrM = snap.thr.m, cap = snap.cap;
+  const sorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
+  const cortos = sorted.filter(p=>p.horas<thrS);
+  const medios = sorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
+  const largos = sorted.filter(p=>p.horas>=thrM);
+  const enMarcha = new Set([
+    ...cortos.slice(0,cap.corto), ...medios.slice(0,cap.medio), ...largos.slice(0,cap.largo),
+  ].map(p=>p.nom));
+
+  const pf = (ms)=>{ if(!ms) return '—'; const d=new Date(ms); return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); };
+  const card = (p, active)=>{
+    const cl = clsf(p.sf);
+    return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
+      +(active?'2px solid var(--d3)':'1px dashed var(--b2)')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+p.nom+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
+        +'<div style="display:flex;gap:4px;align-items:center">'
+          +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
+          +_prioBadge(p.adoPriority)
+        +'</div>'
+        +'<span style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
+      +'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:3px" title="'+p.nom+'">'+p.nom+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:9px;color:var(--ink3)">'+(p.area||'—')+'</span>'
+        +'<span style="font-size:9px;color:var(--ink3)">'+p.horas+'h</span>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
+        +'<span style="font-size:8px;color:var(--ink4)">'+(active?'🟢 Inicio:':'📅 Inicio est.:')+'</span>'
+        +'<span style="font-size:9px;font-weight:700;color:'+(active?'var(--d3)':'var(--ink3)')+'">'+pf(p.start)+'</span>'
+      +'</div></div>';
+  };
+
+  const col = (title, arr, color)=>{
+    const active = arr.filter(p=>enMarcha.has(p.nom));
+    const next = arr.filter(p=>!enMarcha.has(p.nom));
+    return '<div style="flex:1;min-width:0">'
+      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+active.length+')</div>'
+      +active.map(p=>card(p,true)).join('')
+      +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola</div>':'')
+      +next.slice(0,5).map(p=>card(p,false)).join('')
+      +'</div>';
+  };
+
+  const fecha = new Date(snap.ts).toLocaleString('es-ES',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  cont.innerHTML =
+    '<div style="background:linear-gradient(135deg,#16243E,#1C2B4A);color:#fff;padding:16px 20px;border-radius:10px;margin-bottom:16px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+        +'<div><div style="font-size:18px;font-weight:800">🚀 Proyectos en marcha</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Vista compartida · snapshot del '+fecha+'</div></div>'
+        +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
+      +'</div></div>'
+    +'<div style="display:flex;gap:14px;align-items:flex-start">'
+      +col('⚡ Cortos', cortos, '#C07800')
+      +col('◉ Medios', medios, '#1848A0')
+      +col('▣ Largos', largos, '#087B50')
+    +'</div>';
+
+  // Análisis de prioridad sobre el snapshot
+  const p1 = snap.projects.filter(p=>parseInt(p.adoPriority)===1);
+  const p1NoMarcha = p1.filter(p=>!enMarcha.has(p.nom));
+  const marchaNoP1 = snap.projects.filter(p=>enMarcha.has(p.nom)&&parseInt(p.adoPriority)!==1);
+  const pa = document.getElementById('priority-analysis');
+  if (pa) {
+    const rowP=(p,tag,tagColor)=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:#fff;border:1px solid rgba(120,150,200,.14);border-radius:7px;margin-bottom:5px" title="'+p.nom+'"><div style="display:flex;align-items:center;gap:6px;min-width:0">'+_prioBadge(p.adoPriority)+'<span style="font-size:10px;color:#333">'+p.nom+'</span></div><span style="font-size:8px;background:'+tagColor+';color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">'+tag+'</span></div>';
+    pa.innerHTML = '<div style="font-size:12px;font-weight:700;color:#CC1F26;margin-bottom:8px">⚠ Prioridad 1 que NO están en marcha ('+p1NoMarcha.length+')</div>'
+      +(p1NoMarcha.length?p1NoMarcha.map(p=>rowP(p,'DEBERÍA ENTRAR','#CC1F26')).join(''):'<div style="font-size:11px;color:#087B50;padding:6px 0">✓ Todos los P1 están en marcha.</div>')
+      +'<div style="font-size:12px;font-weight:700;color:#C07800;margin:14px 0 8px">⚑ En marcha pero NO son P1 ('+marchaNoP1.length+')</div>'
+      +(marchaNoP1.length?marchaNoP1.map(p=>rowP(p,'REVISAR','#C07800')).join(''):'<div style="font-size:11px;color:#087B50;padding:6px 0">✓ Todos los activos son P1.</div>');
+  }
 }

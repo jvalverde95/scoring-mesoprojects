@@ -617,3 +617,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (u) u.focus();
   }, 300);
 });
+
+// ── Detección de enlace compartido de "En Marcha" ──
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    if (typeof loadSprintSnapshotFromURL === 'function' && loadSprintSnapshotFromURL()) {
+      // Es un enlace compartido: entrar directo a la vista En Marcha (solo lectura)
+      setTimeout(function(){
+        if (typeof enterApp === 'function') enterApp();
+        if (typeof goStep === 'function') goStep('sprint');
+      }, 300);
+    }
+  } catch(e) { console.error('snapshot init', e); }
+});

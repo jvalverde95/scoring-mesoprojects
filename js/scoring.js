@@ -591,6 +591,15 @@ function applyProjects(projects, filename, mergeMode) {
     incoming.forEach(function(np){
       const k = keyOf(np);
       if (idx[k] !== undefined) {
+        const prev = portfolioData[idx[k]];
+        // Conservar la descripción que vino de ADO si el Excel no trae una
+        if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
+        if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
+        // Conservar también ID de ADO, tags, prioridad y tipo si el Excel no los trae
+        if (np.adoId == null && prev.adoId != null) np.adoId = prev.adoId;
+        if (!np.adoTags && prev.adoTags) np.adoTags = prev.adoTags;
+        if (np.adoPriority == null && prev.adoPriority != null) np.adoPriority = prev.adoPriority;
+        if (!np.adoType && prev.adoType) np.adoType = prev.adoType;
         portfolioData[idx[k]] = np;   // sobrescribe el que coincide
         updated++;
       } else {
@@ -1648,7 +1657,7 @@ function renderChartsStep() {
           borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
           borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>`Score: ${d.raw} — ${clsf(d.raw).et}`}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>top[items[0].dataIndex].nom,label:d=>`Score: ${d.raw} — ${clsf(d.raw).et}`}}},
         scales:{x:{min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}},
                 y:{ticks:{font:{family:'DM Sans',size:9}},grid:{display:false}}}}});
   } else if (curChart2==='dept') {
