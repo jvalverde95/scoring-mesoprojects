@@ -2699,10 +2699,22 @@
                 <input type="checkbox" id="chk-select-all-tbl" style="width:13px;height:13px;accent-color:var(--d1)"
                   onchange="selectAllProjects(this.checked)">
               </th>
-              <th>#</th><th>proyecto</th><th>área</th>
-              <th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>D5</th><th>D6</th>
-              <th>base</th><th>aging</th><th>final</th>
-              <th>clasificación</th><th>reg.</th><th>horas</th><th>pool</th><th></th><th title="Sincronizar score → Azure DevOps" style="font-size:9px;white-space:nowrap">ADO ↑</th>
+              <th>#</th>
+              <th data-sort="name" data-label="proyecto" onclick="sortPort('name')" style="cursor:pointer;min-width:280px;text-align:left">proyecto</th>
+              <th data-sort="area" data-label="área" onclick="sortPort('area')" style="cursor:pointer">área</th>
+              <th data-sort="d1" data-label="D1" onclick="sortPort('d1')" style="cursor:pointer">D1</th>
+              <th data-sort="d2" data-label="D2" onclick="sortPort('d2')" style="cursor:pointer">D2</th>
+              <th data-sort="d3" data-label="D3" onclick="sortPort('d3')" style="cursor:pointer">D3</th>
+              <th data-sort="d4" data-label="D4" onclick="sortPort('d4')" style="cursor:pointer">D4</th>
+              <th data-sort="d5" data-label="D5" onclick="sortPort('d5')" style="cursor:pointer">D5</th>
+              <th data-sort="d6" data-label="D6" onclick="sortPort('d6')" style="cursor:pointer">D6</th>
+              <th data-sort="base" data-label="base" onclick="sortPort('base')" style="cursor:pointer">base</th>
+              <th data-sort="aging" data-label="aging" onclick="sortPort('aging')" style="cursor:pointer">aging</th>
+              <th data-sort="score" data-label="final" onclick="sortPort('score')" style="cursor:pointer">final</th>
+              <th data-sort="clas" data-label="clasificación" onclick="sortPort('clas')" style="cursor:pointer">clasificación</th>
+              <th data-sort="reg" data-label="reg." onclick="sortPort('reg')" style="cursor:pointer">reg.</th>
+              <th data-sort="horas" data-label="horas" onclick="sortPort('horas')" style="cursor:pointer">horas</th>
+              <th data-sort="pool" data-label="pool" onclick="sortPort('pool')" style="cursor:pointer">pool</th><th></th><th title="Sincronizar score → Azure DevOps" style="font-size:9px;white-space:nowrap">ADO ↑</th>
             </tr></thead>
             <tbody id="port-tbody"></tbody>
           </table>

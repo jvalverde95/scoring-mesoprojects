@@ -597,6 +597,7 @@ function applyProjects(projects, filename, mergeMode) {
         // se toca desde el Excel, porque el Excel no es la fuente de verdad de ese campo).
         np.adoPriority = (prev.adoPriority != null) ? prev.adoPriority : np.adoPriority;
         np.adoId       = (prev.adoId != null)       ? prev.adoId       : np.adoId;
+        np.adoStartDate= (prev.adoStartDate != null && prev.adoStartDate !== '') ? prev.adoStartDate : np.adoStartDate;  // fecha inicio: SIEMPRE de ADO
         np.adoTags     = prev.adoTags     || np.adoTags;
         np.adoType     = prev.adoType     || np.adoType;
         np.adoState    = prev.adoState    || np.adoState;
@@ -752,10 +753,34 @@ function computeProj(proj) {
 }
 
 function sortPort(by,btn) {
+  // Si se clica la misma columna, invierte la dirección; si es otra, dirección por defecto
+  if (window.portSort === by) {
+    window.portSortDir = (window.portSortDir===undefined?1:window.portSortDir) * -1;
+  } else {
+    window.portSortDir = 1;
+  }
   portSort=by;
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+  if(typeof updateSortIndicators==='function') updateSortIndicators();
   renderPortfolio();
+}
+
+// Sincroniza las flechas ▲▼ en las cabeceras de columna clicables
+function updateSortIndicators() {
+  document.querySelectorAll('th[data-sort]').forEach(function(th){
+    const key = th.getAttribute('data-sort');
+    const base = th.getAttribute('data-label') || th.textContent.replace(/[▲▼↕]/g,'').trim();
+    th.setAttribute('data-label', base);
+    if (key === window.portSort) {
+      const arrow = (window.portSortDir===-1) ? ' ▲' : ' ▼';
+      th.innerHTML = base + '<span style="font-size:9px;color:var(--d2)">'+arrow+'</span>';
+      th.style.color = 'var(--d2)';
+    } else {
+      th.innerHTML = base + '<span style="font-size:8px;color:#BBB"> ↕</span>';
+      th.style.color = '';
+    }
+  });
 }
 function filterPort(f,btn) {
   portFilter=f;
@@ -787,16 +812,36 @@ function filterPortfolio(query) {
 
 function renderPortfolio() {
   portfolioData=portfolioData.map(p=>computeProj(p));
+  const _dir = (window.portSortDir===undefined?1:window.portSortDir);  // 1=desc, -1=asc
+  const _num = (x)=> (x===null||x===undefined||isNaN(x)) ? -Infinity : +x;
   const sorted=[...portfolioData].sort((a,b)=>{
-    if(portSort==='score')return b.sf-a.sf;
-    if(portSort==='aging')return b.sf-a.sf;
-    if(portSort==='reg'){
-      if(a.regDays===null&&b.regDays===null)return 0;
-      if(a.regDays===null)return 1;
-      if(b.regDays===null)return -1;
-      return a.regDays-b.regDays;
+    let r=0;
+    switch(portSort){
+      case 'score': r = b.sf - a.sf; break;
+      case 'base':  r = (b.sb||0) - (a.sb||0); break;
+      case 'aging': r = (b.af||1) - (a.af||1); break;
+      case 'horas': r = _num(b.horas) - _num(a.horas); break;
+      case 'area':  r = (a.area||'').localeCompare(b.area||''); break;
+      case 'pool':  { const ord={S:0,M:1,L:2}; r = (ord[getPool(a)]??9) - (ord[getPool(b)]??9); break; }
+      case 'clas':  r = (b.sf||0) - (a.sf||0); break;
+      case 'd1': r=(b.dimScores?.[0]||0)-(a.dimScores?.[0]||0); break;
+      case 'd2': r=(b.dimScores?.[1]||0)-(a.dimScores?.[1]||0); break;
+      case 'd3': r=(b.dimScores?.[2]||0)-(a.dimScores?.[2]||0); break;
+      case 'd4': r=(b.dimScores?.[3]||0)-(a.dimScores?.[3]||0); break;
+      case 'd5': r=(b.dimScores?.[4]||0)-(a.dimScores?.[4]||0); break;
+      case 'd6': r=(b.dimScores?.[5]||0)-(a.dimScores?.[5]||0); break;
+      case 'reg':
+        if(a.regDays===null&&b.regDays===null) r=0;
+        else if(a.regDays===null) r=1;
+        else if(b.regDays===null) r=-1;
+        else r = a.regDays-b.regDays;
+        break;
+      case 'name': r = a.nom.localeCompare(b.nom); break;
+      default: r = b.sf - a.sf;
     }
-    return a.nom.localeCompare(b.nom);
+    // 'name','area' ordenan A→Z por defecto; 'reg' días ascendente; el resto descendente
+    const naturalAsc = (portSort==='name'||portSort==='area'||portSort==='reg');
+    return naturalAsc ? r * (_dir===-1 ? -1 : 1) : r * _dir;
   });
   const tbody=document.getElementById('port-tbody');
   tbody.innerHTML='';
@@ -853,7 +898,7 @@ function renderPortfolio() {
           onclick="event.stopPropagation()">
       </td>
       <td><span class="rank ${rank}">${idx+1}</span></td>
-      <td style="font-weight:600;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.nom}">${dvDot} ${p.nom}</td>
+      <td style="font-weight:600;max-width:300px;min-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.nom}">${dvDot} ${p.nom}</td>
       <td style="font-size:10px;color:var(--ink3);white-space:nowrap;">${p.area||'—'}</td>
       ${dimCells}
       <td style="text-align:center;font-family:'Playfair Display',serif;font-size:16px;">${p.sb.toFixed(1)}</td>
@@ -899,6 +944,8 @@ function renderPortfolio() {
   if(bt) bt.style.display = portfolioData.length > 0 ? 'flex' : 'none';
   updateBulkDeleteBtn();
   renderPools();
+
+  if(typeof updateSortIndicators==='function') updateSortIndicators();
 }
 
 /* ── POOL / HOURS SYSTEM ───────────────────────────────── */

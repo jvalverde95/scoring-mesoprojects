@@ -70,6 +70,7 @@ async function adoFetchRequirements(org, project, pat, queryId) {
     'System.Id','System.Title','System.WorkItemType','System.State',
     'System.AssignedTo','System.CreatedDate','System.Description',
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
+    'Custom.MPGStartDate','Custom.MPGTaskStartDate',  // fecha de inicio (Requirement / Task)
     // Effort / estimation fields — ADO uses different field names depending on process template
     'Microsoft.VSTS.Scheduling.OriginalEstimate',   // Scrum: Original Estimate (Hours)
     'Microsoft.VSTS.Scheduling.StoryPoints',         // Agile: Story Points
@@ -118,6 +119,9 @@ function adoMapToProject(wi) {
     adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
     adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
     adoIteration:f['System.IterationPath']||'',
+    // Fecha de inicio según el tipo: Requirement → MPGStartDate, Task → MPGTaskStartDate.
+    // Vacío = no iniciado (planificación normal). Con valor = en curso desde esa fecha.
+    adoStartDate: (f['Custom.MPGStartDate'] || f['Custom.MPGTaskStartDate'] || null),
     adoDesc:desc, adoTags:tags, adoRaw:f};
 }
 

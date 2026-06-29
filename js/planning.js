@@ -121,7 +121,16 @@ function planBuildTimeline() {
     avail[dev.name] = {corto:new Date(today), medio:new Date(today), largo:new Date(today)};
   });
 
-  // Block for active (in-progress) projects
+  // ── Proyectos EN CURSO según ADO (Custom.MPGStartDate / MPGTaskStartDate) ──
+  // Solo estos pueden adelantarse a otros con mayor score. El resto se planifica
+  // estrictamente por score. Si MPGStartDate está vacío → planificación normal.
+  var adoActive = (portfolioData||[])
+    .filter(function(p){ return (p.horas||0)>0 && p.adoStartDate && String(p.adoStartDate).trim()!==''; })
+    .sort(function(a,b){ return new Date(a.adoStartDate) - new Date(b.adoStartDate); });
+  var adoActiveNoms = {};
+  adoActive.forEach(function(p){ adoActiveNoms[p.nom]=true; });
+
+  // Block for active (in-progress) projects — solo los marcados manualmente que aún tengan sentido
   activeProjects.forEach(function(ap) {
     if (ap.endDate && avail[ap.devName] && avail[ap.devName][ap.pool]) {
       var end = new Date(ap.endDate+'T00:00:00');
@@ -133,12 +142,14 @@ function planBuildTimeline() {
   var lockMap = {};
   lockedAssignments.forEach(function(l){ lockMap[l.nom]=l; });
 
-  // Queue: projects with hours, sorted by score desc
+  // Queue: proyectos con horas. Primero los EN CURSO (por fecha ADO), luego el resto por score.
   var activeNoms = {};
   activeProjects.forEach(function(a){ activeNoms[a.nom]=true; });
-  var queue = (portfolioData||[])
-    .filter(function(p){ return (p.horas||0)>0 && !activeNoms[p.nom] && pPool(p); })
+  var queueRest = (portfolioData||[])
+    .filter(function(p){ return (p.horas||0)>0 && !activeNoms[p.nom] && !adoActiveNoms[p.nom] && pPool(p); })
     .slice().sort(function(a,b){ return (b.sf||0)-(a.sf||0); });
+  // Los en curso (ADO) van SIEMPRE delante, ordenados por su fecha de inicio real
+  var queue = adoActive.filter(function(p){ return pPool(p); }).concat(queueRest);
 
   var timeline = [];
 
@@ -182,12 +193,14 @@ function planBuildTimeline() {
     if (!bestDev) return;
 
     var days  = Math.ceil((p.horas/bestWh)*5);
-    var start = pNextWork(new Date(bestStart));
+    // Si ADO ha fijado fecha de inicio (proyecto EN CURSO), respetarla; si no, planificación normal
+    var hasAdoStart = p.adoStartDate && String(p.adoStartDate).trim() !== '';
+    var start = hasAdoStart ? new Date(p.adoStartDate) : pNextWork(new Date(bestStart));
     var end   = pAddDays(new Date(start), days);
 
     timeline.push({
       proj:p, pool:pool, devName:bestDev.name,
-      startDate:start, endDate:end,
+      startDate:start, endDate:end, enCurso: !!hasAdoStart,
       hoursPerWeek:bestWh, totalHours:p.horas,
       weeks:+(p.horas/bestWh).toFixed(1), locked:false
     });

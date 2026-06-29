@@ -265,17 +265,34 @@ function renderSprintScreen() {
   const allMedios = sorted.filter(p => p.horas >= thrS && p.horas < thrM);
   const allLargos = sorted.filter(p => p.horas >= thrM);
 
-  // "En marcha" = top N by score according to team capacity
-  const inMarcha = {
-    corto: allCortos.slice(0, cap.corto),
-    medio: allMedios.slice(0, cap.medio),
-    largo: allLargos.slice(0, cap.largo),
+  // Un proyecto está "en curso" si ADO le ha puesto fecha de inicio (Custom.MPGStartDate / MPGTaskStartDate)
+  const enCurso = p => !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
+
+  // Dentro de cada pool: primero los EN CURSO (ordenados por fecha de inicio), luego el resto por score
+  const splitPool = (arr, capN) => {
+    const started = arr.filter(enCurso).sort((a,b)=> new Date(a.adoStartDate) - new Date(b.adoStartDate));
+    const rest    = arr.filter(p => !enCurso(p));   // ya vienen ordenados por score
+    // "En marcha" = TODOS los en curso (ADO manda) + los siguientes por score hasta cubrir capacidad
+    const slots = Math.max(0, capN - started.length);
+    const inMarchaPool = started.concat(rest.slice(0, slots));
+    const proximosPool = rest.slice(slots);
+    return { inMarcha: inMarchaPool, proximos: proximosPool };
   };
-  // "Próximos" = next in queue after capacity
+  const _sCorto = splitPool(allCortos, cap.corto);
+  const _sMedio = splitPool(allMedios, cap.medio);
+  const _sLargo = splitPool(allLargos, cap.largo);
+
+  // "En marcha" = en curso (por fecha ADO) + top por score hasta capacidad
+  const inMarcha = {
+    corto: _sCorto.inMarcha,
+    medio: _sMedio.inMarcha,
+    largo: _sLargo.inMarcha,
+  };
+  // "Próximos" = resto de la cola (no iniciados), TODOS
   const proximos = {
-    corto: allCortos.slice(cap.corto),   // TODOS los de la cola, sin recortar
-    medio: allMedios.slice(cap.medio),
-    largo: allLargos.slice(cap.largo),
+    corto: _sCorto.proximos,
+    medio: _sMedio.proximos,
+    largo: _sLargo.proximos,
   };
 
   const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
@@ -316,9 +333,9 @@ function renderSprintScreen() {
           <span style="font-size:9px;color:var(--ink3)">${p.horas}h</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">
-          <span style="font-size:8px;color:var(--ink4)">${isActive?'🟢 Inicio:':'📅 Inicio est.:'}</span>
-          <span style="font-size:9px;font-weight:700;color:${isActive?'var(--d3)':'var(--ink3)'}">
-            ${_startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—'}
+          <span style="font-size:8px;color:var(--ink4)">${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? '🟢 En curso desde:' : (isActive?'🟢 Inicio:':'📅 Inicio est.:')}</span>
+          <span style="font-size:9px;font-weight:700;color:${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? 'var(--d3)' : (isActive?'var(--d3)':'var(--ink3)')}">
+            ${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? pFmt(new Date(p.adoStartDate)) : (_startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—')}
           </span>
         </div>
       </div>`;
@@ -742,7 +759,8 @@ function _buildSprintSnapshot() {
       adoPriority:p.adoPriority||3, start:startDates[p.nom]||null,
       desc:(p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim().substring(0,400),
       dims:(p.dimScores||[]).map(function(d){return +(+d).toFixed(1);}),
-      reqDate:p.reqDate||null };
+      reqDate:p.reqDate||null,
+      adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null };
   });
   return {
     v: 1,
@@ -844,8 +862,8 @@ function renderSprintSnapshotView() {
         +'<span style="font-size:9px;color:var(--ink3)">'+p.horas+'h</span>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
-        +'<span style="font-size:8px;color:var(--ink4)">'+(active?'🟢 Inicio:':'📅 Inicio est.:')+'</span>'
-        +'<span style="font-size:9px;font-weight:700;color:'+(active?'var(--d3)':'var(--ink3)')+'">'+pf(p.start)+'</span>'
+        +'<span style="font-size:8px;color:var(--ink4)">'+(p.adoStart?'🟢 En curso desde:':(active?'🟢 Inicio:':'📅 Inicio est.:'))+'</span>'
+        +'<span style="font-size:9px;font-weight:700;color:'+((p.adoStart||active)?'var(--d3)':'var(--ink3)')+'">'+(p.adoStart?pf(+new Date(p.adoStart)):pf(p.start))+'</span>'
       +'</div></div>';
   };
 
