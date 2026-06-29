@@ -592,14 +592,20 @@ function applyProjects(projects, filename, mergeMode) {
       const k = keyOf(np);
       if (idx[k] !== undefined) {
         const prev = portfolioData[idx[k]];
-        // Conservar la descripción que vino de ADO si el Excel no trae una
+        // ── El Excel SOLO actualiza notas, horas, área y descripción ──
+        // Los metadatos que provienen de ADO se conservan SIEMPRE (la prioridad NUNCA
+        // se toca desde el Excel, porque el Excel no es la fuente de verdad de ese campo).
+        np.adoPriority = (prev.adoPriority != null) ? prev.adoPriority : np.adoPriority;
+        np.adoId       = (prev.adoId != null)       ? prev.adoId       : np.adoId;
+        np.adoTags     = prev.adoTags     || np.adoTags;
+        np.adoType     = prev.adoType     || np.adoType;
+        np.adoState    = prev.adoState    || np.adoState;
+        np.adoIteration= prev.adoIteration|| np.adoIteration;
+        // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
-        // Conservar también ID de ADO, tags, prioridad y tipo si el Excel no los trae
-        if (np.adoId == null && prev.adoId != null) np.adoId = prev.adoId;
-        if (!np.adoTags && prev.adoTags) np.adoTags = prev.adoTags;
-        if (np.adoPriority == null && prev.adoPriority != null) np.adoPriority = prev.adoPriority;
-        if (!np.adoType && prev.adoType) np.adoType = prev.adoType;
+        // Sponsor de ADO si el Excel no lo trae
+        if (!np.sponsor && prev.sponsor) np.sponsor = prev.sponsor;
         portfolioData[idx[k]] = np;   // sobrescribe el que coincide
         updated++;
       } else {

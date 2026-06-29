@@ -273,9 +273,9 @@ function renderSprintScreen() {
   };
   // "Próximos" = next in queue after capacity
   const proximos = {
-    corto: allCortos.slice(cap.corto, cap.corto + 3),
-    medio: allMedios.slice(cap.medio, cap.medio + 3),
-    largo: allLargos.slice(cap.largo, cap.largo + 3),
+    corto: allCortos.slice(cap.corto),   // TODOS los de la cola, sin recortar
+    medio: allMedios.slice(cap.medio),
+    largo: allLargos.slice(cap.largo),
   };
 
   const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
