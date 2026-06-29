@@ -821,6 +821,12 @@ function renderPortfolio() {
       case 'base':  r = (b.sb||0) - (a.sb||0); break;
       case 'aging': r = (b.af||1) - (a.af||1); break;
       case 'horas': r = _num(b.horas) - _num(a.horas); break;
+      case 'inicio': {
+        const ad = (a.adoStartDate && String(a.adoStartDate).trim()!=='') ? new Date(a.adoStartDate).getTime() : Infinity;
+        const bd = (b.adoStartDate && String(b.adoStartDate).trim()!=='') ? new Date(b.adoStartDate).getTime() : Infinity;
+        r = ad - bd;  // los que tienen fecha (en curso) primero, por fecha ascendente
+        break;
+      }
       case 'area':  r = (a.area||'').localeCompare(b.area||''); break;
       case 'pool':  { const ord={S:0,M:1,L:2}; r = (ord[getPool(a)]??9) - (ord[getPool(b)]??9); break; }
       case 'clas':  r = (b.sf||0) - (a.sf||0); break;
@@ -840,7 +846,7 @@ function renderPortfolio() {
       default: r = b.sf - a.sf;
     }
     // 'name','area' ordenan A→Z por defecto; 'reg' días ascendente; el resto descendente
-    const naturalAsc = (portSort==='name'||portSort==='area'||portSort==='reg');
+    const naturalAsc = (portSort==='name'||portSort==='area'||portSort==='reg'||portSort==='inicio');
     return naturalAsc ? r * (_dir===-1 ? -1 : 1) : r * _dir;
   });
   const tbody=document.getElementById('port-tbody');
@@ -914,6 +920,11 @@ function renderPortfolio() {
           onchange="setHoras(${realIdx},this.value)"
           onclick="event.stopPropagation()">
       </td>
+      <td style="text-align:center;white-space:nowrap;font-size:10px;">${
+        (p.adoStartDate && String(p.adoStartDate).trim()!=='')
+          ? `<span style="color:var(--d3);font-weight:700" title="En curso desde ${new Date(p.adoStartDate).toLocaleDateString('es-ES')}">🟢 ${new Date(p.adoStartDate).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'2-digit'})}</span>`
+          : `<span style="color:#BBB">—</span>`
+      }</td>
       <td style="text-align:center;">${renderPoolTag(pool)}</td>
       <td><button class="load-btn" onclick="loadIntoEval(${realIdx})">Evaluar →</button></td>
       <td style="text-align:center;white-space:nowrap">
