@@ -181,8 +181,20 @@ function planBuildTimeline() {
     }
 
     // Auto-assign: best dev = most hours in pool, earliest available
+    // ── Si el proyecto tiene un dev asignado manualmente, usar ESE dev ──
     var bestDev=null, bestStart=null, bestWh=0;
-    devTeam.forEach(function(dev) {
+    var manualName = p.assignedDev && String(p.assignedDev).trim() !== '' ? p.assignedDev : null;
+    if (manualName) {
+      var md = devTeam.find(function(d){ return d.name === manualName; });
+      var mwh = md ? pDevHours(md)[pool] : 0;
+      if (md && mwh > 0) {
+        bestDev = md;
+        bestStart = new Date((avail[md.name]||{})[pool] || new Date(today));
+        bestWh = mwh;
+      }
+      // Si el dev asignado no tiene capacidad en este pool, cae a automático (abajo)
+    }
+    if (!bestDev) devTeam.forEach(function(dev) {
       var wh = pDevHours(dev)[pool];
       if (wh<=0) return;
       var da = (avail[dev.name]||{})[pool] || new Date(today);
@@ -202,7 +214,8 @@ function planBuildTimeline() {
       proj:p, pool:pool, devName:bestDev.name,
       startDate:start, endDate:end, enCurso: !!hasAdoStart,
       hoursPerWeek:bestWh, totalHours:p.horas,
-      weeks:+(p.horas/bestWh).toFixed(1), locked:false
+      weeks:+(p.horas/bestWh).toFixed(1), locked:false,
+      manualDev: !!manualName
     });
 
     avail[bestDev.name][pool] = new Date(end);
@@ -1756,96 +1769,109 @@ function renderGanttV4(el, timeline) {
 // ── Render planning summary (occupancy + next slots) ──────────
 function renderPlanningSummary() {
   var timeline = planBuildTimeline();
-  if (!timeline.length) return;
-
   var today = new Date(); today.setHours(0,0,0,0);
 
-  // ── Occupancy summary ──────────────────────────────────────
+  // ═══ RESUMEN DE OCUPACIÓN ═══
   var sumEl = document.getElementById('plan-summary-content');
   if (sumEl) {
-    // Group by dev
-    var devMap = {};
-    timeline.forEach(function(t) {
-      if (!devMap[t.devName]) devMap[t.devName] = {corto:[],medio:[],largo:[]};
-      devMap[t.devName][t.pool].push(t);
-    });
+    if (!timeline.length) {
+      sumEl.innerHTML = '<div style="font-size:11px;color:#AAA;padding:12px;text-align:center">Sin proyectos planificables. Añade horas a los proyectos para verlos aquí.</div>';
+    } else {
+      // Estadísticas globales
+      var totalProjs = timeline.length;
+      var totalH = timeline.reduce(function(s,t){return s+t.totalHours;},0);
+      var globalEnd = timeline.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;},today);
+      var globalWeeks = Math.max(0, Math.ceil((+globalEnd-+today)/(7*86400000)));
+      var enCursoN = timeline.filter(function(t){return t.enCurso;}).length;
+      var manualN = timeline.filter(function(t){return t.manualDev;}).length;
 
-    var html = Object.keys(devMap).map(function(devName) {
-      var pools = devMap[devName];
-      var totalH = timeline.filter(function(t){return t.devName===devName;})
-                           .reduce(function(s,t){return s+t.totalHours;}, 0);
-      var lastEnd = timeline.filter(function(t){return t.devName===devName;})
-                            .reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;}, today);
-      var horizonWeeks = Math.max(0, Math.ceil((+lastEnd - +today)/(7*86400000)));
-
-      return '<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-          +'<div style="font-size:10px;font-weight:700;color:#111">'+devName+'</div>'
-          +'<div style="font-size:9px;color:#AAA">'+totalH+'h · '+horizonWeeks+' sem</div>'
-        +'</div>'
-        +'<div style="display:flex;gap:4px;flex-wrap:wrap">'
-        +Object.keys(pools).map(function(pool) {
-          var items = pools[pool];
-          if (!items.length) return '';
-          var col = POOL_COLORS[pool];
-          return '<span style="font-size:8px;padding:2px 8px;border-radius:12px;'
-            +'background:'+POOL_BGS[pool]+';border:1px solid '+col+';color:'+col+';font-weight:600">'
-            +items.length+' '+pool+'</span>';
-        }).join('')
-        +'</div>'
-        +'</div>';
-    }).join('');
-
-    // Overall stats
-    var totalProjs = timeline.length;
-    var totalH2 = timeline.reduce(function(s,t){return s+t.totalHours;},0);
-    var globalEnd = timeline.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;},today);
-    var globalWeeks = Math.ceil((+globalEnd-+today)/(7*86400000));
-
-    sumEl.innerHTML =
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">'
-      +[['Proyectos',totalProjs,'#111'],['Total horas',totalH2+'h','#1848A0'],['Horizonte',globalWeeks+' sem','#087B50']]
-        .map(function(k){ return '<div style="text-align:center;padding:6px;background:#F7F7F5;border-radius:6px">'
-          +'<div style="font-size:16px;font-weight:800;color:'+k[2]+'">'+k[1]+'</div>'
-          +'<div style="font-size:8px;color:#AAA;text-transform:uppercase;letter-spacing:.08em">'+k[0]+'</div>'
+      var stats = [
+        ['Proyectos', totalProjs, '#111'],
+        ['Horas totales', totalH+'h', '#1848A0'],
+        ['Horizonte', globalWeeks+' sem', '#087B50'],
+        ['En curso', enCursoN, '#C07800'],
+      ];
+      var statsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'
+        + stats.map(function(k){ return '<div style="text-align:center;padding:8px 4px;background:#F7F7F5;border-radius:8px">'
+          +'<div style="font-size:18px;font-weight:800;color:'+k[2]+'">'+k[1]+'</div>'
+          +'<div style="font-size:8px;color:#999;text-transform:uppercase;letter-spacing:.06em">'+k[0]+'</div>'
           +'</div>'; }).join('')
-      +'</div>'
-      + html;
+        + '</div>';
+
+      // Por desarrollador: carga, ocupación, fecha fin, fecha libre
+      var devMap = {};
+      timeline.forEach(function(t){
+        if (!devMap[t.devName]) devMap[t.devName] = [];
+        devMap[t.devName].push(t);
+      });
+
+      var devHtml = '<div style="font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Carga por desarrollador</div>';
+      devHtml += Object.keys(devMap).sort().map(function(devName){
+        var items = devMap[devName].slice().sort(function(a,b){return a.startDate-b.startDate;});
+        var devH = items.reduce(function(s,t){return s+t.totalHours;},0);
+        var wh = pDevHours((devTeam||[]).find(function(d){return d.name===devName;})||{});
+        var whTotal = (wh.corto||0)+(wh.medio||0)+(wh.largo||0);
+        var lastEnd = items.reduce(function(mx,t){return t.endDate>mx?t.endDate:mx;},today);
+        var busyWeeks = Math.max(0, Math.ceil((+lastEnd-+today)/(7*86400000)));
+        // Barra de ocupación por pool
+        var poolCounts = {corto:0,medio:0,largo:0};
+        items.forEach(function(t){poolCounts[t.pool]++;});
+        var poolBadges = ['corto','medio','largo'].filter(function(p){return poolCounts[p]>0;}).map(function(p){
+          return '<span style="font-size:8px;padding:2px 7px;border-radius:10px;background:'+POOL_BGS[p]
+            +';border:1px solid '+POOL_COLORS[p]+';color:'+POOL_COLORS[p]+';font-weight:600">'+poolCounts[p]+' '+p+'</span>';
+        }).join(' ');
+
+        return '<div style="padding:10px;border:1px solid #EEF0F4;border-radius:8px;margin-bottom:8px;background:#fff">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+            +'<div style="font-size:11px;font-weight:800;color:#1C2B4A">'+devName+'</div>'
+            +'<div style="font-size:9px;color:#888">'+items.length+' proyectos · '+devH+'h</div>'
+          +'</div>'
+          +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">'+poolBadges+'</div>'
+          +'<div style="display:flex;gap:12px;font-size:9px;color:#666">'
+            +'<span>🗓 Ocupado hasta: <b style="color:#1C2B4A">'+pShort(lastEnd)+'</b></span>'
+            +'<span>⏳ '+busyWeeks+' sem</span>'
+            +'<span>⚙ '+whTotal.toFixed(0)+'h/sem cap.</span>'
+          +'</div>'
+        +'</div>';
+      }).join('');
+
+      sumEl.innerHTML = statsHtml + devHtml;
+    }
   }
 
-  // ── Next free slots ────────────────────────────────────────
+  // ═══ PRÓXIMAS FECHAS LIBRES ═══
   var slotsEl = document.getElementById('plan-next-slots');
   if (slotsEl) {
-    var devSlots = (devTeam||[]).map(function(dev) {
-      var devTL = timeline.filter(function(t){return t.devName===dev.name;});
-      var wh = pDevHours(dev);
-      var slots = Object.keys(wh).filter(function(k){return wh[k]>0;}).map(function(pool) {
-        var poolTL = devTL.filter(function(t){return t.pool===pool;})
-                         .sort(function(a,b){return a.endDate-b.endDate;});
-        var nextFree = poolTL.length
-          ? pNextWork(new Date(poolTL[poolTL.length-1].endDate))
-          : pNextWork(new Date());
-        return {pool:pool, nextFree:nextFree, wh:wh[pool]};
+    if (!timeline.length && !(devTeam||[]).length) {
+      slotsEl.innerHTML = '<div style="font-size:11px;color:#AAA;padding:12px">Sin equipo configurado.</div>';
+    } else {
+      var devSlots = (devTeam||[]).map(function(dev){
+        var devTL = timeline.filter(function(t){return t.devName===dev.name;});
+        var wh = pDevHours(dev);
+        var slots = ['corto','medio','largo'].filter(function(k){return wh[k]>0;}).map(function(pool){
+          var poolTL = devTL.filter(function(t){return t.pool===pool;}).sort(function(a,b){return a.endDate-b.endDate;});
+          var nextFree = poolTL.length ? pNextWork(new Date(poolTL[poolTL.length-1].endDate)) : pNextWork(new Date());
+          return {pool:pool, nextFree:nextFree, wh:wh[pool], busy:poolTL.length};
+        });
+        return {devName:dev.name, slots:slots};
       });
-      return {devName:dev.name, slots:slots};
-    });
 
-    slotsEl.innerHTML = devSlots.map(function(d) {
-      return '<div style="padding:6px 0;border-bottom:1px solid #F5F5F5">'
-        +'<div style="font-size:10px;font-weight:700;color:#111;margin-bottom:4px">'+d.devName+'</div>'
-        +d.slots.map(function(s) {
-          var col = POOL_COLORS[s.pool];
-          var isNow = +s.nextFree <= +today + 7*86400000; // within a week
-          return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
-            +'<span style="font-size:8px;padding:1px 6px;border-radius:10px;'
-              +'background:'+POOL_BGS[s.pool]+';color:'+col+';border:1px solid '+col+';font-weight:600">'+s.pool+'</span>'
-            +'<span style="font-size:10px;color:'+( isNow?'#087B50':'#555' )+';font-weight:'+(isNow?700:400)+'">'+pShort(s.nextFree)+'</span>'
-            +'<span style="font-size:8px;color:#AAA">'+s.wh.toFixed(1)+'h/sem</span>'
-            +(isNow?'<span style="font-size:8px;color:#087B50;font-weight:700">← disponible pronto</span>':'')
-            +'</div>';
-        }).join('')
-        +'</div>';
-    }).join('');
+      slotsEl.innerHTML = devSlots.map(function(d){
+        return '<div style="padding:8px 0;border-bottom:1px solid #F5F5F5">'
+          +'<div style="font-size:10px;font-weight:700;color:#1C2B4A;margin-bottom:5px">'+d.devName+'</div>'
+          +d.slots.map(function(s){
+            var col = POOL_COLORS[s.pool];
+            var isSoon = +s.nextFree <= +today + 7*86400000;
+            return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+              +'<span style="font-size:8px;padding:1px 7px;border-radius:10px;background:'+POOL_BGS[s.pool]+';color:'+col+';border:1px solid '+col+';font-weight:600;min-width:38px;text-align:center">'+s.pool+'</span>'
+              +'<span style="font-size:10px;color:'+(isSoon?'#087B50':'#333')+';font-weight:'+(isSoon?700:600)+'">'+pShort(s.nextFree)+'</span>'
+              +'<span style="font-size:8px;color:#AAA">'+s.wh.toFixed(0)+'h/sem</span>'
+              +(isSoon?'<span style="font-size:8px;color:#087B50;font-weight:700">● libre pronto</span>':'')
+              +'</div>';
+          }).join('')
+          +'</div>';
+      }).join('');
+    }
   }
 }
 
@@ -2536,4 +2562,107 @@ function renderHourlyView(el, timeline) {
   });
   legend.innerHTML += '<span>· Franja con color sólido = proyecto asignado en ese slot</span>';
   el.appendChild(legend);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ASIGNACIÓN MANUAL DE DESARROLLADORES (pantalla Planificación)
+   Cada proyecto puede asignarse a un dev concreto o quedar en automático.
+   Mantiene su orden por score; solo cambia QUIÉN lo ejecuta.
+   ═══════════════════════════════════════════════════════════════ */
+function assignDevToProject(nom, devName) {
+  const p = (portfolioData||[]).find(function(x){ return x.nom === nom; });
+  if (!p) return;
+  p.assignedDev = (devName && devName !== '__auto__') ? devName : null;
+  // Persistir las asignaciones manuales
+  try {
+    const map = {};
+    portfolioData.forEach(function(x){ if (x.assignedDev) map[x.nom] = x.assignedDev; });
+    localStorage.setItem('nexus_devassign', JSON.stringify(map));
+  } catch(e){}
+  // Recalcular TODA la planificación con la nueva asignación
+  recalcAndRenderPlanning();
+  toast(p.assignedDev ? ('✓ '+nom.substring(0,30)+' → '+p.assignedDev) : ('↺ '+nom.substring(0,30)+' → automático'));
+}
+
+function loadDevAssignments() {
+  try {
+    const s = localStorage.getItem('nexus_devassign');
+    if (s) {
+      const map = JSON.parse(s);
+      (portfolioData||[]).forEach(function(p){ if (map[p.nom]) p.assignedDev = map[p.nom]; });
+    }
+  } catch(e){}
+}
+
+function recalcAndRenderPlanning() {
+  if (typeof renderCalendar === 'function') renderCalendar();
+  if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
+  if (typeof renderDevAssignPanel === 'function') renderDevAssignPanel();
+  if (typeof renderSprintScreen === 'function') renderSprintScreen();  // En Marcha también usa el timeline
+}
+
+function clearAllDevAssignments() {
+  if (!confirm('¿Quitar todas las asignaciones manuales y volver a automático?')) return;
+  (portfolioData||[]).forEach(function(p){ p.assignedDev = null; });
+  try { localStorage.removeItem('nexus_devassign'); } catch(e){}
+  recalcAndRenderPlanning();
+  toast('↺ Todas las asignaciones en automático');
+}
+
+// Panel de asignación: lista de proyectos planificados con un selector de dev cada uno
+function renderDevAssignPanel() {
+  const cont = document.getElementById('dev-assign-panel');
+  if (!cont) return;
+  if (!portfolioData || !portfolioData.length) { cont.innerHTML = '<div style="font-size:11px;color:#AAA;padding:12px">Sin proyectos</div>'; return; }
+
+  // Mapa nom → item del timeline (para mostrar el dev calculado y la fecha)
+  const tl = (typeof planBuildTimeline === 'function') ? planBuildTimeline() : [];
+  const byNom = {};
+  tl.forEach(function(t){ byNom[t.proj.nom] = t; });
+
+  // Solo proyectos con horas (planificables), ordenados por score
+  const projects = portfolioData.filter(function(p){ return p.horas != null && p.horas > 0; })
+    .slice().sort(function(a,b){ return (b.sf||0)-(a.sf||0); });
+
+  const devOptions = function(sel){
+    let o = '<option value="__auto__"'+(!sel?' selected':'')+'>⚙ Automático</option>';
+    devTeam.forEach(function(d){
+      o += '<option value="'+d.name+'"'+(sel===d.name?' selected':'')+'>'+d.name+'</option>';
+    });
+    return o;
+  };
+
+  const rows = projects.map(function(p){
+    const t = byNom[p.nom];
+    const assigned = p.assignedDev || null;
+    const calcDev = t ? t.devName : '—';
+    const start = t ? pFmt(t.startDate) : '—';
+    const isManual = !!assigned;
+    return '<div style="display:grid;grid-template-columns:1fr 130px 90px 80px;gap:8px;align-items:center;'
+      +'padding:7px 10px;border:1px solid '+(isManual?'rgba(24,72,160,.3)':'rgba(120,150,200,.12)')+';'
+      +'border-radius:7px;margin-bottom:5px;background:'+(isManual?'#F4F8FF':'#fff')+'" title="'+p.nom+'">'
+      +'<div style="min-width:0;overflow:hidden">'
+        +'<div style="font-size:10px;font-weight:600;color:#1C2B4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.nom+'</div>'
+        +'<div style="font-size:8px;color:#999">Score '+(p.sf||0).toFixed(1)+' · '+(p.horas||0)+'h · '+(pPool(p)==='corto'?'⚡ corto':pPool(p)==='medio'?'◉ medio':'▣ largo')+'</div>'
+      +'</div>'
+      +'<select onchange="assignDevToProject(\''+p.nom.replace(/'/g,"\\'")+'\',this.value)" '
+        +'style="font-size:10px;padding:5px 6px;border:1px solid #DEDEDE;border-radius:6px;'
+        +(isManual?'background:#1848A0;color:#fff;font-weight:700':'background:#fff')+'">'
+        +devOptions(assigned)+'</select>'
+      +'<div style="font-size:9px;color:'+(isManual?'#1848A0':'#888')+';text-align:center" title="Dev en la planificación">'
+        +(isManual?'→ '+calcDev:'auto: '+calcDev)+'</div>'
+      +'<div style="font-size:9px;color:#888;text-align:center">'+start+'</div>'
+    +'</div>';
+  }).join('');
+
+  const nManual = projects.filter(function(p){ return p.assignedDev; }).length;
+  cont.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">'
+      +'<div style="font-size:10px;color:#666">'+nManual+' de '+projects.length+' asignados manualmente · el resto en automático</div>'
+      +'<button onclick="clearAllDevAssignments()" style="font-size:9px;padding:5px 10px;border:1px solid #DEDEDE;border-radius:6px;background:#fff;color:#666;cursor:pointer">↺ Todo automático</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 130px 90px 80px;gap:8px;padding:4px 10px;font-size:8px;color:#AAA;text-transform:uppercase;font-weight:700">'
+      +'<div>Proyecto</div><div>Asignar a</div><div>En plan</div><div>Inicio</div>'
+    +'</div>'
+    + rows;
 }

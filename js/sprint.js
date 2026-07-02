@@ -311,8 +311,7 @@ function renderSprintScreen() {
       <div style="padding:10px 12px;background:#fff;border-radius:8px;border:${border};
         cursor:pointer;opacity:${opacity};margin-bottom:6px"
         title="${_liveTip(p, isActive)}"
-        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))"
-        title="${p.nom}">
+        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
           <div style="display:flex;gap:4px;align-items:center">
             ${tag}

@@ -70,7 +70,9 @@ function goStep(t) {
       if (typeof loadLocked      === 'function') loadLocked();
       if (typeof loadPlanningState=== 'function') loadPlanningState();
       if (typeof renderCalendar  === 'function') renderCalendar();
-    }
+    
+    if(typeof loadDevAssignments==='function') loadDevAssignments();
+    if(typeof renderDevAssignPanel==='function') renderDevAssignPanel();}
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
     if (t === 'config')    { if(typeof aiLoadKeywords==='function') aiLoadKeywords(); }
@@ -451,12 +453,66 @@ function enterApp() {
   document.getElementById('landing').style.display='none';
   document.getElementById('shell').style.display='';
   document.getElementById('bar').style.display='';
-  // Go to dashboard if projects exist, else to projects screen
-  if (portfolioData.length > 0) {
-    goStep('dashboard');
-  } else {
-    goStep('dashboard');  // always start at dashboard
+  goStep('dashboard');  // always start at dashboard
+  // Si no hay proyectos cargados, exigir la carga del Excel (modal sin cierre)
+  if (!portfolioData || portfolioData.length === 0) {
+    setTimeout(showMandatoryExcelUpload, 300);
   }
+}
+
+// Modal obligatorio de carga de Excel al iniciar sesión (no se puede cerrar sin cargar)
+function showMandatoryExcelUpload() {
+  if (window._sharedViewLocked || window._sprintSnapshot) return;  // vista de directores: nunca pedir Excel
+  if (portfolioData && portfolioData.length > 0) return;  // ya hay datos
+  var ov = document.getElementById('mandatory-excel-overlay');
+  if (ov) { ov.style.display = 'flex'; return; }
+  ov = document.createElement('div');
+  ov.id = 'mandatory-excel-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:900;background:rgba(12,18,32,.85);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:14px;padding:32px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">'
+      +'<div style="font-size:20px;font-weight:800;color:#1C2B4A;margin-bottom:8px">Carga la cartera de proyectos</div>'
+      +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px">Para empezar a trabajar necesitas cargar el Excel con los proyectos y sus puntuaciones. Selecciona el archivo exportado por la herramienta.</div>'
+      +'<div id="mandatory-excel-drop" onclick="document.getElementById(\'mandatory-excel-input\').click()" '
+        +'style="border:2px dashed #C4974A;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#FDFAF3;transition:.2s">'
+        +'<div style="font-size:34px;margin-bottom:8px">📊</div>'
+        +'<div style="font-size:14px;font-weight:700;color:#1C2B4A;margin-bottom:4px">Selecciona el archivo Excel</div>'
+        +'<div style="font-size:11px;color:#999">Formato .xlsx o .xls</div>'
+      +'</div>'
+      +'<input type="file" id="mandatory-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleMandatoryExcel(this)">'
+      +'<div id="mandatory-excel-status" style="font-size:11px;color:#087B50;margin-top:14px;text-align:center;display:none"></div>'
+      +'<div style="font-size:10px;color:#BBB;margin-top:18px;text-align:center">Esta ventana no se cerrará hasta que cargues la cartera.</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function handleMandatoryExcel(inp) {
+  if (!inp || !inp.files || !inp.files.length) return;
+  var statusEl = document.getElementById('mandatory-excel-status');
+  if (statusEl) { statusEl.style.display='block'; statusEl.textContent='Cargando…'; statusEl.style.color='#888'; }
+  // Delegar en loadExcel; comprobar el resultado tras un instante
+  try {
+    loadExcel(inp);
+  } catch(e) {
+    if (statusEl) { statusEl.textContent='Error al cargar: '+e.message; statusEl.style.color='#C0392B'; }
+    return;
+  }
+  // loadExcel es asíncrono (FileReader); comprobamos periódicamente si ya hay datos
+  var tries = 0;
+  var iv = setInterval(function(){
+    tries++;
+    if (portfolioData && portfolioData.length > 0) {
+      clearInterval(iv);
+      if (statusEl) { statusEl.textContent='✓ '+portfolioData.length+' proyectos cargados'; statusEl.style.color='#087B50'; }
+      setTimeout(function(){
+        var ov = document.getElementById('mandatory-excel-overlay');
+        if (ov) ov.style.display='none';
+      }, 700);
+    } else if (tries > 40) {  // ~8s sin éxito
+      clearInterval(iv);
+      if (statusEl) { statusEl.textContent='No se detectaron proyectos. Revisa el archivo e inténtalo de nuevo.'; statusEl.style.color='#C0392B'; }
+    }
+  }, 200);
 }
 
 function switchSprintTab(tab) {

@@ -41,6 +41,8 @@ function closeProjEdit() {
   if (el) el.classList.remove('open');
   renderPortfolio(); renderPools();
   if (currentStep === 'pools') renderPoolsStep();
+  if (typeof renderSprintScreen === 'function') renderSprintScreen();
+  if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 function pemSave() {
@@ -51,6 +53,12 @@ function pemSave() {
   portfolioData[_pemIdx].horas = p.horas;
   toast('✓ Proyecto actualizado');
   renderPemBody();
+  // Refrescar todas las vistas que dependen del score/horas
+  if (typeof renderPortfolio === 'function') renderPortfolio();
+  if (typeof renderPools === 'function') renderPools();
+  if (typeof renderSprintScreen === 'function') renderSprintScreen();
+  if (typeof renderDashboard === 'function') renderDashboard();
+  if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
 }
 
 function pemPrev() {
