@@ -1742,10 +1742,27 @@
     </button>
   </div>
 
-  <!-- Sprint columns: Corto / Medio / Largo -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+  <!-- Filtros sutiles (solo filtran, no cambian la visualización) -->
+  <div style="display:flex;align-items:center;gap:10px;margin:14px 0 12px;flex-wrap:wrap">
+    <span style="font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:.06em">Filtrar:</span>
+    <select id="sprint-filter-area" onchange="renderSprintScreen()"
+      style="font-size:10px;padding:5px 8px;border:1px solid var(--b2);border-radius:6px;background:#fff;color:var(--ink);max-width:220px">
+      <option value="">Todas las áreas</option>
+    </select>
+    <select id="sprint-filter-top" onchange="renderSprintScreen()"
+      style="font-size:10px;padding:5px 8px;border:1px solid var(--b2);border-radius:6px;background:#fff;color:var(--ink)">
+      <option value="">Todos los proyectos</option>
+      <option value="10">Top 10 por nota</option>
+      <option value="20">Top 20 por nota</option>
+      <option value="30">Top 30 por nota</option>
+    </select>
+    <span id="sprint-filter-info" style="font-size:9px;color:var(--ink4)"></span>
+  </div>
 
-    <div>
+  <!-- Sprint columns: Corto / Medio / Largo -->
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:16px">
+
+    <div style="min-width:0">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:10px;height:10px;border-radius:50%;background:var(--d3)"></div>
         <div style="font-weight:700;font-size:11px;color:var(--d3)">CORTO</div>
@@ -1756,7 +1773,7 @@
       </div>
     </div>
 
-    <div>
+    <div style="min-width:0">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:10px;height:10px;border-radius:50%;background:var(--d4)"></div>
         <div style="font-weight:700;font-size:11px;color:var(--d4)">MEDIO</div>
@@ -1767,7 +1784,7 @@
       </div>
     </div>
 
-    <div>
+    <div style="min-width:0">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:10px;height:10px;border-radius:50%;background:var(--d1)"></div>
         <div style="font-weight:700;font-size:11px;color:var(--d1)">LARGO</div>

@@ -257,9 +257,30 @@ function renderSprintScreen() {
   const cap  = getDevCapacity();
 
   // All projects with hours, sorted by score desc
-  const sorted = portfolioData
+  let sorted = portfolioData
     .filter(p => p.horas !== null && p.horas !== undefined)
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
+
+  // ── Filtros sutiles (solo filtran, no cambian la visualización) ──
+  const areaSel = document.getElementById('sprint-filter-area');
+  if (areaSel) {
+    // Poblar el desplegable de áreas (conservando la selección)
+    const areas = [...new Set(portfolioData.map(p => p.area).filter(Boolean))].sort();
+    const cur = areaSel.value;
+    if (areaSel.options.length !== areas.length + 1) {
+      areaSel.innerHTML = '<option value="">Todas las áreas</option>'
+        + areas.map(a => '<option value="' + a.replace(/"/g,'&quot;') + '">' + a + '</option>').join('');
+      areaSel.value = cur;
+    }
+    if (areaSel.value) sorted = sorted.filter(p => p.area === areaSel.value);
+  }
+  const topSel = document.getElementById('sprint-filter-top');
+  if (topSel && topSel.value) sorted = sorted.slice(0, parseInt(topSel.value));
+  const infoEl = document.getElementById('sprint-filter-info');
+  if (infoEl) {
+    const filtering = (areaSel && areaSel.value) || (topSel && topSel.value);
+    infoEl.textContent = filtering ? ('mostrando ' + sorted.length + ' proyectos') : '';
+  }
 
   // Todos los proyectos van a sus pools, ordenados ESTRICTAMENTE por score
   const allCortos = sorted.filter(p => p.horas < thrS);
@@ -292,7 +313,7 @@ function renderSprintScreen() {
   setTxt('sprint-medio-count', `${inMarcha.medio.length}/${cap.medio}`);
   setTxt('sprint-largo-count', `${inMarcha.largo.length}/${cap.largo}`);
 
-  const renderCard = (p, isActive) => {
+  const renderCard = (p, isActive, ordNum) => {
     const cl = clsf(p.sf || 0);
     const border = isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)';
     const opacity = isActive ? '1' : '0.65';
@@ -309,6 +330,7 @@ function renderSprintScreen() {
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
           <div style="display:flex;gap:4px;align-items:center">
+            ${ordNum ? `<span style="font-size:9px;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border-radius:50%;font-weight:800">${ordNum}</span>` : ''}
             ${tag}
           </div>
           <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif">
@@ -339,11 +361,11 @@ function renderSprintScreen() {
       return '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
     }
     const slots = Array(Math.max(capN, active.length)).fill(null).map((_, i) => {
-      if (i < active.length) return renderCard(active[i], true);
+      if (i < active.length) return renderCard(active[i], true, i + 1);
       return `<div style="padding:10px 12px;border:1px dashed var(--b2);border-radius:8px;
         text-align:center;font-size:9px;color:var(--ink4);opacity:0.4">Hueco libre</div>`;
     });
-    const nextCards = next.map(p => renderCard(p, false));
+    const nextCards = next.map((p, i) => renderCard(p, false, active.length + i + 1));
     const sep = nextCards.length
       ? '<div style="font-size:8px;color:var(--ink4);text-align:center;margin:8px 0;letter-spacing:.1em;text-transform:uppercase">· próximos ·</div>'
       : '';
