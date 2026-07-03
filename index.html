@@ -331,7 +331,7 @@
 
     <div class="lnav-divider"></div>
 
-    <div class="lnav-group-label">Gestión</div>
+    <div class="lnav-group-label">1 · Cartera</div>
     <div class="lnav-group">
       <div class="lnav-item" id="nav-projects" onclick="goStep('projects')" title="Proyectos">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="10.5" x2="14" y2="10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
@@ -345,7 +345,7 @@
 
     <div class="lnav-divider"></div>
 
-    <div class="lnav-group-label">Analítica</div>
+    <div class="lnav-group-label">2 · Priorización</div>
     <div class="lnav-group">
       <div class="lnav-item" id="nav-sum" onclick="goStep('summary')" title="Resumen">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
@@ -359,6 +359,12 @@
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="12" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="8" y="8" width="4" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="4" width="4" height="14" rx="1" stroke="currentColor" stroke-width="1.5"/></svg></div>
         <span class="lnav-label">Pools</span>
       </div>
+    </div>
+
+    <div class="lnav-divider"></div>
+
+    <div class="lnav-group-label">3 · Ejecución</div>
+    <div class="lnav-group">
       <div class="lnav-item" id="nav-sprint" onclick="goStep('sprint')" title="En marcha">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <span class="lnav-label">En marcha</span>
@@ -1734,16 +1740,6 @@
     <button class="cfg-apply cfg-reset" style="margin-top:12px;font-size:9px" onclick="goStep('config')">
       ⚙ Configurar equipo →
     </button>
-  </div>
-
-  <!-- Proyectos EN CURSO (con fecha de inicio de ADO) — sección separada, antes de los pools -->
-  <div id="sprint-encurso-wrap" style="display:none;margin-bottom:20px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:10px;height:10px;border-radius:50%;background:var(--d3)"></div>
-      <div style="font-weight:800;font-size:12px;color:var(--d3)">🟢 EN CURSO</div>
-      <div style="font-size:9px;color:var(--ink4)">— proyectos ya iniciados en Azure DevOps</div>
-    </div>
-    <div id="sprint-encurso" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"></div>
   </div>
 
   <!-- Sprint columns: Corto / Medio / Largo -->

@@ -261,18 +261,10 @@ function renderSprintScreen() {
     .filter(p => p.horas !== null && p.horas !== undefined)
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
 
-  // Un proyecto está "en curso" si ADO le ha puesto fecha de inicio (Custom.MPGStartDate / MPGTaskStartDate)
-  const enCurso = p => !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
-
-  // Los EN CURSO van a su propia sección (no compiten en los pools)
-  const enCursoProjects = sorted.filter(enCurso)
-    .sort((a,b)=> new Date(a.adoStartDate) - new Date(b.adoStartDate));
-
-  // Los pools SOLO contienen proyectos NO iniciados, ordenados estrictamente por score
-  const notStarted = sorted.filter(p => !enCurso(p));
-  const allCortos = notStarted.filter(p => p.horas < thrS);
-  const allMedios = notStarted.filter(p => p.horas >= thrS && p.horas < thrM);
-  const allLargos = notStarted.filter(p => p.horas >= thrM);
+  // Todos los proyectos van a sus pools, ordenados ESTRICTAMENTE por score
+  const allCortos = sorted.filter(p => p.horas < thrS);
+  const allMedios = sorted.filter(p => p.horas >= thrS && p.horas < thrM);
+  const allLargos = sorted.filter(p => p.horas >= thrM);
 
   // Dentro de cada pool: los de MAYOR score entran "en marcha" hasta cubrir capacidad; el resto, en cola
   const splitPool = (arr, capN) => {
@@ -282,13 +274,13 @@ function renderSprintScreen() {
   const _sMedio = splitPool(allMedios, cap.medio);
   const _sLargo = splitPool(allLargos, cap.largo);
 
-  // "En marcha" = top por score hasta capacidad (sin proyectos en curso mezclados)
+  // "En marcha" = top por score hasta capacidad
   const inMarcha = {
     corto: _sCorto.inMarcha,
     medio: _sMedio.inMarcha,
     largo: _sLargo.inMarcha,
   };
-  // "Próximos" = resto de la cola (no iniciados), TODOS
+  // "Próximos" = resto de la cola por score, TODOS
   const proximos = {
     corto: _sCorto.proximos,
     medio: _sMedio.proximos,
@@ -304,9 +296,12 @@ function renderSprintScreen() {
     const cl = clsf(p.sf || 0);
     const border = isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)';
     const opacity = isActive ? '1' : '0.65';
-    const tag = isActive
-      ? '<span style="font-size:8px;background:var(--d3);color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">EN MARCHA</span>'
-      : '<span style="font-size:8px;background:var(--surf);color:var(--ink4);padding:2px 6px;border-radius:20px">PRÓXIMO</span>';
+    const _enCurso = !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
+    const tag = _enCurso
+      ? '<span style="font-size:8px;background:#087B50;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🟢 EN CURSO</span>'
+      : (isActive
+        ? '<span style="font-size:8px;background:var(--d3);color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">EN MARCHA</span>'
+        : '<span style="font-size:8px;background:var(--surf);color:var(--ink4);padding:2px 6px;border-radius:20px">PRÓXIMO</span>');
     return `
       <div style="padding:10px 12px;background:#fff;border-radius:8px;border:${border};
         cursor:pointer;opacity:${opacity};margin-bottom:6px"
@@ -315,7 +310,6 @@ function renderSprintScreen() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
           <div style="display:flex;gap:4px;align-items:center">
             ${tag}
-            ${_prioBadge(p.adoPriority)}
           </div>
           <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif">
             ${(p.sf||0).toFixed(1)}
@@ -360,18 +354,6 @@ function renderSprintScreen() {
   setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, cap.corto));
   setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, cap.medio));
   setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, cap.largo));
-
-  // Sección EN CURSO (proyectos ya iniciados en ADO), separada de los pools
-  const encursoWrap = document.getElementById('sprint-encurso-wrap');
-  if (encursoWrap) {
-    if (enCursoProjects.length) {
-      encursoWrap.style.display = 'block';
-      setHTML('sprint-encurso', enCursoProjects.map(p => renderCard(p, true)).join(''));
-    } else {
-      encursoWrap.style.display = 'none';
-      setHTML('sprint-encurso', '');
-    }
-  }
 
   if (typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();
 }
@@ -863,7 +845,6 @@ function renderSprintSnapshotView() {
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
         +'<div style="display:flex;gap:4px;align-items:center">'
           +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
-          +_prioBadge(p.adoPriority)
         +'</div>'
         +'<span style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
       +'</div>'

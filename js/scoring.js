@@ -173,13 +173,6 @@ const DIMS = [
 const DEF_PESOS = DIMS.map(d => d.peso);
 
 /* ── COLORES ──────────────────────────────────────────────── */
-function scColor(s) {
-  if (s >= 8.5) return 'var(--green)';
-  if (s >= 7.0) return 'var(--blue)';
-  if (s >= 5.5) return 'var(--amber)';
-  if (s >= 4.0) return 'var(--ink2)';
-  return 'var(--red)';
-}
 function scColorHex(s) {
   if (s >= 8.5) return '#166534';
   if (s >= 7.0) return '#1E3A5F';
@@ -277,11 +270,6 @@ function boostPreview(c) {
 // renderDims() replaced by renderDimSteps()
 
 
-function toggleDim(id, h) {
-  const b = document.getElementById('db-'+id);
-  const o = b.classList.contains('open');
-  b.classList.toggle('open',!o); h.classList.toggle('open',!o);
-}
 function toggleParams(id) {
   const el = document.getElementById('cp-'+id);
   el.style.display = el.style.display==='none' ? 'block' : 'none';
@@ -2122,10 +2110,6 @@ function updSummary() {
 
 
 /* ── LANDING ────────────────────────────────────────── */
-function landingAdoConnect() {
-  startApp();
-  setTimeout(() => goStep('config'), 80);
-}
 function goLanding() {
   const landing = document.getElementById('landing');
   landing.style.display = 'flex';
@@ -2135,31 +2119,6 @@ function goLanding() {
   document.getElementById('bar').style.display = 'none';
   // Re-init particle canvas (it may have been sized while hidden)
   if (typeof initLandingCanvas === 'function') setTimeout(initLandingCanvas, 50);
-}
-function triggerExcelUpload() {
-  document.getElementById('land-excel-input').click();
-}
-function handleLandingExcel(inp) {
-  // Switch to app, then trigger load
-  startApp();
-  // Small delay so the app DOM renders
-  setTimeout(() => {
-    // Copy file to the main excel input and trigger
-    const mainInp = document.getElementById('excel-input');
-    // Transfer files via DataTransfer
-    try {
-      const dt = new DataTransfer();
-      dt.items.add(inp.files[0]);
-      mainInp.files = dt.files;
-      loadExcel(mainInp);
-    } catch(e) {
-      // Fallback: directly call loadExcel with landing input
-      loadExcel(inp);
-    }
-    inp.value = '';
-    // Go to summary to show portfolio
-    goStep('summary');
-  }, 100);
 }
 /* ── HARDCODED CREDENTIALS (optional) ────────────────────────
    Edit the values below to auto-fill credentials on startup.
@@ -2584,24 +2543,6 @@ function evalSelectProject(idxStr) {
   loadIntoEval(idx);
 }
 
-function openAiModalFromEval() {
-  // Open the AI evaluator modal with all portfolio items
-  const adoItems = portfolioData.map(function(p){
-    // Reconstruct a minimal ADO-like item so openAiModal can process it
-    return { id: p.adoId||0, fields: {
-      'System.Id':    p.adoId||0,
-      'System.Title': p.nom,
-      'System.WorkItemType': p.adoType||'Manual',
-      'System.AreaPath': p.area||'',
-      'System.Description': p.adoDesc||'',
-      'System.Tags': (p.adoTags||[]).join('; '),
-      'System.CreatedDate': p.reqDate||new Date().toISOString(),
-      'Microsoft.VSTS.Scheduling.OriginalEstimate': p.horas||null,
-    }, _proj: p };
-  });
-  if (typeof openAiModal === 'function') openAiModal(adoItems);
-}
-
 /* ═══════════════════════════════════════════════════════════════
    ANALÍTICA AVANZADA — gráficas comparativas con Chart.js
    Tooltips con NOMBRE COMPLETO · radar dimensional · barras por área ·
@@ -2610,7 +2551,7 @@ function openAiModalFromEval() {
    ═══════════════════════════════════════════════════════════════ */
 var _anaCharts = {};
 function _anaDestroy(id){ if(_anaCharts[id]){ _anaCharts[id].destroy(); delete _anaCharts[id]; } }
-function _anaFull(p){ return p.nom; }  // nombre COMPLETO para tooltips
+  // nombre COMPLETO para tooltips
 
 // Tooltip común que muestra el nombre completo + multilínea
 function _anaTooltip(extraLines){

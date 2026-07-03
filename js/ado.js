@@ -14,8 +14,6 @@ function adoStatusShow(type, msg) {
   if(ml) ml.textContent=msg;
 }
 function adoStatusHide(){ const el=document.getElementById('ado-status'); if(el) el.className='ado-status'; }
-function adoBasicAuth(pat){ return 'Basic '+btoa(':'+pat); }
-
 // Proxy helper — routes ADO calls through /api/ado to avoid CORS
 async function adoProxy(org, project, path, pat, method='GET', body=null) {
   // PAT is now read server-side from ADO_PAT env var — not sent from browser
@@ -146,14 +144,6 @@ function cfgAdoStatusShow(type,msg){
   if(el){el.style.display='flex';el.style.background=clr.bg;el.style.color=clr.c;}
   if(sp) sp.style.display=type==='loading'?'block':'none';
   if(ml) ml.textContent=msg;
-}
-
-function cfgAdoSaveCreds(){
-  const c=_cfgAdoCreds();
-  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
-  set('ado-org',c.org); set('ado-project',c.project); if(c.pat) set('ado-pat',c.pat);
-  saveAllCreds();
-  toast('Credenciales guardadas');
 }
 
 function cfgAdoQuerySelected(queryId){

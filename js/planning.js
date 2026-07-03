@@ -207,8 +207,23 @@ function planBuildTimeline() {
     var days  = Math.ceil((p.horas/bestWh)*5);
     // Si ADO ha fijado fecha de inicio (proyecto EN CURSO), respetarla; si no, planificación normal
     var hasAdoStart = p.adoStartDate && String(p.adoStartDate).trim() !== '';
-    var start = hasAdoStart ? new Date(p.adoStartDate) : pNextWork(new Date(bestStart));
-    var end   = pAddDays(new Date(start), days);
+    var start, end;
+    if (hasAdoStart) {
+      // EN CURSO: el inicio es la fecha real de ADO. El fin nunca puede quedar en el pasado:
+      // si por fechas antiguas el fin calculado ya pasó, asumimos que sigue en curso y
+      // reservamos al dev desde hoy el tiempo restante estimado (mínimo 2 días).
+      start = new Date(p.adoStartDate);
+      end = pAddDays(new Date(start), days);
+      if (end < today) {
+        end = pAddDays(new Date(today), Math.max(2, Math.ceil(days * 0.25)));
+      }
+    } else {
+      // Planificación normal: nunca programar en el pasado
+      var s0 = new Date(bestStart);
+      if (s0 < today) s0 = new Date(today);
+      start = pNextWork(s0);
+      end = pAddDays(new Date(start), days);
+    }
 
     timeline.push({
       proj:p, pool:pool, devName:bestDev.name,
@@ -218,7 +233,9 @@ function planBuildTimeline() {
       manualDev: !!manualName
     });
 
-    avail[bestDev.name][pool] = new Date(end);
+    // La disponibilidad del dev nunca retrocede (evita planificar en el pasado)
+    var newAvail = new Date(end);
+    if (newAvail > avail[bestDev.name][pool]) avail[bestDev.name][pool] = newAvail;
   });
 
   return timeline;
@@ -586,12 +603,6 @@ function saveActiveProject() {
   renderCalendar();
   toast('✓ "'+nom.substring(0,28)+'" en curso hasta '+end);
 }
-function removeActiveProject(i) {
-  activeProjects.splice(i,1);
-  savePlanningState();
-  renderCalendar();
-}
-
 // ── Demo data ──────────────────────────────────────────────────
 function planLoadDemo() {
   if (!devTeam.length) {

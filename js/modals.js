@@ -83,37 +83,6 @@ function openNewProjectModal() {
   document.getElementById('new-project-overlay').classList.add('open');
 }
 
-function createNewProject() {
-  const g = id => (document.getElementById(id)?.value || '').trim();
-  const nom    = g('np-nombre');
-  const area   = g('np-area');
-  const sponsor= g('np-sponsor');
-  const horas  = parseFloat(g('np-horas')) || null;
-  const fecha  = g('np-fecha') || null;
-  const errEl  = document.getElementById('np-error');
-  const savEl  = document.getElementById('np-saving');
-
-  if (!nom)  { errEl.textContent='El nombre es obligatorio'; errEl.style.display='block'; return; }
-  if (!area) { errEl.textContent='El área es obligatoria';   errEl.style.display='block'; return; }
-  errEl.style.display = 'none';
-
-  const scores = {};
-  CRIT_IDS.forEach(cid => { scores[cid] = 5; });
-
-  const proj = computeProj({ nom, area, sponsor, scores, reqDate: fecha, regDate: null });
-  proj.horas = horas; proj._dvId = null; proj._selected = false;
-
-  portfolioData.push(proj);
-  renderPortfolio(); renderPools(); renderCharts();
-  ['portfolio','charts-panel'].forEach(id => { const e=document.getElementById(id); if(e) e.style.display='block'; });
-  ['btn-clear','bulk-toolbar'].forEach(id => { const e=document.getElementById(id); if(e) e.style.display='flex'; });
-
-  toast(`✓ "${nom}" añadido a la cartera`);
-  if (typeof renderDashboard === 'function') renderDashboard();
-  document.getElementById('new-project-overlay').classList.remove('open');
-  renderPortfolio();
-}
-
 /* ═══ RE-EVALUATION FLOW ═══════════════════════════════════════
    Instead of the dark overlay modal, we load the project into
    the same manual evaluation wizard (step 0 → 6), pre-filled

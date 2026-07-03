@@ -303,11 +303,6 @@ function saveManualToPortfolio() {
   goStep('pools');
 }
 
-function saveManualAndSync() {
-  saveManualToPortfolio();
-  toast('✓ Guardado en cartera · Exporta a Excel cuando quieras');
-}
-
 /* ═══ AI KEYWORD CONFIGURATION ═══════════════════════════════════════════
    Allows users to customise the keywords used by the auto-scorer per
    dimension, stored in localStorage and used by ruleScoresCriterios().
@@ -359,14 +354,6 @@ function aiLoadKeywords() {
   };
   setRange('ai-boost-prio1',  'ai-boost-prio1-val',  cfg.boostPrio1  ?? 2);
   setRange('ai-autoprio-thr', 'ai-autoprio-thr-val', cfg.autoprioThr ?? 8);
-}
-
-function aiGetKeywords() {
-  try {
-    const saved = localStorage.getItem('meso_ai_keywords_v1');
-    if (saved) return { ...AI_KW_DEFAULTS, ...JSON.parse(saved) };
-  } catch(_) {}
-  return { ...AI_KW_DEFAULTS };
 }
 
 function aiTestScore() {
