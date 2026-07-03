@@ -48,9 +48,12 @@ function closeProjEdit() {
 function pemSave() {
   const p = portfolioData[_pemIdx];
   if (!p) return;
+  // El usuario ha editado las notas manualmente → el score del Excel ya no aplica
+  delete p._sfExcel;
   const updated = computeProj(p);
   Object.assign(portfolioData[_pemIdx], updated);
   portfolioData[_pemIdx].horas = p.horas;
+  delete portfolioData[_pemIdx]._sfExcel;
   toast('✓ Proyecto actualizado');
   renderPemBody();
   // Refrescar todas las vistas que dependen del score/horas

@@ -424,6 +424,7 @@ function aiReevaluateAll(opts) {
     try {
       const scores = ruleScoresCriterios(p);
       CRIT_IDS.forEach(function(cid){ p.scores[cid] = scores[cid]; });
+      delete p._sfExcel;  // la IA recalcula el score → el del Excel ya no aplica
       const computed = computeProj(p);
       Object.assign(p, computed);
       p._aiScored = true;

@@ -412,11 +412,14 @@ function parseExcelBuffer(buffer) {
   // Formato propio exportado por la app (exportPortfolioExcel):
   //   cabecera fila 1, F=Horas, S..AN (idx 18-39)=22 criterios
   let isAppExport = false;
-  let _appHorasCol = -1, _appCrit0Col = -1;
+  let _appHorasCol = -1, _appCrit0Col = -1, _appSfCol = -1;
   if (sn === 'Cartera' && raw.length > 1) {
     const h = (raw[0] || []).map(function(x){ return String(x||'').toLowerCase().trim(); });
     // Localiza columnas por NOMBRE de cabecera (robusto ante cambios de orden)
     _appHorasCol = h.findIndex(function(x){ return x.indexOf('horas') >= 0; });
+    // Columna "Score final" (el score ya calculado que trae el Excel = fuente de verdad)
+    _appSfCol = h.findIndex(function(x){ return x.indexOf('score final') >= 0; });
+    if (_appSfCol < 0) _appSfCol = h.findIndex(function(x){ return x === 'score' || x.indexOf('score final')>=0; });
     // El primer criterio: busca la cabecera del primer criterio real, o 'c1_1', o 'riesgo legal'
     const crit0 = (typeof DIMS!=='undefined' && DIMS[0] && DIMS[0].criterios[0])
       ? String(DIMS[0].criterios[0].nom||'').toLowerCase() : '';
@@ -479,12 +482,17 @@ function parseExcelBuffer(buffer) {
       let nValid = 0;
       CRIT_IDS.forEach(function(cid, j){
         const v = parseFloat(row[_appCrit0Col + j]);
-        const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? Math.round(v) : 5;
+        const s = (Number.isFinite(v) && v >= 1 && v <= 10) ? v : 5;  // conservar decimales
         scores[cid] = s;
         if (Number.isFinite(v) && v >= 1 && v <= 10) nValid++;
       });
       const horasApp = parseFloat(row[_appHorasCol]);
       if (Number.isFinite(horasApp) && horasApp > 0) scores.__horas = horasApp;
+      // Score final que trae el Excel = fuente de verdad (no recalcular)
+      if (_appSfCol >= 0) {
+        const sfRaw = parseFloat(String(row[_appSfCol]).replace(',', '.'));
+        if (Number.isFinite(sfRaw) && sfRaw > 0) scores.__sfExcel = sfRaw;
+      }
       if (nValid < 4) {
         // Sin criterios válidos: intenta al menos conservar las horas y saltar a media
         if (!(Number.isFinite(horasApp) && horasApp > 0)) continue;
@@ -540,12 +548,16 @@ function parseExcelBuffer(buffer) {
     // Extraer horas del marcador __horas y limpiarlo de scores (no es un criterio)
     var _horas = (scores.__horas != null) ? scores.__horas : null;
     if (scores.__horas != null) delete scores.__horas;
+    // Extraer el Score final que trae el Excel (fuente de verdad) y limpiarlo de scores
+    var _sfExcel = (scores.__sfExcel != null) ? scores.__sfExcel : null;
+    if (scores.__sfExcel != null) delete scores.__sfExcel;
     // Extraer el ID de ADO del inicio del nombre si existe (formato "854 — MPG-...")
     var _adoIdMatch = String(nom).match(/^\s*(\d{2,7})\s*[—\-–]/);
     var _adoId = _adoIdMatch ? parseInt(_adoIdMatch[1]) : null;
     projects.push({nom, area, sponsor, scores, reqDate, regDate: null,
       horas: _horas,
       adoId: _adoId,           // recuperado del nombre → permite re-sincronizar a ADO
+      _sfExcel: _sfExcel,      // Score final del Excel = se usa tal cual (no recalcular)
       _fromExcel: true,        // marca: viene de Excel
       _manualEval: true,       // respeta sus notas en re-evaluaciones IA
       _excelScores: Object.assign({}, scores)  // copia de seguridad de las notas del Excel
@@ -571,6 +583,12 @@ function applyProjects(projects, filename, mergeMode) {
     // Reflejar la descripcion de ADO en el campo descripcion breve
     if (!p.descripcion && p.adoDesc) p.descripcion = p.adoDesc;
     const proj = computeProj(p);
+    // Si el proyecto viene de Excel con Score final, ESE es el score bueno (no recalcular).
+    // Evita que el orden difiera del Excel por diferencias de parámetros del algoritmo.
+    if (p._sfExcel != null && Number.isFinite(p._sfExcel)) {
+      proj.sf = p._sfExcel;
+      proj._sfExcel = p._sfExcel;
+    }
     // Horas: Excel directo (p.horas) > marcador legacy __horas > previas > ADO
     const excelHoras = (p.horas != null) ? p.horas : ((p.scores && p.scores.__horas != null) ? p.scores.__horas : null);
     proj.horas = excelHoras ?? prevHoras[p.nom] ?? null;
