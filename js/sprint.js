@@ -330,12 +330,14 @@ function renderSprintScreen() {
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
           <div style="display:flex;gap:4px;align-items:center">
-            ${ordNum ? `<span style="font-size:9px;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;border-radius:50%;font-weight:800">${ordNum}</span>` : ''}
             ${tag}
           </div>
-          <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif">
-            ${(p.sf||0).toFixed(1)}
-          </span>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif;line-height:1">
+              ${(p.sf||0).toFixed(1)}
+            </div>
+            ${ordNum ? `<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden ${ordNum}</div>` : ''}
+          </div>
         </div>
         <div style="font-size:10px;font-weight:700;color:var(--ink);
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px" title="${p.nom}">
@@ -865,7 +867,7 @@ function renderSprintSnapshotView() {
     if (p.desc) { t += '────────────────\n' + p.desc; }
     return t;
   };
-  const card = (p, active)=>{
+  const card = (p, active, ordNum)=>{
     const cl = clsf(p.sf);
     return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
       +(active?'2px solid var(--d3)':'1px dashed var(--b2)')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
@@ -873,7 +875,7 @@ function renderSprintSnapshotView() {
         +'<div style="display:flex;gap:4px;align-items:center">'
           +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
         +'</div>'
-        +'<span style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
+        +'<div style="text-align:right"><div style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif;line-height:1">'+p.sf.toFixed(1)+'</div>'+(ordNum?'<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden '+ordNum+'</div>':'')+'</div>'
       +'</div>'
       +'<div style="font-size:10px;font-weight:'+(active?'800':'400')+';color:var(--ink);margin-bottom:3px">'+p.nom+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
@@ -891,9 +893,9 @@ function renderSprintSnapshotView() {
     const next = arr.filter(p=>!enMarcha.has(p.nom));
     return '<div style="flex:1;min-width:0">'
       +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
-      +active.map(p=>card(p,true)).join('')
+      +active.map((p,i)=>card(p,true,i+1)).join('')
       +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola ('+next.length+')</div>':'')
-      +next.map(p=>card(p,false)).join('')   // TODOS los de la cola, sin recortar
+      +next.map((p,i)=>card(p,false,active.length+i+1)).join('')   // TODOS los de la cola, sin recortar
       +'</div>';
   };
 
