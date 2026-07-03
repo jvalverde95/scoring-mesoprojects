@@ -261,28 +261,28 @@ function renderSprintScreen() {
     .filter(p => p.horas !== null && p.horas !== undefined)
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
 
-  const allCortos = sorted.filter(p => p.horas < thrS);
-  const allMedios = sorted.filter(p => p.horas >= thrS && p.horas < thrM);
-  const allLargos = sorted.filter(p => p.horas >= thrM);
-
   // Un proyecto está "en curso" si ADO le ha puesto fecha de inicio (Custom.MPGStartDate / MPGTaskStartDate)
   const enCurso = p => !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
 
-  // Dentro de cada pool: primero los EN CURSO (ordenados por fecha de inicio), luego el resto por score
+  // Los EN CURSO van a su propia sección (no compiten en los pools)
+  const enCursoProjects = sorted.filter(enCurso)
+    .sort((a,b)=> new Date(a.adoStartDate) - new Date(b.adoStartDate));
+
+  // Los pools SOLO contienen proyectos NO iniciados, ordenados estrictamente por score
+  const notStarted = sorted.filter(p => !enCurso(p));
+  const allCortos = notStarted.filter(p => p.horas < thrS);
+  const allMedios = notStarted.filter(p => p.horas >= thrS && p.horas < thrM);
+  const allLargos = notStarted.filter(p => p.horas >= thrM);
+
+  // Dentro de cada pool: los de MAYOR score entran "en marcha" hasta cubrir capacidad; el resto, en cola
   const splitPool = (arr, capN) => {
-    const started = arr.filter(enCurso).sort((a,b)=> new Date(a.adoStartDate) - new Date(b.adoStartDate));
-    const rest    = arr.filter(p => !enCurso(p));   // ya vienen ordenados por score
-    // "En marcha" = TODOS los en curso (ADO manda) + los siguientes por score hasta cubrir capacidad
-    const slots = Math.max(0, capN - started.length);
-    const inMarchaPool = started.concat(rest.slice(0, slots));
-    const proximosPool = rest.slice(slots);
-    return { inMarcha: inMarchaPool, proximos: proximosPool };
+    return { inMarcha: arr.slice(0, capN), proximos: arr.slice(capN) };
   };
   const _sCorto = splitPool(allCortos, cap.corto);
   const _sMedio = splitPool(allMedios, cap.medio);
   const _sLargo = splitPool(allLargos, cap.largo);
 
-  // "En marcha" = en curso (por fecha ADO) + top por score hasta capacidad
+  // "En marcha" = top por score hasta capacidad (sin proyectos en curso mezclados)
   const inMarcha = {
     corto: _sCorto.inMarcha,
     medio: _sMedio.inMarcha,
@@ -360,6 +360,18 @@ function renderSprintScreen() {
   setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, cap.corto));
   setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, cap.medio));
   setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, cap.largo));
+
+  // Sección EN CURSO (proyectos ya iniciados en ADO), separada de los pools
+  const encursoWrap = document.getElementById('sprint-encurso-wrap');
+  if (encursoWrap) {
+    if (enCursoProjects.length) {
+      encursoWrap.style.display = 'block';
+      setHTML('sprint-encurso', enCursoProjects.map(p => renderCard(p, true)).join(''));
+    } else {
+      encursoWrap.style.display = 'none';
+      setHTML('sprint-encurso', '');
+    }
+  }
 
   if (typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();
 }

@@ -649,6 +649,11 @@ function applyProjects(projects, filename, mergeMode) {
   const bt=document.getElementById('bulk-toolbar'); if(bt) bt.style.display='flex';
   try { renderCharts(); } catch(_) {}
   if (typeof renderDashboard === 'function') renderDashboard();
+  // Refrescar En Marcha y planificación con las nuevas notas (reordena por score)
+  if (typeof renderSprintScreen === 'function') { try { renderSprintScreen(); } catch(_) {} }
+  if (typeof renderPlanningSummary === 'function') { try { renderPlanningSummary(); } catch(_) {} }
+  if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch(_) {} }
+  if (typeof renderDevAssignPanel === 'function') { try { renderDevAssignPanel(); } catch(_) {} }
 
   if (window._mergeStats) {
     const m = window._mergeStats;
