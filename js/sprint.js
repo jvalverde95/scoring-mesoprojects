@@ -835,7 +835,12 @@ function renderSprintSnapshotView() {
   if (!cont) return;
 
   const thrS = snap.thr.s, thrM = snap.thr.m, cap = snap.cap;
-  const sorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
+  let sorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
+  // ── Filtros (área / top N), persisten en window para sobrevivir re-render ──
+  const fArea = window._snapFilterArea || '';
+  const fTop  = window._snapFilterTop  || '';
+  if (fArea) sorted = sorted.filter(p => p.area === fArea);
+  if (fTop)  sorted = sorted.slice(0, parseInt(fTop));
   const cortos = sorted.filter(p=>p.horas<thrS);
   const medios = sorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
   const largos = sorted.filter(p=>p.horas>=thrM);
@@ -901,6 +906,21 @@ function renderSprintSnapshotView() {
         +'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px;font-style:italic">Los proyectos en <b style="color:rgba(255,255,255,.85)">negrita</b> son los que están actualmente en marcha</div></div>'
         +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
+    +(function(){
+        const areas=[...new Set(snap.projects.map(p=>p.area).filter(Boolean))].sort();
+        return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">'
+          +'<span style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.06em">Filtrar:</span>'
+          +'<select onchange="window._snapFilterArea=this.value;renderSprintSnapshotView()" style="font-size:10px;padding:5px 8px;border:1px solid #DEDEDE;border-radius:6px;background:#fff;max-width:220px">'
+            +'<option value="">Todas las áreas</option>'
+            +areas.map(a=>'<option value="'+a.replace(/"/g,'&quot;')+'"'+(fArea===a?' selected':'')+'>'+a+'</option>').join('')
+          +'</select>'
+          +'<select onchange="window._snapFilterTop=this.value;renderSprintSnapshotView()" style="font-size:10px;padding:5px 8px;border:1px solid #DEDEDE;border-radius:6px;background:#fff">'
+            +'<option value="">Todos los proyectos</option>'
+            +[10,20,30].map(n=>'<option value="'+n+'"'+(fTop==String(n)?' selected':'')+'>Top '+n+' por nota</option>').join('')
+          +'</select>'
+          +((fArea||fTop)?'<span style="font-size:9px;color:#999">mostrando '+sorted.length+' proyectos</span>':'')
+        +'</div>';
+      })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
       +col('⚡ Cortos', cortos, '#C07800')
       +col('◉ Medios', medios, '#1848A0')
