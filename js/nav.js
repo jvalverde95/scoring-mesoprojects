@@ -705,6 +705,8 @@ function enterSharedViewMode() {
   document.querySelectorAll('[onclick*="shareSprintSnapshot"]').forEach(function(b){
     const wrap = b.closest('div'); if (wrap) wrap.style.display = 'none'; else b.style.display='none';
   });
+  // Ocultar botones de navegación interna (Ver planificación, Configurar equipo…): no funcionan en vista compartida
+  document.querySelectorAll('#step-sprint [onclick*="goStep"]').forEach(function(b){ b.style.display='none'; });
   // Mostrar SOLO el step de En Marcha, ocultar el resto
   document.querySelectorAll('.step').forEach(function(s){
     s.classList.remove('on');
