@@ -256,15 +256,24 @@ function renderSprintScreen() {
   const thrM = parseInt(document.getElementById('thr-m')?.value) || 50;
   const cap  = getDevCapacity();
 
-  // All projects with hours, sorted by score desc
-  let sorted = portfolioData
+  // ═══ 1) LISTA COMPLETA (sin filtros): determina orden y estado ABSOLUTOS ═══
+  const fullSorted = portfolioData
     .filter(p => p.horas !== null && p.horas !== undefined)
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
+  const fCortos = fullSorted.filter(p => p.horas < thrS);
+  const fMedios = fullSorted.filter(p => p.horas >= thrS && p.horas < thrM);
+  const fLargos = fullSorted.filter(p => p.horas >= thrM);
 
-  // ── Filtros sutiles (solo filtran, no cambian la visualización) ──
+  // Mapas absolutos: orden dentro del pool y estado en-marcha (independientes del filtro)
+  const ordMap = {}, activeMap = {};
+  [[fCortos, cap.corto], [fMedios, cap.medio], [fLargos, cap.largo]].forEach(function(t){
+    const arr = t[0], capN = t[1];
+    arr.forEach(function(p, i){ ordMap[p.nom] = i + 1; activeMap[p.nom] = i < capN; });
+  });
+
+  // ═══ 2) FILTROS: solo ocultan tarjetas; orden y estado NO cambian ═══
   const areaSel = document.getElementById('sprint-filter-area');
   if (areaSel) {
-    // Poblar el desplegable de áreas (conservando la selección)
     const areas = [...new Set(portfolioData.map(p => p.area).filter(Boolean))].sort();
     const cur = areaSel.value;
     if (areaSel.options.length !== areas.length + 1) {
@@ -272,40 +281,39 @@ function renderSprintScreen() {
         + areas.map(a => '<option value="' + a.replace(/"/g,'&quot;') + '">' + a + '</option>').join('');
       areaSel.value = cur;
     }
-    if (areaSel.value) sorted = sorted.filter(p => p.area === areaSel.value);
   }
   const topSel = document.getElementById('sprint-filter-top');
-  if (topSel && topSel.value) sorted = sorted.slice(0, parseInt(topSel.value));
+  const fArea = areaSel ? areaSel.value : '';
+  const fTop  = (topSel && topSel.value) ? parseInt(topSel.value) : 0;
+  const topSet = fTop ? new Set(fullSorted.slice(0, fTop).map(p => p.nom)) : null;
+  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom));
+
+  const allCortos = fCortos.filter(passes);
+  const allMedios = fMedios.filter(passes);
+  const allLargos = fLargos.filter(passes);
+
+  // Info del filtro: total visible y desglose por pool
   const infoEl = document.getElementById('sprint-filter-info');
   if (infoEl) {
-    const filtering = (areaSel && areaSel.value) || (topSel && topSel.value);
-    infoEl.textContent = filtering ? ('mostrando ' + sorted.length + ' proyectos') : '';
+    if (fArea || fTop) {
+      const tot = allCortos.length + allMedios.length + allLargos.length;
+      infoEl.textContent = tot + ' proyectos · ' + allCortos.length + ' cortos · '
+        + allMedios.length + ' medios · ' + allLargos.length + ' largos';
+    } else {
+      infoEl.textContent = '';
+    }
   }
 
-  // Todos los proyectos van a sus pools, ordenados ESTRICTAMENTE por score
-  const allCortos = sorted.filter(p => p.horas < thrS);
-  const allMedios = sorted.filter(p => p.horas >= thrS && p.horas < thrM);
-  const allLargos = sorted.filter(p => p.horas >= thrM);
-
-  // Dentro de cada pool: los de MAYOR score entran "en marcha" hasta cubrir capacidad; el resto, en cola
-  const splitPool = (arr, capN) => {
-    return { inMarcha: arr.slice(0, capN), proximos: arr.slice(capN) };
-  };
-  const _sCorto = splitPool(allCortos, cap.corto);
-  const _sMedio = splitPool(allMedios, cap.medio);
-  const _sLargo = splitPool(allLargos, cap.largo);
-
-  // "En marcha" = top por score hasta capacidad
+  // ═══ 3) Estado en-marcha/próximo según el mapa ABSOLUTO (no según el filtro) ═══
   const inMarcha = {
-    corto: _sCorto.inMarcha,
-    medio: _sMedio.inMarcha,
-    largo: _sLargo.inMarcha,
+    corto: allCortos.filter(p => activeMap[p.nom]),
+    medio: allMedios.filter(p => activeMap[p.nom]),
+    largo: allLargos.filter(p => activeMap[p.nom]),
   };
-  // "Próximos" = resto de la cola por score, TODOS
   const proximos = {
-    corto: _sCorto.proximos,
-    medio: _sMedio.proximos,
-    largo: _sLargo.proximos,
+    corto: allCortos.filter(p => !activeMap[p.nom]),
+    medio: allMedios.filter(p => !activeMap[p.nom]),
+    largo: allLargos.filter(p => !activeMap[p.nom]),
   };
 
   const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
@@ -363,11 +371,11 @@ function renderSprintScreen() {
       return '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
     }
     const slots = Array(Math.max(capN, active.length)).fill(null).map((_, i) => {
-      if (i < active.length) return renderCard(active[i], true, i + 1);
+      if (i < active.length) return renderCard(active[i], true, ordMap[active[i].nom]);
       return `<div style="padding:10px 12px;border:1px dashed var(--b2);border-radius:8px;
         text-align:center;font-size:9px;color:var(--ink4);opacity:0.4">Hueco libre</div>`;
     });
-    const nextCards = next.map((p, i) => renderCard(p, false, active.length + i + 1));
+    const nextCards = next.map(p => renderCard(p, false, ordMap[p.nom]));
     const sep = nextCards.length
       ? '<div style="font-size:8px;color:var(--ink4);text-align:center;margin:8px 0;letter-spacing:.1em;text-transform:uppercase">· próximos ·</div>'
       : '';
@@ -375,9 +383,10 @@ function renderSprintScreen() {
   };
 
   const setHTML = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML = v; };
-  setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, cap.corto));
-  setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, cap.medio));
-  setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, cap.largo));
+  const _filtering = !!(fArea || fTop);
+  setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, _filtering ? inMarcha.corto.length : cap.corto));
+  setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, _filtering ? inMarcha.medio.length : cap.medio));
+  setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, _filtering ? inMarcha.largo.length : cap.largo));
 
   if (typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();
 }
@@ -837,18 +846,24 @@ function renderSprintSnapshotView() {
   if (!cont) return;
 
   const thrS = snap.thr.s, thrM = snap.thr.m, cap = snap.cap;
-  let sorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
-  // ── Filtros (área / top N), persisten en window para sobrevivir re-render ──
+  // ═══ 1) Lista COMPLETA: estado en-marcha y orden ABSOLUTOS (independientes del filtro) ═══
+  const fullSorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
+  const fCortos = fullSorted.filter(p=>p.horas<thrS);
+  const fMedios = fullSorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
+  const fLargos = fullSorted.filter(p=>p.horas>=thrM);
+  const ordMap = {}, enMarcha = new Set();
+  [[fCortos,cap.corto],[fMedios,cap.medio],[fLargos,cap.largo]].forEach(function(t){
+    t[0].forEach(function(p,i){ ordMap[p.nom]=i+1; if(i<t[1]) enMarcha.add(p.nom); });
+  });
+  // ═══ 2) Filtros: SOLO ocultan tarjetas; estado y orden no cambian ═══
   const fArea = window._snapFilterArea || '';
   const fTop  = window._snapFilterTop  || '';
-  if (fArea) sorted = sorted.filter(p => p.area === fArea);
-  if (fTop)  sorted = sorted.slice(0, parseInt(fTop));
-  const cortos = sorted.filter(p=>p.horas<thrS);
-  const medios = sorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
-  const largos = sorted.filter(p=>p.horas>=thrM);
-  const enMarcha = new Set([
-    ...cortos.slice(0,cap.corto), ...medios.slice(0,cap.medio), ...largos.slice(0,cap.largo),
-  ].map(p=>p.nom));
+  const topSet = fTop ? new Set(fullSorted.slice(0, parseInt(fTop)).map(p=>p.nom)) : null;
+  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom));
+  const sorted = fullSorted.filter(passes);
+  const cortos = fCortos.filter(passes);
+  const medios = fMedios.filter(passes);
+  const largos = fLargos.filter(passes);
 
   const pf = (ms)=>{ if(!ms) return '—'; const d=new Date(ms); return d.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}); };
   const DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
@@ -893,9 +908,9 @@ function renderSprintSnapshotView() {
     const next = arr.filter(p=>!enMarcha.has(p.nom));
     return '<div style="flex:1;min-width:0">'
       +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
-      +active.map((p,i)=>card(p,true,i+1)).join('')
+      +active.map(p=>card(p,true,ordMap[p.nom])).join('')
       +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola ('+next.length+')</div>':'')
-      +next.map((p,i)=>card(p,false,active.length+i+1)).join('')   // TODOS los de la cola, sin recortar
+      +next.map(p=>card(p,false,ordMap[p.nom])).join('')   // TODOS los de la cola, sin recortar
       +'</div>';
   };
 
@@ -920,7 +935,7 @@ function renderSprintSnapshotView() {
             +'<option value="">Todos los proyectos</option>'
             +[10,20,30].map(n=>'<option value="'+n+'"'+(fTop==String(n)?' selected':'')+'>Top '+n+' por nota</option>').join('')
           +'</select>'
-          +((fArea||fTop)?'<span style="font-size:9px;color:#999">mostrando '+sorted.length+' proyectos</span>':'')
+          +((fArea||fTop)?'<span style="font-size:9px;color:#999">'+sorted.length+' proyectos · '+cortos.length+' cortos · '+medios.length+' medios · '+largos.length+' largos</span>':'')
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
