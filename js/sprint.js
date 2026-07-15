@@ -389,6 +389,26 @@ function renderSprintScreen() {
   setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, _filtering ? inMarcha.medio.length : cap.medio));
   setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, _filtering ? inMarcha.largo.length : cap.largo));
 
+  // ── Próximo día libre GLOBAL: fin de toda la cola planificada ──
+  // (la fecha en la que arrancaría un proyecto puesto el último de la cola)
+  try {
+    const elFree = document.getElementById('sprint-free-total');
+    if (elFree && typeof planBuildTimeline === 'function') {
+      const _tl = planBuildTimeline();
+      if (_tl.length) {
+        let maxEnd = 0;
+        _tl.forEach(function(t){ const e = +t.endDate; if (e > maxEnd) maxEnd = e; });
+        const d = new Date(maxEnd);
+        const weeks = Math.max(0, Math.ceil((maxEnd - Date.now()) / (7*86400000)));
+        elFree.innerHTML = '📅 Próximo día libre del equipo: <b style="color:#087B50;font-size:13px">'
+          + d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}) + '</b>'
+          + ' <span style="color:#AAA;font-size:9px">· fin de toda la cola planificada ('+_tl.length+' proyectos, '+weeks+' semanas) — ahí empezaría un proyecto puesto el último</span>';
+      } else {
+        elFree.innerHTML = '';
+      }
+    }
+  } catch(e){}
+
   if (typeof renderPriorityAnalysis==='function') renderPriorityAnalysis();
 }
 
