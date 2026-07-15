@@ -593,7 +593,7 @@ function applyProjects(projects, filename, mergeMode) {
     const keyOf = function(p){ return p.adoId != null ? ('id:'+p.adoId) : ('nom:'+(p.nom||'').trim().toLowerCase()); };
     const idx = {};
     portfolioData.forEach(function(p,i){ idx[keyOf(p)] = i; });
-    let updated = 0, added = 0;
+    let updated = 0, added = 0, skipped = 0;
     incoming.forEach(function(np){
       const k = keyOf(np);
       if (idx[k] !== undefined) {
@@ -616,13 +616,13 @@ function applyProjects(projects, filename, mergeMode) {
         portfolioData[idx[k]] = np;   // sobrescribe el que coincide
         updated++;
       } else {
-        portfolioData.push(np);        // nuevo → se añade
-        idx[k] = portfolioData.length - 1;
-        added++;
+        // NO se añade: si el proyecto no está en la cartera (ADO no lo trajo,
+        // p.ej. porque está cerrado), el Excel NO debe resucitarlo.
+        skipped++;
       }
     });
     portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
-    window._mergeStats = { updated: updated, added: added, kept: portfolioData.length - updated - added };
+    window._mergeStats = { updated: updated, added: 0, skipped: skipped, kept: portfolioData.length - updated };
   } else {
     // ── REPLACE: reemplaza toda la cartera (carga desde ADO o Excel sin merge) ──
     portfolioData = incoming;
@@ -645,7 +645,8 @@ function applyProjects(projects, filename, mergeMode) {
 
   if (window._mergeStats) {
     const m = window._mergeStats;
-    toast('✓ Excel fusionado · '+m.updated+' actualizados, '+m.added+' nuevos, '+m.kept+' conservados');
+    toast('✓ Excel fusionado · '+m.updated+' actualizados, '+m.kept+' conservados'
+      + (m.skipped ? ' · '+m.skipped+' ignorados (no están en ADO, p. ej. cerrados)' : ''));
   } else {
     toast('✓ '+portfolioData.length+' proyectos cargados · exporta a Excel cuando quieras');
   }
