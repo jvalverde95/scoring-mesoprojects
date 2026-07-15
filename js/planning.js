@@ -142,7 +142,8 @@ function planBuildTimeline() {
       return (p.horas||0) > 0
         && !activeNoms[p.nom]
         && pPool(p)
-        && !(typeof isProjClosed === 'function' && isProjClosed(p));
+        && !(typeof isProjClosed === 'function' && isProjClosed(p))
+        && !(typeof isProxPro === 'function' && isProxPro(p));
     })
     .slice()
     .sort(function(a,b){ return (b.sf||0) - (a.sf||0); });   // ← ORDEN POR NOTA, SIEMPRE
@@ -153,6 +154,7 @@ function planBuildTimeline() {
   // de la cola de ese pool (orden por score). Entre pools distintos las fechas pueden
   // variar según la disponibilidad de los desarrolladores; eso es correcto.
   var prevStartPool = { corto:new Date(today), medio:new Date(today), largo:new Date(today) };
+  var prevEndPool   = { corto:null, medio:null, largo:null };
 
   queue.forEach(function(p) {
     var pool = pPool(p);
@@ -209,10 +211,27 @@ function planBuildTimeline() {
       // anterior de la cola (respeta el orden por score) ni en el pasado.
       var s0 = new Date(avail[dev.name][pool]);
       if (s0 < today) s0 = new Date(today);
-      // No adelantar a un proyecto de MAYOR score DEL MISMO POOL
+      // No adelantar a un proyecto de MAYOR score DEL MISMO POOL (ni en inicio ni en fin)
       if (s0 < prevStartPool[pool]) s0 = new Date(prevStartPool[pool]);
       start = pNextWork(s0);
       end = pAddDays(new Date(start), days);
+      // Garantía fuerte: un proyecto de menor score no puede TERMINAR antes que el anterior
+      // (de mayor score) del mismo pool. Si ocurriera, se retrasa su inicio hasta que su
+      // fin coincida al menos con el del proyecto previo (mantiene la monotonía visual).
+      if (prevEndPool[pool] && end < prevEndPool[pool]) {
+        // Fin objetivo = fin del proyecto anterior; inicio = fin objetivo - duración
+        var targetEnd = new Date(prevEndPool[pool]);
+        // Retroceder 'days' días laborables desde targetEnd para fijar el inicio
+        var ns = new Date(targetEnd);
+        var back = days;
+        while (back > 0) { ns.setDate(ns.getDate()-1); var dw=ns.getDay(); if(dw!==0&&dw!==6) back--; }
+        ns = pNextWork(ns);
+        if (ns < today) ns = new Date(today);
+        if (ns < prevStartPool[pool]) ns = new Date(prevStartPool[pool]);
+        start = ns;
+        end = pAddDays(new Date(start), days);
+        if (end < prevEndPool[pool]) end = new Date(prevEndPool[pool]);  // seguridad
+      }
     }
 
     timeline.push({
@@ -223,8 +242,9 @@ function planBuildTimeline() {
 
     // Ocupar al desarrollador hasta el fin (la disponibilidad nunca retrocede)
     if (end > avail[dev.name][pool]) avail[dev.name][pool] = new Date(end);
-    // El siguiente proyecto del MISMO POOL (menor score) no puede empezar antes que este
+    // El siguiente proyecto del MISMO POOL (menor score) no puede empezar ni terminar antes que este
     if (start > prevStartPool[pool]) prevStartPool[pool] = new Date(start);
+    if (!prevEndPool[pool] || end > prevEndPool[pool]) prevEndPool[pool] = new Date(end);
   });
 
   return timeline;

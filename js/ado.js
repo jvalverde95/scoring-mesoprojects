@@ -114,6 +114,7 @@ function adoMapToProject(wi) {
     horas,                          // ← mapped from ADO estimation field
     horasSource: rawHours !== null ? 'OriginalEstimate' : null,
     reqDate, regDate:null,
+    adoAssigned: sponsor || '',     // System.AssignedTo (persona responsable) → "Pendiente de:"
     adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
     adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
     adoIteration:f['System.IterationPath']||'',

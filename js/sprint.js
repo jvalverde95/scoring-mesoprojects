@@ -11,6 +11,19 @@ function isProjClosed(p) {
   return st==='closed' || st==='done' || st==='removed' || st==='completed' || st==='cerrado';
 }
 
+// ¿"Próximamente en PRO"? Requirement + Prioridad 1 + estado con número > 6 (ej. "7-...", "8-...").
+// Los Task (Proposed/Active/Resolved/Closed) nunca cumplen (su estado no empieza por número).
+// Estos proyectos salen de los pools de En Marcha y de la planificación de fechas.
+function isProxPro(p) {
+  if (!p) return false;
+  if (parseInt(p.adoPriority) !== 1) return false;
+  if (typeof isProjClosed === 'function' && isProjClosed(p)) return false;
+  var st = String(p.adoState || '').trim();
+  var m = st.match(/^\s*(\d+)\s*-/);   // número al inicio seguido de guion
+  if (!m) return false;
+  return parseInt(m[1]) > 6;
+}
+
 
 function loadDevTeam() {
   // Version bump: forces the corrected default team to load once,
@@ -266,7 +279,7 @@ function renderSprintScreen() {
 
   // ═══ 1) LISTA COMPLETA (sin filtros): determina orden y estado ABSOLUTOS ═══
   const fullSorted = portfolioData
-    .filter(p => p.horas !== null && p.horas !== undefined && !isProjClosed(p))
+    .filter(p => p.horas !== null && p.horas !== undefined && !isProjClosed(p) && !isProxPro(p))
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
   const fCortos = fullSorted.filter(p => p.horas < thrS);
   const fMedios = fullSorted.filter(p => p.horas >= thrS && p.horas < thrM);
@@ -328,6 +341,35 @@ function renderSprintScreen() {
   setTxt('sprint-corto-count', `${inMarcha.corto.length}/${cap.corto}`);
   setTxt('sprint-medio-count', `${inMarcha.medio.length}/${cap.medio}`);
   setTxt('sprint-largo-count', `${inMarcha.largo.length}/${cap.largo}`);
+
+  // Tarjeta de "Próximamente en PRO": muestra nota, orden por score y "Pendiente de: [AssignedTo]"
+  const renderProxCard = (p) => {
+    const pend = (p.adoAssigned && String(p.adoAssigned).trim() !== '') ? p.adoAssigned : 'Sin asignar';
+    const stTxt = String(p.adoState || '').trim();
+    const nomClean = String(p.nom).replace(/'/g, "\\'");
+    return `
+      <div style="padding:10px 12px;background:#F7F5FE;border-radius:8px;border:2px solid #7A5AF0;
+        cursor:pointer;margin-bottom:6px"
+        title="${_liveTip(p, false)}"
+        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${nomClean}')))">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <span style="font-size:8px;background:#7A5AF0;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>
+          <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif;line-height:1">
+            ${(p.sf||0).toFixed(1)}
+          </span>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:5px">${p.nom}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+          <span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>
+          ${stTxt ? `<span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">${stTxt}</span>` : ''}
+          <span style="font-size:8px;background:var(--surf);color:var(--ink3);padding:2px 6px;border-radius:4px">${p.horas!=null?p.horas+'h':'—'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E4DEFA">
+          <span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>
+          <span style="font-size:9px;font-weight:800;color:#5B3FD6">${pend}</span>
+        </div>
+      </div>`;
+  };
 
   const renderCard = (p, isActive, ordNum) => {
     const cl = clsf(p.sf || 0);
@@ -402,6 +444,30 @@ function renderSprintScreen() {
   setHTML('sprint-col-corto', renderCol(inMarcha.corto, proximos.corto, _filtering ? inMarcha.corto.length : cap.corto));
   setHTML('sprint-col-medio', renderCol(inMarcha.medio, proximos.medio, _filtering ? inMarcha.medio.length : cap.medio));
   setHTML('sprint-col-largo', renderCol(inMarcha.largo, proximos.largo, _filtering ? inMarcha.largo.length : cap.largo));
+
+  // ═══ PRÓXIMAMENTE EN PRO: P1 + estado ADO > 6, fuera de planificación ═══
+  const proxWrap = document.getElementById('sprint-proxpro-wrap');
+  if (proxWrap) {
+    const proxAll = portfolioData
+      .filter(p => isProxPro(p) && (!fArea || p.area === fArea))
+      .sort((a,b) => (b.sf||0) - (a.sf||0));
+    if (proxAll.length) {
+      proxWrap.style.display = 'block';
+      const byPool = { corto:[], medio:[], largo:[] };
+      proxAll.forEach(p => {
+        const h = p.horas || 0;
+        const pk = h < thrS ? 'corto' : (h < thrM ? 'medio' : 'largo');
+        byPool[pk].push(p);
+      });
+      ['corto','medio','largo'].forEach(pk => {
+        setHTML('proxpro-col-'+pk, byPool[pk].length
+          ? byPool[pk].map(p => renderProxCard(p)).join('')
+          : '<div style="font-size:9px;color:var(--ink4);text-align:center;padding:12px 0;opacity:.6">—</div>');
+      });
+    } else {
+      proxWrap.style.display = 'none';
+    }
+  }
 
   // ── Próximo día libre GLOBAL: fin de toda la cola planificada ──
   // (la fecha en la que arrancaría un proyecto puesto el último de la cola)
@@ -854,6 +920,8 @@ function _buildSprintSnapshot() {
       desc:(p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim().substring(0,400),
       dims:(p.dimScores||[]).map(function(d){return +(+d).toFixed(1);}),
       reqDate:p.reqDate||null,
+      proxPro:(typeof isProxPro==='function' && isProxPro(p)),   // Próximamente en PRO
+      adoState:p.adoState||'', adoAssigned:p.adoAssigned||'',    // estado y responsable
       adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre
@@ -939,7 +1007,8 @@ function renderSprintSnapshotView() {
 
   const thrS = snap.thr.s, thrM = snap.thr.m, cap = snap.cap;
   // ═══ 1) Lista COMPLETA: estado en-marcha y orden ABSOLUTOS (independientes del filtro) ═══
-  const fullSorted = snap.projects.slice().sort((a,b)=>b.sf-a.sf);
+  // Los "Próximamente en PRO" salen de los pools (van a su propia sección)
+  const fullSorted = snap.projects.slice().filter(function(p){ return !p.proxPro; }).sort((a,b)=>b.sf-a.sf);
   const fCortos = fullSorted.filter(p=>p.horas<thrS);
   const fMedios = fullSorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
   const fLargos = fullSorted.filter(p=>p.horas>=thrM);
@@ -1038,6 +1107,51 @@ function renderSprintSnapshotView() {
             +[10,20,30].map(n=>'<option value="'+n+'"'+(fTop==String(n)?' selected':'')+'>Top '+n+' por nota</option>').join('')
           +'</select>'
           +((fArea||fTop)?'<span style="font-size:9px;color:#999">'+sorted.length+' proyectos · '+cortos.length+' cortos · '+medios.length+' medios · '+largos.length+' largos</span>':'')
+        +'</div>';
+      })()
+    +(function(){
+        // ═══ PRÓXIMAMENTE EN PRO (P1 + estado > 6), fuera de planificación ═══
+        var prox = snap.projects.filter(function(p){ return p.proxPro && (!fArea || p.area===fArea); })
+          .sort(function(a,b){ return b.sf-a.sf; });
+        if (!prox.length) return '';
+        var byPool = {corto:[],medio:[],largo:[]};
+        prox.forEach(function(p){ var h=p.horas||0; byPool[h<thrS?'corto':(h<thrM?'medio':'largo')].push(p); });
+        var proxCard = function(p){
+          var pend = (p.adoAssigned && String(p.adoAssigned).trim()!=='') ? p.adoAssigned : 'Sin asignar';
+          return '<div style="padding:9px 11px;background:#F7F5FE;border:2px solid #7A5AF0;border-radius:8px;margin-bottom:6px">'
+            +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
+              +'<span style="font-size:8px;background:#7A5AF0;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
+              +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
+            +'</div>'
+            +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">'+p.nom+'</div>'
+            +'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">'
+              +'<span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>'
+              +(p.adoState?'<span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">'+p.adoState+'</span>':'')
+              +'<span style="font-size:8px;background:#F0F0F0;color:#777;padding:2px 6px;border-radius:4px">'+(p.horas!=null?p.horas+'h':'—')+'</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E4DEFA">'
+              +'<span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>'
+              +'<span style="font-size:9px;font-weight:800;color:#5B3FD6">'+pend+'</span>'
+            +'</div>'
+          +'</div>';
+        };
+        var proxCol = function(title,arr,color){
+          return '<div style="flex:1;min-width:0"><div style="font-size:10px;font-weight:700;color:'+color+';margin-bottom:6px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
+            +(arr.length?arr.map(proxCard).join(''):'<div style="font-size:9px;color:#BBB;text-align:center;padding:10px 0">—</div>')+'</div>';
+        };
+        return '<div style="margin-bottom:20px">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+            +'<div style="width:10px;height:10px;border-radius:50%;background:#7A5AF0"></div>'
+            +'<div style="font-weight:800;font-size:12px;color:#5B3FD6">🚀 PRÓXIMAMENTE EN PRO</div>'
+            +'<div style="font-size:9px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
+          +'</div>'
+          +'<div style="display:flex;gap:14px;align-items:flex-start">'
+            +proxCol('⚡ Cortos', byPool.corto, '#C07800')
+            +proxCol('◉ Medios', byPool.medio, '#1848A0')
+            +proxCol('▣ Largos', byPool.largo, '#087B50')
+          +'</div>'
+          +'<div style="border-top:2px solid #EEF0F4;margin:16px 0 6px"></div>'
+          +'<div style="font-weight:800;font-size:12px;color:var(--d3);margin-bottom:10px">🔧 EN MARCHA</div>'
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
