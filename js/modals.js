@@ -47,6 +47,7 @@ function closeProjEdit() {
   if (typeof renderSprintScreen === 'function') renderSprintScreen();
   if (typeof renderDashboard === 'function') renderDashboard();
   // Replanificar SIEMPRE y avisar de la nueva fecha estimada de inicio del proyecto editado
+  if (typeof clearPlanningLocks === 'function') clearPlanningLocks();
   if (typeof replanAndNotify === 'function') replanAndNotify(p && p.nom);
 }
 
@@ -67,6 +68,7 @@ function pemSave() {
   if (typeof renderSprintScreen === 'function') renderSprintScreen();
   if (typeof renderDashboard === 'function') renderDashboard();
   // Replanificar SIEMPRE tras cambiar el scoring y avisar de la nueva fecha estimada de inicio
+  if (typeof clearPlanningLocks === 'function') clearPlanningLocks();
   if (typeof replanAndNotify === 'function') replanAndNotify(portfolioData[_pemIdx] && portfolioData[_pemIdx].nom);
   else if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
 }

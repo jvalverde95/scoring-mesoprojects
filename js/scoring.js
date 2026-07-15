@@ -638,6 +638,9 @@ function applyProjects(projects, filename, mergeMode) {
   try { renderCharts(); } catch(_) {}
   if (typeof renderDashboard === 'function') renderDashboard();
   // Refrescar En Marcha y planificación con las nuevas notas (reordena por score)
+  // IMPORTANTE: limpiar locks/activos viejos para que la planificación se recalcule
+  // LIMPIA por score (evita fechas congeladas de sesiones anteriores, p. ej. 2028).
+  if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_) {} }
   if (typeof renderSprintScreen === 'function') { try { renderSprintScreen(); } catch(_) {} }
   if (typeof renderPlanningSummary === 'function') { try { renderPlanningSummary(); } catch(_) {} }
   if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch(_) {} }

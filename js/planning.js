@@ -41,6 +41,15 @@ function saveLocked() {
 function loadLocked() {
   try { var s=localStorage.getItem('nexus_lk'); if(s) lockedAssignments=JSON.parse(s); } catch(e) {}
 }
+// Limpia las asignaciones bloqueadas y proyectos activos manuales para forzar
+// una replanificación LIMPIA por score. Se usa al cargar Excel o al repriorizar,
+// porque los locks viejos congelaban fechas (p. ej. de 2028) y rompían el orden.
+function clearPlanningLocks() {
+  lockedAssignments = [];
+  activeProjects = [];
+  try { localStorage.removeItem('nexus_lk'); } catch(e) {}
+  try { localStorage.removeItem('nexus_ap'); } catch(e) {}
+}
 
 // ── Utilities ──────────────────────────────────────────────────
 function pFmt(d) {
@@ -249,6 +258,27 @@ function planBuildTimeline() {
       if (start > prevStartPool[pool]) prevStartPool[pool] = new Date(start);
       if (!prevEndPool[pool] || end > prevEndPool[pool]) prevEndPool[pool] = new Date(end);
     }
+  });
+
+  // ══ PASE FINAL DE SEGURIDAD ══
+  // Garantiza de forma absoluta que, entre proyectos NO iniciados del mismo pool,
+  // uno de mayor score nunca empiece después que uno de menor score.
+  // Reordena las fechas de inicio ya calculadas siguiendo el orden por score.
+  ['corto','medio','largo'].forEach(function(pool){
+    var norms = timeline
+      .filter(function(t){ return t.pool===pool && !t.enCurso && !t.locked; })
+      .sort(function(a,b){ return (b.proj.sf||0) - (a.proj.sf||0); });   // orden por score
+    // Las fechas de inicio disponibles (las que ya calculó el algoritmo), ordenadas ascendente
+    var starts = norms.map(function(t){ return +t.startDate; }).sort(function(a,b){ return a-b; });
+    var ends   = norms.map(function(t){ return +t.endDate; });
+    var durs   = norms.map(function(t,i){ return ends[i]-(+t.startDate); });
+    // Reasigna: el de mayor score recibe la fecha de inicio más temprana, y así sucesivamente
+    norms.forEach(function(t, i){
+      var ns = new Date(starts[i]);
+      var dur = (+t.endDate) - (+t.startDate);
+      t.startDate = ns;
+      t.endDate = new Date(+ns + dur);
+    });
   });
 
   return timeline;
