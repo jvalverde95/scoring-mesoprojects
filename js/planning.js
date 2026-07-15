@@ -2680,3 +2680,71 @@ function renderDevAssignPanel() {
     +'</div>'
     + rows;
 }
+
+// ── Replanificar y notificar la nueva fecha estimada de inicio de un proyecto ──
+// Se llama tras cambiar el scoring o cargar Excel. Reconstruye el timeline (orden por nota
+// + capacidad de los equipos) y, si se pasa projNom, muestra un popup con su nueva fecha de inicio.
+function replanAndNotify(projNom, opts) {
+  opts = opts || {};
+  // Fuerza el recálculo de todas las vistas dependientes del timeline
+  if (typeof recalcAndRenderPlanning === 'function') recalcAndRenderPlanning();
+  else if (typeof renderSprintScreen === 'function') renderSprintScreen();
+
+  var tl = (typeof planBuildTimeline === 'function') ? planBuildTimeline() : [];
+  if (!tl.length) {
+    // Sin equipo configurado no hay fechas: avisar una sola vez
+    if (projNom) planShowReplanToast('Planificación actualizada. Configura el equipo en Configuración para ver fechas estimadas de inicio.', null, null);
+    return;
+  }
+
+  if (projNom) {
+    var t = tl.find(function(x){ return x.proj && x.proj.nom === projNom; });
+    if (t) {
+      var enCurso = !!(t.proj.adoStartDate && String(t.proj.adoStartDate).trim() !== '');
+      planShowReplanToast(null, t, enCurso);
+    } else {
+      planShowReplanToast('Planificación actualizada con el nuevo orden por nota.', null, null);
+    }
+  } else if (opts.fromExcel) {
+    // Resumen global tras cargar Excel: primer proyecto no-en-curso y fecha fin de cola
+    var firstNew = tl.find(function(x){ return !(x.proj && x.proj.adoStartDate && String(x.proj.adoStartDate).trim() !== ''); });
+    var maxEnd = 0; tl.forEach(function(x){ var e=+x.endDate; if(e>maxEnd) maxEnd=e; });
+    var fmt = function(d){ return d ? new Date(d).toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}) : '—'; };
+    var m = 'Reordenado por nota y capacidad de los equipos. '
+      + (firstNew ? 'Próximo en arrancar: <b>'+String(firstNew.proj.nom).slice(0,32)+'</b> el <b style="color:#087B50">'+fmt(firstNew.startDate)+'</b>. ' : '')
+      + 'Cola planificada hasta <b>'+fmt(maxEnd)+'</b>.';
+    planShowReplanToast(m, null, null);
+  }
+}
+
+// Popup (toast enriquecido) con la nueva fecha estimada de inicio/entrega
+function planShowReplanToast(msg, t, enCurso) {
+  var old = document.getElementById('replan-popup');
+  if (old) old.remove();
+  var box = document.createElement('div');
+  box.id = 'replan-popup';
+  box.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:950;max-width:340px;'
+    + 'background:#fff;border:1px solid #E3E8F0;border-left:4px solid #087B50;border-radius:10px;'
+    + 'box-shadow:0 12px 40px rgba(0,0,0,.18);padding:16px 18px;font-family:inherit;animation:none';
+  var html;
+  if (t) {
+    var fmt = function(d){ return d ? new Date(d).toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}) : '—'; };
+    html = '<div style="font-size:13px;font-weight:800;color:#1C2B4A;margin-bottom:8px">✓ Planificación recalculada</div>'
+      + '<div style="font-size:11px;color:#333;line-height:1.6">'
+        + '<b>'+String(t.proj.nom).replace(/</g,'&lt;').slice(0,46)+'</b>'
+        + '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">'
+          + '<div>'+(enCurso?'🟢 En curso desde:':'📅 Inicio estimado:')+' <b style="color:#087B50">'+fmt(enCurso?t.proj.adoStartDate:t.startDate)+'</b></div>'
+          + '<div>📦 Entrega estimada: <b style="color:#1C2B4A">'+fmt(t.endDate)+'</b></div>'
+          + '<div style="color:#888;font-size:10px">👤 '+(t.devName||'—')+' · '+(t.pool||'')+' · '+(t.totalHours||0)+'h</div>'
+        + '</div>'
+      + '</div>';
+  } else {
+    html = '<div style="font-size:13px;font-weight:800;color:#1C2B4A;margin-bottom:6px">✓ Planificación recalculada</div>'
+      + '<div style="font-size:11px;color:#555;line-height:1.5">'+(msg||'Orden de ejecución actualizado por nota.')+'</div>';
+  }
+  html += '<button onclick="var e=document.getElementById(\'replan-popup\');if(e)e.remove()" '
+    + 'style="position:absolute;top:8px;right:10px;border:none;background:none;font-size:16px;color:#BBB;cursor:pointer">&times;</button>';
+  box.innerHTML = html;
+  document.body.appendChild(box);
+  setTimeout(function(){ var e=document.getElementById('replan-popup'); if(e) e.remove(); }, 8000);
+}

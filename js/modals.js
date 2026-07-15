@@ -39,10 +39,15 @@ function closeAiModal() {
 function closeProjEdit() {
   const el = document.getElementById('proj-edit-overlay');
   if (el) el.classList.remove('open');
+  // Al cerrar puede haber cambiado el scoring/horas → limpiar sf del Excel y replanificar
+  const p = portfolioData[_pemIdx];
+  if (p) delete p._sfExcel;
   renderPortfolio(); renderPools();
   if (currentStep === 'pools') renderPoolsStep();
   if (typeof renderSprintScreen === 'function') renderSprintScreen();
   if (typeof renderDashboard === 'function') renderDashboard();
+  // Replanificar SIEMPRE y avisar de la nueva fecha estimada de inicio del proyecto editado
+  if (typeof replanAndNotify === 'function') replanAndNotify(p && p.nom);
 }
 
 function pemSave() {
@@ -61,7 +66,9 @@ function pemSave() {
   if (typeof renderPools === 'function') renderPools();
   if (typeof renderSprintScreen === 'function') renderSprintScreen();
   if (typeof renderDashboard === 'function') renderDashboard();
-  if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
+  // Replanificar SIEMPRE tras cambiar el scoring y avisar de la nueva fecha estimada de inicio
+  if (typeof replanAndNotify === 'function') replanAndNotify(portfolioData[_pemIdx] && portfolioData[_pemIdx].nom);
+  else if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
 }
 
 function pemPrev() {
