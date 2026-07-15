@@ -19,7 +19,7 @@ function isProxPro(p) {
   if (parseInt(p.adoPriority) !== 1) return false;
   if (typeof isProjClosed === 'function' && isProjClosed(p)) return false;
   var st = String(p.adoState || '').trim();
-  var m = st.match(/^\s*(\d+)\s*-/);   // número al inicio seguido de guion
+  var m = st.match(/^\s*(\d+)\s*[-–—]/);   // número al inicio seguido de guion (normal, medio o largo)
   if (!m) return false;
   return parseInt(m[1]) > 6;
 }
@@ -297,7 +297,7 @@ function renderSprintScreen() {
   if (areaSel) {
     const areas = [...new Set(portfolioData.map(p => p.area).filter(Boolean))].sort();
     const cur = areaSel.value;
-    if (areaSel.options.length !== areas.length + 1) {
+    if (!areaSel.options || areaSel.options.length !== areas.length + 1) {
       areaSel.innerHTML = '<option value="">Todas las áreas</option>'
         + areas.map(a => '<option value="' + a.replace(/"/g,'&quot;') + '">' + a + '</option>').join('');
       areaSel.value = cur;
