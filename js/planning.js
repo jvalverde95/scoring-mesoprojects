@@ -125,7 +125,7 @@ function planBuildTimeline() {
   // Solo estos pueden adelantarse a otros con mayor score. El resto se planifica
   // estrictamente por score. Si MPGStartDate está vacío → planificación normal.
   var adoActive = (portfolioData||[])
-    .filter(function(p){ return (p.horas||0)>0 && p.adoStartDate && String(p.adoStartDate).trim()!==''; })
+    .filter(function(p){ return (p.horas||0)>0 && p.adoStartDate && String(p.adoStartDate).trim()!=='' && !(typeof isProjClosed==='function' && isProjClosed(p)); })
     .sort(function(a,b){ return new Date(a.adoStartDate) - new Date(b.adoStartDate); });
   var adoActiveNoms = {};
   adoActive.forEach(function(p){ adoActiveNoms[p.nom]=true; });
@@ -146,7 +146,7 @@ function planBuildTimeline() {
   var activeNoms = {};
   activeProjects.forEach(function(a){ activeNoms[a.nom]=true; });
   var queueRest = (portfolioData||[])
-    .filter(function(p){ return (p.horas||0)>0 && !activeNoms[p.nom] && !adoActiveNoms[p.nom] && pPool(p); })
+    .filter(function(p){ return (p.horas||0)>0 && !activeNoms[p.nom] && !adoActiveNoms[p.nom] && pPool(p) && !(typeof isProjClosed==='function' && isProjClosed(p)); })
     .slice().sort(function(a,b){ return (b.sf||0)-(a.sf||0); });
   // Los en curso (ADO) van SIEMPRE delante, ordenados por su fecha de inicio real
   var queue = adoActive.filter(function(p){ return pPool(p); }).concat(queueRest);

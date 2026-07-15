@@ -5,6 +5,13 @@
 // ── Developer capacity state ─────────────────────────────────
 let devTeam = [];  // [{name, corto, medio, largo}]
 
+// ¿El proyecto está cerrado en ADO? (el estado lo manda ADO — los cerrados no van a pools ni planificación)
+function isProjClosed(p) {
+  const st = String(p && p.adoState || '').toLowerCase().trim();
+  return st==='closed' || st==='done' || st==='removed' || st==='completed' || st==='cerrado';
+}
+
+
 function loadDevTeam() {
   // Version bump: forces the corrected default team to load once,
   // overriding any stale team saved in the browser from earlier sessions.
@@ -258,7 +265,7 @@ function renderSprintScreen() {
 
   // ═══ 1) LISTA COMPLETA (sin filtros): determina orden y estado ABSOLUTOS ═══
   const fullSorted = portfolioData
-    .filter(p => p.horas !== null && p.horas !== undefined)
+    .filter(p => p.horas !== null && p.horas !== undefined && !isProjClosed(p))
     .sort((a, b) => (b.sf || 0) - (a.sf || 0));
   const fCortos = fullSorted.filter(p => p.horas < thrS);
   const fMedios = fullSorted.filter(p => p.horas >= thrS && p.horas < thrM);
@@ -719,7 +726,7 @@ function renderPriorityAnalysis() {
   const cap  = getDevCapacity();
 
   // Orden y estado ABSOLUTOS por score dentro de cada pool
-  const sorted = portfolioData.filter(p=>p.horas!=null).sort((a,b)=>(b.sf||0)-(a.sf||0));
+  const sorted = portfolioData.filter(p=>p.horas!=null && !isProjClosed(p)).sort((a,b)=>(b.sf||0)-(a.sf||0));
   const pools = {
     corto: sorted.filter(p=>p.horas<thrS),
     medio: sorted.filter(p=>p.horas>=thrS&&p.horas<thrM),
@@ -734,12 +741,12 @@ function renderPriorityAnalysis() {
   });
 
   // ═══ TODOS los proyectos Prioridad 1 de ADO, ordenados por score ═══
-  const p1 = portfolioData.filter(p=>parseInt(p.adoPriority)===1)
+  const p1 = portfolioData.filter(p=>parseInt(p.adoPriority)===1 && !isProjClosed(p))
     .sort((a,b)=>(b.sf||0)-(a.sf||0));
   // "Remarcados": P1 cuyo scoring NO los coloca en marcha → la prioridad declarada no se sostiene por nota
   const p1Injustificados = p1.filter(p=>!enMarcha.has(p.nom));
   // Inverso: en marcha por score pero sin P1 declarada
-  const marchaNoP1 = portfolioData.filter(p=>enMarcha.has(p.nom) && parseInt(p.adoPriority)!==1)
+  const marchaNoP1 = portfolioData.filter(p=>enMarcha.has(p.nom) && parseInt(p.adoPriority)!==1 && !isProjClosed(p))
     .sort((a,b)=>(b.sf||0)-(a.sf||0));
 
   const pf2 = d => { if(!d) return null; const x=new Date(d); return isNaN(x)?null:x.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}); };
@@ -816,7 +823,7 @@ function _buildSprintSnapshot() {
       planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom) startDates[t.proj.nom]=+t.startDate; });
     }
   } catch(e){}
-  const projects = portfolioData.filter(p=>p.horas!=null).map(function(p){
+  const projects = portfolioData.filter(p=>p.horas!=null && !isProjClosed(p)).map(function(p){
     return { nom:p.nom, sf:+(p.sf||0).toFixed(2), horas:p.horas, area:p.area||'',
       adoPriority:p.adoPriority||3, start:startDates[p.nom]||null,
       desc:(p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim().substring(0,400),
