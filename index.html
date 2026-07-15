@@ -1912,18 +1912,21 @@
 
   <!-- ═══ PRÓXIMAMENTE EN PRO (P1 + estado ADO > 6) — fuera de planificación ═══ -->
   <div id="sprint-proxpro-wrap" style="display:none;margin-bottom:22px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div style="width:10px;height:10px;border-radius:50%;background:#7A5AF0"></div>
-      <div style="font-weight:800;font-size:12px;color:#5B3FD6">🚀 PRÓXIMAMENTE EN PRO</div>
-      <div style="font-size:9px;color:var(--ink4)">— Prioridad 1 en fase avanzada (fuera de la planificación de fechas)</div>
+    <div onclick="toggleProxPro()" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none">
+      <div style="width:14px;height:14px;border-radius:50%;background:#7A5AF0"></div>
+      <div style="font-weight:800;font-size:19px;color:#5B3FD6;letter-spacing:-.01em">🚀 Próximamente en PRO</div>
+      <div style="font-size:10px;color:var(--ink4)">— Prioridad 1 en fase avanzada (fuera de la planificación de fechas)</div>
+      <div id="proxpro-toggle" style="margin-left:auto;font-size:11px;color:#5B3FD6;font-weight:700">▾ ocultar</div>
     </div>
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:16px">
-      <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d3);margin-bottom:6px;text-transform:uppercase">Corto</div><div id="proxpro-col-corto" style="display:flex;flex-direction:column;gap:8px"></div></div>
-      <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d4);margin-bottom:6px;text-transform:uppercase">Medio</div><div id="proxpro-col-medio" style="display:flex;flex-direction:column;gap:8px"></div></div>
-      <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d1);margin-bottom:6px;text-transform:uppercase">Largo</div><div id="proxpro-col-largo" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    <div id="proxpro-body">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:16px">
+        <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d3);margin-bottom:6px;text-transform:uppercase">Corto</div><div id="proxpro-col-corto" style="display:flex;flex-direction:column;gap:8px"></div></div>
+        <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d4);margin-bottom:6px;text-transform:uppercase">Medio</div><div id="proxpro-col-medio" style="display:flex;flex-direction:column;gap:8px"></div></div>
+        <div style="min-width:0"><div style="font-size:10px;font-weight:700;color:var(--d1);margin-bottom:6px;text-transform:uppercase">Largo</div><div id="proxpro-col-largo" style="display:flex;flex-direction:column;gap:8px"></div></div>
+      </div>
     </div>
-    <div style="border-top:2px solid #EEF0F4;margin-top:18px"></div>
-    <div style="font-weight:800;font-size:12px;color:var(--d3);margin-top:16px">🔧 EN MARCHA</div>
+    <div style="border-top:2px solid #EEF0F4;margin-top:22px"></div>
+    <div style="font-weight:800;font-size:19px;color:var(--d3);margin-top:16px;letter-spacing:-.01em">🔧 En Marcha</div>
   </div>
 
   <!-- Sprint columns: Corto / Medio / Largo -->

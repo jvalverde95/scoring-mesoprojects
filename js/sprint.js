@@ -24,6 +24,16 @@ function isProxPro(p) {
   return parseInt(m[1]) > 6;
 }
 
+// Colapsar/expandir la sección "Próximamente en PRO"
+function toggleProxPro() {
+  var body = document.getElementById('proxpro-body');
+  var tog = document.getElementById('proxpro-toggle');
+  if (!body) return;
+  var hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  if (tog) tog.textContent = hidden ? '▾ ocultar' : '▸ mostrar';
+}
+
 
 function loadDevTeam() {
   // Version bump: forces the corrected default team to load once,
@@ -1008,7 +1018,13 @@ function renderSprintSnapshotView() {
   const thrS = snap.thr.s, thrM = snap.thr.m, cap = snap.cap;
   // ═══ 1) Lista COMPLETA: estado en-marcha y orden ABSOLUTOS (independientes del filtro) ═══
   // Los "Próximamente en PRO" salen de los pools (van a su propia sección)
-  const fullSorted = snap.projects.slice().filter(function(p){ return !p.proxPro; }).sort((a,b)=>b.sf-a.sf);
+  const _snapIsPx = function(p){
+    if (p.proxPro) return true;
+    if (parseInt(p.adoPriority) !== 1) return false;
+    var m = String(p.adoState||'').trim().match(/^\s*(\d+)\s*[-–—]/);
+    return !!(m && parseInt(m[1]) > 6);
+  };
+  const fullSorted = snap.projects.slice().filter(function(p){ return !_snapIsPx(p); }).sort((a,b)=>b.sf-a.sf);
   const fCortos = fullSorted.filter(p=>p.horas<thrS);
   const fMedios = fullSorted.filter(p=>p.horas>=thrS&&p.horas<thrM);
   const fLargos = fullSorted.filter(p=>p.horas>=thrM);
@@ -1111,7 +1127,14 @@ function renderSprintSnapshotView() {
       })()
     +(function(){
         // ═══ PRÓXIMAMENTE EN PRO (P1 + estado > 6), fuera de planificación ═══
-        var prox = snap.projects.filter(function(p){ return p.proxPro && (!fArea || p.area===fArea); })
+        // Detecta con el flag guardado o, si no viene, recalcula desde adoState/adoPriority
+        var _isPx = function(p){
+          if (p.proxPro) return true;
+          if (parseInt(p.adoPriority) !== 1) return false;
+          var m = String(p.adoState||'').trim().match(/^\s*(\d+)\s*[-–—]/);
+          return !!(m && parseInt(m[1]) > 6);
+        };
+        var prox = snap.projects.filter(function(p){ return _isPx(p) && (!fArea || p.area===fArea); })
           .sort(function(a,b){ return b.sf-a.sf; });
         if (!prox.length) return '';
         var byPool = {corto:[],medio:[],largo:[]};
@@ -1140,18 +1163,20 @@ function renderSprintSnapshotView() {
             +(arr.length?arr.map(proxCard).join(''):'<div style="font-size:9px;color:#BBB;text-align:center;padding:10px 0">—</div>')+'</div>';
         };
         return '<div style="margin-bottom:20px">'
-          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-            +'<div style="width:10px;height:10px;border-radius:50%;background:#7A5AF0"></div>'
-            +'<div style="font-weight:800;font-size:12px;color:#5B3FD6">🚀 PRÓXIMAMENTE EN PRO</div>'
-            +'<div style="font-size:9px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
+          +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none">'
+            +'<div style="width:14px;height:14px;border-radius:50%;background:#7A5AF0"></div>'
+            +'<div style="font-weight:800;font-size:19px;color:#5B3FD6;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="font-size:10px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
+            +'<div style="margin-left:auto;font-size:11px;color:#5B3FD6;font-weight:700">'+(window._snapProxHidden?'▸ mostrar':'▾ ocultar')+'</div>'
           +'</div>'
-          +'<div style="display:flex;gap:14px;align-items:flex-start">'
-            +proxCol('⚡ Cortos', byPool.corto, '#C07800')
-            +proxCol('◉ Medios', byPool.medio, '#1848A0')
-            +proxCol('▣ Largos', byPool.largo, '#087B50')
-          +'</div>'
-          +'<div style="border-top:2px solid #EEF0F4;margin:16px 0 6px"></div>'
-          +'<div style="font-weight:800;font-size:12px;color:var(--d3);margin-bottom:10px">🔧 EN MARCHA</div>'
+          +(window._snapProxHidden ? '' :
+            '<div style="display:flex;gap:14px;align-items:flex-start">'
+              +proxCol('⚡ Cortos', byPool.corto, '#C07800')
+              +proxCol('◉ Medios', byPool.medio, '#1848A0')
+              +proxCol('▣ Largos', byPool.largo, '#087B50')
+            +'</div>')
+          +'<div style="border-top:2px solid #EEF0F4;margin:20px 0 6px"></div>'
+          +'<div style="font-weight:800;font-size:19px;color:var(--d3);margin-bottom:12px;letter-spacing:-.01em">🔧 En Marcha</div>'
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
