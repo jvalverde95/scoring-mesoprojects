@@ -461,22 +461,18 @@ function renderSprintScreen() {
     const proxAll = portfolioData
       .filter(p => isProxPro(p) && (!fArea || p.area === fArea))
       .sort((a,b) => (b.sf||0) - (a.sf||0));
-    if (proxAll.length) {
-      proxWrap.style.display = 'block';
-      const byPool = { corto:[], medio:[], largo:[] };
-      proxAll.forEach(p => {
-        const h = p.horas || 0;
-        const pk = h < thrS ? 'corto' : (h < thrM ? 'medio' : 'largo');
-        byPool[pk].push(p);
-      });
-      ['corto','medio','largo'].forEach(pk => {
-        setHTML('proxpro-col-'+pk, byPool[pk].length
-          ? byPool[pk].map(p => renderProxCard(p)).join('')
-          : '<div style="font-size:9px;color:var(--ink4);text-align:center;padding:12px 0;opacity:.6">—</div>');
-      });
-    } else {
-      proxWrap.style.display = 'none';
-    }
+    proxWrap.style.display = 'block';   // la sección SIEMPRE es visible (cabecera + toggle)
+    const byPool = { corto:[], medio:[], largo:[] };
+    proxAll.forEach(p => {
+      const h = p.horas || 0;
+      const pk = h < thrS ? 'corto' : (h < thrM ? 'medio' : 'largo');
+      byPool[pk].push(p);
+    });
+    ['corto','medio','largo'].forEach(pk => {
+      setHTML('proxpro-col-'+pk, byPool[pk].length
+        ? byPool[pk].map(p => renderProxCard(p)).join('')
+        : '<div style="font-size:9px;color:var(--ink4);text-align:center;padding:12px 0;opacity:.6">' + (proxAll.length ? '—' : 'Sin proyectos en esta fase') + '</div>');
+    });
   }
 
   // ── Próximo día libre GLOBAL: fin de toda la cola planificada ──
@@ -955,6 +951,11 @@ function _buildSprintSnapshot() {
   try {
     var _tlg = (typeof planBuildTimeline === 'function') ? planBuildTimeline() : [];
     _tlg.forEach(function(t){ var e=+t.endDate; if(e>globalEnd) globalEnd=e; });
+    if (!globalEnd) {
+      // Fallback sin equipo configurado: estimar por horas totales / ~30h por semana
+      var _th = portfolioData.reduce(function(sm,p){ return sm+((p.horas>0&&!isProjClosed(p))?p.horas:0); }, 0);
+      if (_th > 0) globalEnd = Date.now() + Math.ceil(_th/30)*7*86400000;
+    }
   } catch(e){}
   return {
     v: 1,
@@ -1102,9 +1103,15 @@ function renderSprintSnapshotView() {
         +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
     +(function(){
-        if (!snap.globalEnd) return '';
-        const d=new Date(snap.globalEnd);
-        const weeks=Math.max(0,Math.ceil((snap.globalEnd-Date.now())/(7*86400000)));
+        var ge = snap.globalEnd;
+        if (!ge) {
+          // Fallback para enlaces sin el dato: estimar con horas totales / ~30h por semana
+          var th = snap.projects.reduce(function(sm,p){ return sm+(p.horas||0); }, 0);
+          if (th > 0) ge = Date.now() + Math.ceil(th/30)*7*86400000;
+        }
+        if (!ge) return '';
+        const d=new Date(ge);
+        const weeks=Math.max(0,Math.ceil((ge-Date.now())/(7*86400000)));
         return '<div style="padding:10px 14px;background:#FAF7F2;border:1px solid #E8DCC8;border-radius:8px;margin-bottom:14px;font-size:11px;color:#1A1A1A">'
           +'📅 Próximo día libre del equipo: <b style="font-size:13px">'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
           +' <span style="color:#A8873C;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
@@ -1134,10 +1141,10 @@ function renderSprintSnapshotView() {
           var m = String(p.adoState||'').trim().match(/^\s*(\d+)\s*[-–—]/);
           return !!(m && parseInt(m[1]) > 6);
         };
-        if (window._snapProxHidden === undefined) window._snapProxHidden = true;  // oculto por defecto
+        if (window._snapProxHidden === undefined) window._snapProxHidden = true;  // plegado por defecto
         var prox = snap.projects.filter(function(p){ return _isPx(p) && (!fArea || p.area===fArea); })
           .sort(function(a,b){ return b.sf-a.sf; });
-        if (!prox.length) return '';
+        // La cabecera SIEMPRE se muestra (plegada por defecto); el cuerpo, al desplegar
         var byPool = {corto:[],medio:[],largo:[]};
         prox.forEach(function(p){ var h=p.horas||0; byPool[h<thrS?'corto':(h<thrM?'medio':'largo')].push(p); });
         var proxCard = function(p){
@@ -1166,16 +1173,18 @@ function renderSprintSnapshotView() {
         return '<div style="margin-bottom:20px">'
           +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none">'
             +'<div style="width:14px;height:14px;border-radius:50%;background:#C4974A"></div>'
-            +'<div style="font-weight:800;font-size:19px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="font-weight:800;font-size:19px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO ('+prox.length+')</div>'
             +'<div style="font-size:10px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
             +'<div style="margin-left:auto;font-size:11px;color:#8A6D3B;font-weight:700">'+(window._snapProxHidden?'▸ mostrar':'▾ ocultar')+'</div>'
           +'</div>'
           +(window._snapProxHidden ? '' :
-            '<div style="display:flex;gap:14px;align-items:flex-start">'
-              +proxCol('⚡ Cortos', byPool.corto, '#8A6D3B')
-              +proxCol('◉ Medios', byPool.medio, '#4A5568')
-              +proxCol('▣ Largos', byPool.largo, '#1A1A1A')
-            +'</div>')
+            (prox.length
+              ? '<div style="display:flex;gap:14px;align-items:flex-start">'
+                +proxCol('⚡ Cortos', byPool.corto, '#8A6D3B')
+                +proxCol('◉ Medios', byPool.medio, '#4A5568')
+                +proxCol('▣ Largos', byPool.largo, '#1A1A1A')
+              +'</div>'
+              : '<div style="font-size:10px;color:#A0A09C;padding:8px 0 4px">No hay proyectos de Prioridad 1 en fase avanzada ahora mismo.</div>'))
           +'<div style="border-top:2px solid #EEF0F4;margin:20px 0 6px"></div>'
           +'<div style="font-weight:800;font-size:19px;color:#1A1A1A;margin-bottom:12px;letter-spacing:-.01em">🔧 En Marcha</div>'
         +'</div>';
