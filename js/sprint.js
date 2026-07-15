@@ -323,7 +323,8 @@ function renderSprintScreen() {
 
   const renderCard = (p, isActive, ordNum) => {
     const cl = clsf(p.sf || 0);
-    const border = isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)';
+    const _isP1 = parseInt(p.adoPriority) === 1;   // Prioridad 1 de ADO → marcado en rojo
+    const border = _isP1 ? '2px solid #CC1F26' : (isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)');
     const opacity = isActive ? '1' : '0.65';
     const _enCurso = !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
     const tag = _enCurso
@@ -332,7 +333,7 @@ function renderSprintScreen() {
         ? '<span style="font-size:8px;background:var(--d3);color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">EN MARCHA</span>'
         : '<span style="font-size:8px;background:var(--surf);color:var(--ink4);padding:2px 6px;border-radius:20px">PRÓXIMO</span>');
     return `
-      <div style="padding:10px 12px;background:#fff;border-radius:8px;border:${border};
+      <div style="padding:10px 12px;background:${_isP1?'#FFF7F6':'#fff'};border-radius:8px;border:${border};
         cursor:pointer;opacity:${opacity};margin-bottom:6px"
         title="${_liveTip(p, isActive)}"
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))">
@@ -916,8 +917,9 @@ function renderSprintSnapshotView() {
   };
   const card = (p, active, ordNum)=>{
     const cl = clsf(p.sf);
-    return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
-      +(active?'2px solid var(--d3)':'1px dashed var(--b2)')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
+    const _isP1 = parseInt(p.adoPriority) === 1;   // Prioridad 1 → marcado en rojo
+    return '<div style="padding:10px 12px;background:'+(_isP1?'#FFF7F6':'#fff')+';border-radius:8px;border:'
+      +(_isP1?'2px solid #CC1F26':(active?'2px solid var(--d3)':'1px dashed var(--b2)'))+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
         +'<div style="display:flex;gap:4px;align-items:center">'
           +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
