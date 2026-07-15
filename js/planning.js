@@ -114,131 +114,117 @@ function planBuildTimeline() {
   if (!devTeam || !devTeam.length) return [];
 
   var today = new Date(); today.setHours(0,0,0,0);
+  var _od = (typeof getOverdueDays === 'function') ? getOverdueDays() : 10;
 
-  // Build availability map per dev+pool
+  // Disponibilidad por desarrollador y pool (cuándo queda libre para el siguiente proyecto)
   var avail = {};
   devTeam.forEach(function(dev) {
-    avail[dev.name] = {corto:new Date(today), medio:new Date(today), largo:new Date(today)};
+    avail[dev.name] = { corto:new Date(today), medio:new Date(today), largo:new Date(today) };
   });
 
-  // ── Proyectos EN CURSO según ADO (Custom.MPGStartDate / MPGTaskStartDate) ──
-  // Solo estos pueden adelantarse a otros con mayor score. El resto se planifica
-  // estrictamente por score. Si MPGStartDate está vacío → planificación normal.
-  var adoActive = (portfolioData||[])
-    .filter(function(p){ return (p.horas||0)>0 && p.adoStartDate && String(p.adoStartDate).trim()!=='' && !(typeof isProjClosed==='function' && isProjClosed(p)); })
-    .sort(function(a,b){ return new Date(a.adoStartDate) - new Date(b.adoStartDate); });
-  var adoActiveNoms = {};
-  adoActive.forEach(function(p){ adoActiveNoms[p.nom]=true; });
-
-  // Block for active (in-progress) projects — solo los marcados manualmente que aún tengan sentido
+  // Proyectos marcados activos manualmente: bloquean disponibilidad
   activeProjects.forEach(function(ap) {
     if (ap.endDate && avail[ap.devName] && avail[ap.devName][ap.pool]) {
-      var end = new Date(ap.endDate+'T00:00:00');
-      if (end > avail[ap.devName][ap.pool]) avail[ap.devName][ap.pool]=new Date(end);
+      var end = new Date(ap.endDate + 'T00:00:00');
+      if (end > avail[ap.devName][ap.pool]) avail[ap.devName][ap.pool] = new Date(end);
     }
   });
+  var activeNoms = {}; activeProjects.forEach(function(a){ activeNoms[a.nom] = true; });
+  var lockMap = {}; lockedAssignments.forEach(function(l){ lockMap[l.nom] = l; });
 
-  // Index locked assignments by nom
-  var lockMap = {};
-  lockedAssignments.forEach(function(l){ lockMap[l.nom]=l; });
+  var enCursoOf = function(p){ return !!(p.adoStartDate && String(p.adoStartDate).trim() !== ''); };
 
-  // Queue: proyectos con horas. Primero los EN CURSO (por fecha ADO), luego el resto por score.
-  var activeNoms = {};
-  activeProjects.forEach(function(a){ activeNoms[a.nom]=true; });
-  var queueRest = (portfolioData||[])
-    .filter(function(p){ return (p.horas||0)>0 && !activeNoms[p.nom] && !adoActiveNoms[p.nom] && pPool(p) && !(typeof isProjClosed==='function' && isProjClosed(p)); })
-    .slice().sort(function(a,b){ return (b.sf||0)-(a.sf||0); });
-  // Los en curso (ADO) van SIEMPRE delante, ordenados por su fecha de inicio real
-  var queue = adoActive.filter(function(p){ return pPool(p); }).concat(queueRest);
+  // ══ COLA ÚNICA, ORDENADA ESTRICTAMENTE POR SCORE (desc) ══
+  // Los proyectos EN CURSO (fecha de ADO) se planifican en su fecha real, pero NO alteran
+  // el orden por score del resto: se limitan a ocupar a su desarrollador desde su fecha.
+  var queue = (portfolioData||[])
+    .filter(function(p){
+      return (p.horas||0) > 0
+        && !activeNoms[p.nom]
+        && pPool(p)
+        && !(typeof isProjClosed === 'function' && isProjClosed(p));
+    })
+    .slice()
+    .sort(function(a,b){ return (b.sf||0) - (a.sf||0); });   // ← ORDEN POR NOTA, SIEMPRE
 
   var timeline = [];
+
+  // Garantiza que, DENTRO DE CADA POOL, un proyecto no arranque antes que el anterior
+  // de la cola de ese pool (orden por score). Entre pools distintos las fechas pueden
+  // variar según la disponibilidad de los desarrolladores; eso es correcto.
+  var prevStartPool = { corto:new Date(today), medio:new Date(today), largo:new Date(today) };
 
   queue.forEach(function(p) {
     var pool = pPool(p);
     if (!pool) return;
 
-    // Locked override
+    // ── Asignación bloqueada (drag manual en el calendario) ──
     if (lockMap[p.nom]) {
       var l = lockMap[p.nom];
-      var devObj = devTeam.find(function(d){ return d.name===l.devName; })||{};
-      var wh = pDevHours(devObj)[pool]||1;
-      var item = {
-        proj:p, pool:pool, devName:l.devName,
-        startDate: new Date(l.startDate),
-        endDate:   new Date(l.endDate),
-        hoursPerWeek: wh,
-        totalHours: p.horas,
-        weeks: +(p.horas/wh).toFixed(1),
-        locked: true
-      };
-      timeline.push(item);
-      // Update avail so subsequent auto-assigned don't overlap
-      if (avail[l.devName] && avail[l.devName][pool]) {
-        var le = new Date(l.endDate);
-        if (le > avail[l.devName][pool]) avail[l.devName][pool]=le;
-      }
+      var devObjL = devTeam.find(function(d){ return d.name === l.devName; }) || {};
+      var whL = pDevHours(devObjL)[pool] || 1;
+      var sL = new Date(l.startDate), eL = new Date(l.endDate);
+      timeline.push({
+        proj:p, pool:pool, devName:l.devName, startDate:sL, endDate:eL,
+        hoursPerWeek:whL, totalHours:p.horas, weeks:+(p.horas/whL).toFixed(1),
+        locked:true, enCurso:enCursoOf(p), manualDev:true
+      });
+      if (avail[l.devName] && eL > avail[l.devName][pool]) avail[l.devName][pool] = new Date(eL);
+      if (sL > prevStartPool[pool]) prevStartPool[pool] = new Date(sL);
       return;
     }
 
-    // Auto-assign: best dev = most hours in pool, earliest available
-    // ── Si el proyecto tiene un dev asignado manualmente, usar ESE dev ──
-    var bestDev=null, bestStart=null, bestWh=0;
-    var manualName = p.assignedDev && String(p.assignedDev).trim() !== '' ? p.assignedDev : null;
+    // ── Elegir desarrollador ──
+    // Si hay dev asignado manualmente y tiene capacidad en el pool, usarlo; si no, automático.
+    var dev = null, wh = 0;
+    var manualName = (p.assignedDev && String(p.assignedDev).trim() !== '') ? p.assignedDev : null;
     if (manualName) {
       var md = devTeam.find(function(d){ return d.name === manualName; });
       var mwh = md ? pDevHours(md)[pool] : 0;
-      if (md && mwh > 0) {
-        bestDev = md;
-        bestStart = new Date((avail[md.name]||{})[pool] || new Date(today));
-        bestWh = mwh;
-      }
-      // Si el dev asignado no tiene capacidad en este pool, cae a automático (abajo)
+      if (md && mwh > 0) { dev = md; wh = mwh; }
     }
-    if (!bestDev) devTeam.forEach(function(dev) {
-      var wh = pDevHours(dev)[pool];
-      if (wh<=0) return;
-      var da = (avail[dev.name]||{})[pool] || new Date(today);
-      if (!bestDev || da<bestStart || (da.getTime()===bestStart.getTime() && wh>bestWh)) {
-        bestDev=dev; bestStart=new Date(da); bestWh=wh;
-      }
-    });
-    if (!bestDev) return;
+    if (!dev) {
+      // Automático: el desarrollador que antes queda libre en este pool (a igualdad, más horas/sem)
+      devTeam.forEach(function(d) {
+        var w = pDevHours(d)[pool];
+        if (w <= 0) return;
+        var da = avail[d.name][pool];
+        if (!dev || da < avail[dev.name][pool] || (da.getTime() === avail[dev.name][pool].getTime() && w > wh)) {
+          dev = d; wh = w;
+        }
+      });
+    }
+    if (!dev || wh <= 0) return;
 
-    var days  = Math.ceil((p.horas/bestWh)*5);
-    // Si ADO ha fijado fecha de inicio (proyecto EN CURSO), respetarla; si no, planificación normal
-    var hasAdoStart = p.adoStartDate && String(p.adoStartDate).trim() !== '';
+    var days = Math.ceil((p.horas / wh) * 5);
     var start, end;
-    if (hasAdoStart) {
-      // EN CURSO: el inicio es la fecha real de ADO. El fin nunca puede quedar en el pasado:
-      // si por fechas antiguas el fin calculado ya pasó, asumimos que sigue en curso y
-      // reservamos al dev desde hoy el tiempo restante estimado (mínimo 2 días).
+
+    if (enCursoOf(p)) {
+      // EN CURSO: inicio real de ADO. Fin nunca en el pasado (regla +N días si venció).
       start = new Date(p.adoStartDate);
       end = pAddDays(new Date(start), days);
-      if (end < today) {
-        // Inicio + horas dan fecha pasada pero ADO dice que sigue en curso (no cerrado):
-        // proponer entrega a HOY + N días naturales (configurable en Configuración)
-        var _od = (typeof getOverdueDays === 'function') ? getOverdueDays() : 10;
-        end = new Date(+today + _od * 86400000);
-      }
+      if (end < today) end = new Date(+today + _od * 86400000);
     } else {
-      // Planificación normal: nunca programar en el pasado
-      var s0 = new Date(bestStart);
+      // NORMAL: arranca cuando su dev queda libre, pero NUNCA antes que el proyecto
+      // anterior de la cola (respeta el orden por score) ni en el pasado.
+      var s0 = new Date(avail[dev.name][pool]);
       if (s0 < today) s0 = new Date(today);
+      // No adelantar a un proyecto de MAYOR score DEL MISMO POOL
+      if (s0 < prevStartPool[pool]) s0 = new Date(prevStartPool[pool]);
       start = pNextWork(s0);
       end = pAddDays(new Date(start), days);
     }
 
     timeline.push({
-      proj:p, pool:pool, devName:bestDev.name,
-      startDate:start, endDate:end, enCurso: !!hasAdoStart,
-      hoursPerWeek:bestWh, totalHours:p.horas,
-      weeks:+(p.horas/bestWh).toFixed(1), locked:false,
-      manualDev: !!manualName
+      proj:p, pool:pool, devName:dev.name, startDate:start, endDate:end,
+      hoursPerWeek:wh, totalHours:p.horas, weeks:+(p.horas/wh).toFixed(1),
+      locked:false, enCurso:enCursoOf(p), manualDev:!!manualName
     });
 
-    // La disponibilidad del dev nunca retrocede (evita planificar en el pasado)
-    var newAvail = new Date(end);
-    if (newAvail > avail[bestDev.name][pool]) avail[bestDev.name][pool] = newAvail;
+    // Ocupar al desarrollador hasta el fin (la disponibilidad nunca retrocede)
+    if (end > avail[dev.name][pool]) avail[dev.name][pool] = new Date(end);
+    // El siguiente proyecto del MISMO POOL (menor score) no puede empezar antes que este
+    if (start > prevStartPool[pool]) prevStartPool[pool] = new Date(start);
   });
 
   return timeline;
