@@ -1061,12 +1061,11 @@ function renderSprintSnapshotView() {
   };
   const card = (p, active, ordNum)=>{
     const cl = clsf(p.sf);
-    const _isP1 = parseInt(p.adoPriority) === 1;   // Prioridad 1 → marcado en rojo
-    return '<div style="padding:10px 12px;background:'+(_isP1?'#FFF7F6':'#fff')+';border-radius:8px;border:'
-      +(_isP1?'2px solid #CC1F26':(active?'2px solid var(--d3)':'1px dashed var(--b2)'))+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
+    return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
+      +(active?'1.5px solid #1A1A1A':'1px solid #E5E5E3')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
         +'<div style="display:flex;gap:4px;align-items:center">'
-          +'<span style="font-size:8px;background:'+(active?'var(--d3)':'var(--surf)')+';color:'+(active?'#fff':'var(--ink4)')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
+          +'<span style="font-size:8px;background:'+(active?'#1A1A1A':'#F2F2F0')+';color:'+(active?'#fff':'#8A8A86')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
         +'</div>'
         +'<div style="text-align:right"><div style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif;line-height:1">'+p.sf.toFixed(1)+'</div>'+(ordNum?'<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden '+ordNum+'</div>':'')+'</div>'
       +'</div>'
@@ -1077,7 +1076,7 @@ function renderSprintSnapshotView() {
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
         +'<span style="font-size:8px;color:var(--ink4)">'+(p.adoStart?'🟢 En curso desde:':(active?'🟢 Inicio:':'📅 Inicio est.:'))+'</span>'
-        +'<span style="font-size:11px;font-weight:800;color:'+((p.adoStart||active)?'var(--d3)':'var(--ink)')+'">'+(p.adoStart?pf(+new Date(p.adoStart)):pf(p.start))+'</span>'
+        +'<span style="font-size:11px;font-weight:800;color:'+((p.adoStart||active)?'#8A6D3B':'#1A1A1A')+'">'+(p.adoStart?pf(+new Date(p.adoStart)):pf(p.start))+'</span>'
       +'</div></div>';
   };
 
@@ -1094,20 +1093,21 @@ function renderSprintSnapshotView() {
 
   const fecha = new Date(snap.ts).toLocaleString('es-ES',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   cont.innerHTML =
-    '<div style="background:linear-gradient(135deg,#16243E,#1C2B4A);color:#fff;padding:16px 20px;border-radius:10px;margin-bottom:16px">'
+    '<div style="background:#fff;color:#1A1A1A;padding:20px 22px;border:1px solid #E5E5E3;border-bottom:3px solid #C4974A;border-radius:10px;margin-bottom:16px">'
+      +'<div style="font-size:15px;font-weight:800;letter-spacing:.01em;color:#1A1A1A;margin-bottom:8px">mesoestetic<span style="font-size:9px;vertical-align:super">®</span></div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
-        +'<div><div style="font-size:18px;font-weight:800">Proyectos digitales de eficiencia y optimización de operativa</div>'
-        +'<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">Vista compartida · snapshot del '+fecha+'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px;font-style:italic">Los proyectos en <b style="color:rgba(255,255,255,.85)">negrita</b> son los que están actualmente en marcha</div></div>'
+        +'<div><div style="font-size:20px;font-weight:300;letter-spacing:-.01em;color:#1A1A1A">Proyectos digitales de eficiencia y optimización de operativa</div>'
+        +'<div style="font-size:11px;color:#8A8A86;margin-top:2px">Vista compartida · snapshot del '+fecha+'</div>'
+        +'<div style="font-size:10px;color:#A0A09C;margin-top:4px;font-style:italic">Los proyectos en <b style="color:#1A1A1A">negrita</b> son los que están actualmente en marcha</div></div>'
         +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
     +(function(){
         if (!snap.globalEnd) return '';
         const d=new Date(snap.globalEnd);
         const weeks=Math.max(0,Math.ceil((snap.globalEnd-Date.now())/(7*86400000)));
-        return '<div style="padding:10px 14px;background:#ECF8F3;border:1px solid rgba(8,123,80,.25);border-radius:8px;margin-bottom:14px;font-size:11px;color:#0A5C3E">'
+        return '<div style="padding:10px 14px;background:#FAF7F2;border:1px solid #E8DCC8;border-radius:8px;margin-bottom:14px;font-size:11px;color:#1A1A1A">'
           +'📅 Próximo día libre del equipo: <b style="font-size:13px">'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
-          +' <span style="color:#6BA98E;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
+          +' <span style="color:#A8873C;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
         +'</div>';
       })()
     +(function(){
@@ -1134,6 +1134,7 @@ function renderSprintSnapshotView() {
           var m = String(p.adoState||'').trim().match(/^\s*(\d+)\s*[-–—]/);
           return !!(m && parseInt(m[1]) > 6);
         };
+        if (window._snapProxHidden === undefined) window._snapProxHidden = true;  // oculto por defecto
         var prox = snap.projects.filter(function(p){ return _isPx(p) && (!fArea || p.area===fArea); })
           .sort(function(a,b){ return b.sf-a.sf; });
         if (!prox.length) return '';
@@ -1141,20 +1142,20 @@ function renderSprintSnapshotView() {
         prox.forEach(function(p){ var h=p.horas||0; byPool[h<thrS?'corto':(h<thrM?'medio':'largo')].push(p); });
         var proxCard = function(p){
           var pend = (p.adoAssigned && String(p.adoAssigned).trim()!=='') ? p.adoAssigned : 'Sin asignar';
-          return '<div style="padding:9px 11px;background:#F7F5FE;border:2px solid #7A5AF0;border-radius:8px;margin-bottom:6px">'
+          return '<div style="padding:9px 11px;background:#FAF7F2;border:2px solid #C4974A;border-radius:8px;margin-bottom:6px">'
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
-              +'<span style="font-size:8px;background:#7A5AF0;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
+              +'<span style="font-size:8px;background:#C4974A;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
               +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
             +'</div>'
             +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">'+p.nom+'</div>'
             +'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">'
-              +'<span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>'
-              +(p.adoState?'<span style="font-size:8px;background:#EDE9FB;color:#5B3FD6;padding:2px 6px;border-radius:4px;font-weight:600">'+p.adoState+'</span>':'')
+              +'<span style="font-size:8px;background:#F3EAD9;color:#8A6D3B;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>'
+              +(p.adoState?'<span style="font-size:8px;background:#F3EAD9;color:#8A6D3B;padding:2px 6px;border-radius:4px;font-weight:600">'+p.adoState+'</span>':'')
               +'<span style="font-size:8px;background:#F0F0F0;color:#777;padding:2px 6px;border-radius:4px">'+(p.horas!=null?p.horas+'h':'—')+'</span>'
             +'</div>'
-            +'<div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E4DEFA">'
+            +'<div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E8DCC8">'
               +'<span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>'
-              +'<span style="font-size:9px;font-weight:800;color:#5B3FD6">'+pend+'</span>'
+              +'<span style="font-size:9px;font-weight:800;color:#8A6D3B">'+pend+'</span>'
             +'</div>'
           +'</div>';
         };
@@ -1164,25 +1165,25 @@ function renderSprintSnapshotView() {
         };
         return '<div style="margin-bottom:20px">'
           +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none">'
-            +'<div style="width:14px;height:14px;border-radius:50%;background:#7A5AF0"></div>'
-            +'<div style="font-weight:800;font-size:19px;color:#5B3FD6;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="width:14px;height:14px;border-radius:50%;background:#C4974A"></div>'
+            +'<div style="font-weight:800;font-size:19px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
             +'<div style="font-size:10px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
-            +'<div style="margin-left:auto;font-size:11px;color:#5B3FD6;font-weight:700">'+(window._snapProxHidden?'▸ mostrar':'▾ ocultar')+'</div>'
+            +'<div style="margin-left:auto;font-size:11px;color:#8A6D3B;font-weight:700">'+(window._snapProxHidden?'▸ mostrar':'▾ ocultar')+'</div>'
           +'</div>'
           +(window._snapProxHidden ? '' :
             '<div style="display:flex;gap:14px;align-items:flex-start">'
-              +proxCol('⚡ Cortos', byPool.corto, '#C07800')
-              +proxCol('◉ Medios', byPool.medio, '#1848A0')
-              +proxCol('▣ Largos', byPool.largo, '#087B50')
+              +proxCol('⚡ Cortos', byPool.corto, '#8A6D3B')
+              +proxCol('◉ Medios', byPool.medio, '#4A5568')
+              +proxCol('▣ Largos', byPool.largo, '#1A1A1A')
             +'</div>')
           +'<div style="border-top:2px solid #EEF0F4;margin:20px 0 6px"></div>'
-          +'<div style="font-weight:800;font-size:19px;color:var(--d3);margin-bottom:12px;letter-spacing:-.01em">🔧 En Marcha</div>'
+          +'<div style="font-weight:800;font-size:19px;color:#1A1A1A;margin-bottom:12px;letter-spacing:-.01em">🔧 En Marcha</div>'
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
-      +col('⚡ Cortos', cortos, '#C07800','corto')
-      +col('◉ Medios', medios, '#1848A0','medio')
-      +col('▣ Largos', largos, '#087B50','largo')
+      +col('⚡ Cortos', cortos, '#8A6D3B','corto')
+      +col('◉ Medios', medios, '#4A5568','medio')
+      +col('▣ Largos', largos, '#1A1A1A','largo')
     +'</div>';
 
   // (análisis de prioridad NO se muestra en el snapshot)
