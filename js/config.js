@@ -136,3 +136,25 @@ function updateCfgTotal() {
     el.style.color = total === 100 ? 'var(--d3)' : 'var(--d1)';
   }
 }
+
+// ── Días a sumar para la entrega de proyectos en curso vencidos ──
+function getOverdueDays() {
+  var v = parseInt(localStorage.getItem('nexus_overdue_days'));
+  return (Number.isFinite(v) && v > 0) ? v : 10;
+}
+function saveOverdueDays() {
+  var inp = document.getElementById('cfg-overdue-days');
+  var v = parseInt(inp && inp.value) || 10;
+  if (v < 1) v = 1;
+  localStorage.setItem('nexus_overdue_days', v);
+  var lbl = document.getElementById('cfg-overdue-days-lbl');
+  if (lbl) lbl.textContent = v;
+  if (typeof recalcAndRenderPlanning === 'function') recalcAndRenderPlanning();
+  else if (typeof renderSprintScreen === 'function') renderSprintScreen();
+}
+function initOverdueDays() {
+  var inp = document.getElementById('cfg-overdue-days');
+  if (inp) inp.value = getOverdueDays();
+  var lbl = document.getElementById('cfg-overdue-days-lbl');
+  if (lbl) lbl.textContent = getOverdueDays();
+}

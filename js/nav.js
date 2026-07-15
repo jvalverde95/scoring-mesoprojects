@@ -59,7 +59,7 @@ function goStep(t) {
     if (navEl) navEl.classList.add('active');
     if (t === 'charts')   refreshChartsStep();
     if (t === 'pools')    refreshPoolsStep();
-    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); }
+    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
     if (t === 'sprint')     {

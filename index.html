@@ -970,6 +970,29 @@
           </div>
         </div>
 
+        <!-- ── Regla de entrega para proyectos en curso vencidos ──────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">Entrega de proyectos en curso vencidos</div>
+          <div class="cfg-sec-sub">
+            Si un proyecto ya tiene fecha de inicio en Azure DevOps y, según sus horas estimadas,
+            <strong>ya debería estar terminado</strong> (la entrega calculada cae en el pasado) pero
+            <strong>ADO indica que sigue en curso</strong> (no está cerrado), la app propone una nueva
+            fecha de entrega sumando estos días a partir de hoy.
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--ink3)">Entrega estimada =</span>
+            <span style="font-size:10px;font-weight:700;color:var(--d3)">hoy +</span>
+            <input type="number" id="cfg-overdue-days" value="10" min="1" max="120"
+              oninput="saveOverdueDays()" style="width:60px;text-align:center;font-size:12px;border:1px solid var(--b);border-radius:4px;padding:3px">
+            <span style="font-size:10px;color:var(--ink3)">días naturales</span>
+          </div>
+          <div style="margin-top:10px;padding:8px 12px;background:var(--surf);border-radius:6px;font-size:9px;color:var(--ink4);border:1px solid var(--b);line-height:1.6">
+            Ejemplo: un proyecto que empezó hace meses y cuya estimación ya venció, pero que sigue abierto
+            en ADO, mostrará como entrega estimada <strong>hoy + <span id="cfg-overdue-days-lbl">10</span> días</strong>.
+            No afecta a los proyectos con entrega aún futura ni a los ya cerrados.
+          </div>
+        </div>
+
         <!-- ── Developer capacity ──────────────────── -->
         <div class="cfg-section">
           <div class="cfg-sec-title">Capacidad del equipo</div>

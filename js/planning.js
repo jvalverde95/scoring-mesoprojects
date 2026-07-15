@@ -215,7 +215,10 @@ function planBuildTimeline() {
       start = new Date(p.adoStartDate);
       end = pAddDays(new Date(start), days);
       if (end < today) {
-        end = pAddDays(new Date(today), Math.max(2, Math.ceil(days * 0.25)));
+        // Inicio + horas dan fecha pasada pero ADO dice que sigue en curso (no cerrado):
+        // proponer entrega a HOY + N días naturales (configurable en Configuración)
+        var _od = (typeof getOverdueDays === 'function') ? getOverdueDays() : 10;
+        end = new Date(+today + _od * 86400000);
       }
     } else {
       // Planificación normal: nunca programar en el pasado

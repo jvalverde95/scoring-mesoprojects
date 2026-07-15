@@ -233,6 +233,7 @@ function renderSprintScreen() {
 
   // Lookup de fechas de inicio esperadas desde la planificación
   var _startDates = {};
+  var _endDates = {};
   // Tooltip enriquecido para las tarjetas (descripción, notas por dimensión, fechas, horas)
   var _DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
   var _liveTip = function(p, active){
@@ -253,7 +254,7 @@ function renderSprintScreen() {
   try {
     if (typeof planBuildTimeline === 'function') {
       planBuildTimeline().forEach(function(t){
-        if (t.proj && t.proj.nom) _startDates[t.proj.nom] = t.startDate;
+        if (t.proj && t.proj.nom) { _startDates[t.proj.nom] = t.startDate; _endDates[t.proj.nom] = t.endDate; }
       });
     }
   } catch(e){}
@@ -369,6 +370,12 @@ function renderSprintScreen() {
           <span style="font-size:8px;color:var(--ink4)">${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? '🟢 En curso desde:' : (isActive?'🟢 Inicio:':'📅 Inicio est.:')}</span>
           <span style="font-size:9px;font-weight:700;color:${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? 'var(--d3)' : (isActive?'var(--d3)':'var(--ink3)')}">
             ${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? pFmt(new Date(p.adoStartDate)) : (_startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—')}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;padding-top:3px">
+          <span style="font-size:8px;color:var(--ink4)">📦 Entrega est.:</span>
+          <span style="font-size:9px;font-weight:800;color:var(--ink)">
+            ${_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—'}
           </span>
         </div>
       </div>`;
