@@ -407,16 +407,34 @@ function renderSprintScreen() {
   // (la fecha en la que arrancaría un proyecto puesto el último de la cola)
   try {
     const elFree = document.getElementById('sprint-free-total');
-    if (elFree && typeof planBuildTimeline === 'function') {
-      const _tl = planBuildTimeline();
-      if (_tl.length) {
-        let maxEnd = 0;
+    if (elFree) {
+      let maxEnd = 0, nProj = 0;
+      // 1) Preferir el timeline real de planificación (respeta devs, en-curso, etc.)
+      if (typeof planBuildTimeline === 'function') {
+        const _tl = planBuildTimeline();
+        nProj = _tl.length;
         _tl.forEach(function(t){ const e = +t.endDate; if (e > maxEnd) maxEnd = e; });
+      }
+      // 2) Fallback si no hay equipo configurado: estimar por horas totales / capacidad simple
+      if (!maxEnd) {
+        const activos = portfolioData.filter(function(p){ return p.horas>0 && !(typeof isProjClosed==='function' && isProjClosed(p)); });
+        nProj = activos.length;
+        const totalH = activos.reduce(function(s,p){ return s + (p.horas||0); }, 0);
+        if (totalH > 0) {
+          // Suponer ~30 h/semana de capacidad si no hay equipo definido
+          const capH = (typeof pDevHours==='function' && (devTeam||[]).length)
+            ? (devTeam.reduce(function(s,d){ var w=pDevHours(d); return s+(w.corto||0)+(w.medio||0)+(w.largo||0); },0) || 30)
+            : 30;
+          const weeksNeeded = Math.ceil(totalH / capH);
+          maxEnd = Date.now() + weeksNeeded * 7 * 86400000;
+        }
+      }
+      if (maxEnd) {
         const d = new Date(maxEnd);
         const weeks = Math.max(0, Math.ceil((maxEnd - Date.now()) / (7*86400000)));
         elFree.innerHTML = '📅 Próximo día libre del equipo: <b style="color:#087B50;font-size:13px">'
           + d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}) + '</b>'
-          + ' <span style="color:#AAA;font-size:9px">· fin de toda la cola planificada ('+_tl.length+' proyectos, '+weeks+' semanas) — ahí empezaría un proyecto puesto el último</span>';
+          + ' <span style="color:#AAA;font-size:9px">· hay proyectos planificados hasta esa fecha ('+nProj+' proyectos, '+weeks+' semanas) — ahí empezaría uno puesto el último</span>';
       } else {
         elFree.innerHTML = '';
       }
@@ -854,12 +872,19 @@ function _buildSprintSnapshot() {
       if (vals.length) freeSlots[pool] = Math.min.apply(null, vals);
     });
   } catch(e){}
+  // Fecha global: fin de toda la cola planificada (para "próximo día libre del equipo")
+  var globalEnd = 0;
+  try {
+    var _tlg = (typeof planBuildTimeline === 'function') ? planBuildTimeline() : [];
+    _tlg.forEach(function(t){ var e=+t.endDate; if(e>globalEnd) globalEnd=e; });
+  } catch(e){}
   return {
     v: 1,
     ts: Date.now(),
     title: 'En Marcha — mesoestetic',
     cap: cap, thr: { s:thr.s, m:thr.m },
     freeSlots: freeSlots,
+    globalEnd: globalEnd || null,
     projects: projects,
   };
 }
@@ -972,12 +997,10 @@ function renderSprintSnapshotView() {
   };
 
   const col = (title, arr, color, poolKey)=>{
-    const slotTs = snap.freeSlots && snap.freeSlots[poolKey];
     const active = arr.filter(p=>enMarcha.has(p.nom));
     const next = arr.filter(p=>!enMarcha.has(p.nom));
     return '<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:2px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
-      +(slotTs ? '<div style="font-size:9px;color:#666;margin-bottom:8px">Próximo slot libre: <b style="color:#087B50">'+pf(slotTs)+'</b></div>' : '<div style="margin-bottom:8px"></div>')
+      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
       +active.map(p=>card(p,true,ordMap[p.nom])).join('')
       +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola ('+next.length+')</div>':'')
       +next.map(p=>card(p,false,ordMap[p.nom])).join('')   // TODOS los de la cola, sin recortar
@@ -993,6 +1016,15 @@ function renderSprintSnapshotView() {
         +'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px;font-style:italic">Los proyectos en <b style="color:rgba(255,255,255,.85)">negrita</b> son los que están actualmente en marcha</div></div>'
         +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
+    +(function(){
+        if (!snap.globalEnd) return '';
+        const d=new Date(snap.globalEnd);
+        const weeks=Math.max(0,Math.ceil((snap.globalEnd-Date.now())/(7*86400000)));
+        return '<div style="padding:10px 14px;background:#ECF8F3;border:1px solid rgba(8,123,80,.25);border-radius:8px;margin-bottom:14px;font-size:11px;color:#0A5C3E">'
+          +'📅 Próximo día libre del equipo: <b style="font-size:13px">'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
+          +' <span style="color:#6BA98E;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
+        +'</div>';
+      })()
     +(function(){
         const areas=[...new Set(snap.projects.map(p=>p.area).filter(Boolean))].sort();
         return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">'
