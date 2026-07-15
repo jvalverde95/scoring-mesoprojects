@@ -172,7 +172,7 @@ function planBuildTimeline() {
         locked:true, enCurso:enCursoOf(p), manualDev:true
       });
       if (avail[l.devName] && eL > avail[l.devName][pool]) avail[l.devName][pool] = new Date(eL);
-      if (sL > prevStartPool[pool]) prevStartPool[pool] = new Date(sL);
+      if (!enCursoOf(p) && sL > prevStartPool[pool]) prevStartPool[pool] = new Date(sL);
       return;
     }
 
@@ -242,9 +242,13 @@ function planBuildTimeline() {
 
     // Ocupar al desarrollador hasta el fin (la disponibilidad nunca retrocede)
     if (end > avail[dev.name][pool]) avail[dev.name][pool] = new Date(end);
-    // El siguiente proyecto del MISMO POOL (menor score) no puede empezar ni terminar antes que este
-    if (start > prevStartPool[pool]) prevStartPool[pool] = new Date(start);
-    if (!prevEndPool[pool] || end > prevEndPool[pool]) prevEndPool[pool] = new Date(end);
+    // La garantía de orden por score aplica SOLO a proyectos normales (no iniciados).
+    // Los EN CURSO tienen fecha real de ADO y NO deben contaminar prevStart/prevEnd,
+    // o arrastrarían a los siguientes a fechas irreales (p. ej. años en el futuro).
+    if (!enCursoOf(p)) {
+      if (start > prevStartPool[pool]) prevStartPool[pool] = new Date(start);
+      if (!prevEndPool[pool] || end > prevEndPool[pool]) prevEndPool[pool] = new Date(end);
+    }
   });
 
   return timeline;
