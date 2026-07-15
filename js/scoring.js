@@ -607,6 +607,7 @@ function applyProjects(projects, filename, mergeMode) {
         np.adoTags     = prev.adoTags     || np.adoTags;
         np.adoType     = prev.adoType     || np.adoType;
         np.adoState    = prev.adoState    || np.adoState;
+        np.adoAssigned = prev.adoAssigned || np.adoAssigned;   // responsable de ADO → "Pendiente de:"
         np.adoIteration= prev.adoIteration|| np.adoIteration;
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;

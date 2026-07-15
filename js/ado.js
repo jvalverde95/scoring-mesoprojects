@@ -89,7 +89,14 @@ function adoMapToProject(wi) {
   const f=wi.fields||{};
   const title=(f['System.Title']||`Work Item ${wi.id}`).trim();
   const assignee=f['System.AssignedTo'];
-  const sponsor=typeof assignee==='object'?(assignee.displayName||assignee.uniqueName||'').replace(/<[^>]+>/g,'').trim():String(assignee||'').replace(/<[^>]+>/g,'').trim();
+  // System.AssignedTo puede venir como objeto {displayName, uniqueName, ...} o como string "Nombre <email>"
+  let sponsor='';
+  if (assignee && typeof assignee==='object') {
+    sponsor=(assignee.displayName||assignee.uniqueName||assignee.name||'').replace(/<[^>]+>/g,'').trim();
+  } else if (assignee) {
+    // string: puede ser "Nombre Apellido <email>" → quedarnos con el nombre
+    sponsor=String(assignee).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  }
   const descRaw=f['System.Description']||'';
   const desc=descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
   const areaPath=f['System.AreaPath']||'';
