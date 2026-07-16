@@ -30,6 +30,24 @@
 
 </head>
 <body>
+<!-- ═══ Pantalla de carga épica (solo vista de directores) ═══ -->
+<div id="nexus-loader" style="display:none;position:fixed;inset:0;z-index:99999;background:#0E0E0F;overflow:hidden">
+  <canvas id="nexus-loader-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div id="nl-wordmark" style="opacity:0;transform:translateY(14px);transition:all 1s cubic-bezier(.2,.7,.2,1)">
+      <div style="font-size:clamp(42px,9vw,86px);font-weight:200;letter-spacing:.24em;color:#fff;line-height:1;padding-left:.24em">NEXUS</div>
+      <div style="height:1px;width:0;margin:22px auto 20px;background:linear-gradient(90deg,transparent,#C4974A,transparent);transition:width 1.1s ease .5s" id="nl-line"></div>
+      <div style="font-size:clamp(12px,2.4vw,17px);font-weight:300;letter-spacing:.42em;color:#C4974A;padding-left:.42em">mesoestetic<span style="font-size:.55em;vertical-align:super">&reg;</span></div>
+    </div>
+    <div id="nl-sub" style="margin-top:40px;opacity:0;transition:opacity .8s ease .4s">
+      <div style="font-size:10px;letter-spacing:.28em;color:#6A6A70;text-transform:uppercase" id="nl-status">Iniciando</div>
+      <div style="width:180px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;margin:14px auto 0;overflow:hidden">
+        <div id="nl-bar" style="height:100%;width:0;background:linear-gradient(90deg,#C4974A,#E8C888);border-radius:2px;transition:width .3s ease"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 
 

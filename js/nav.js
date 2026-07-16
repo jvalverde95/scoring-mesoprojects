@@ -700,6 +700,8 @@ document.addEventListener('DOMContentLoaded', function(){
 // Vista DINÁMICA de directores: descarga la cartera publicada, la renderiza con la vista
 // habitual y se refresca sola (al volver el foco y cada 5 minutos).
 function initDirectorsLiveView(key) {
+  nexusLoaderStart();   // pantalla de carga épica
+  var _t0 = Date.now();
   var apply = function(data) {
     if (!data || !data.snapshot) return false;
     window._sprintSnapshot = data.snapshot;
@@ -707,19 +709,31 @@ function initDirectorsLiveView(key) {
     if (typeof renderSprintSnapshotView === 'function') renderSprintSnapshotView();
     return true;
   };
+  var revealWhenReady = function(ok, errMsg) {
+    // Mínimo 3s de pantalla de carga para que se aprecie; máximo ~5s
+    var elapsed = Date.now() - _t0;
+    var wait = Math.max(0, 3000 - elapsed);
+    setTimeout(function(){
+      if (!ok) {
+        var cont = document.getElementById('sprint-tab');
+        if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:#8A8A86;font-size:13px">'
+          + '⚠ No se pudo cargar la vista de directores.<br><span style="font-size:11px">' + (errMsg||'') + '</span></div>';
+      }
+      nexusLoaderFinish();
+    }, wait);
+  };
   var refresh = function(first) {
+    if (first) nexusLoaderStatus('Conectando con el servidor', 30);
     fetch('/api/store?k=' + encodeURIComponent(key), { cache: 'no-store' })
       .then(function(r){ if(!r.ok) throw new Error(r.status===401?'Clave inválida':(r.status===404?'Aún no hay cartera publicada':'HTTP '+r.status)); return r.json(); })
       .then(function(data){
-        // Solo re-renderizar si hay publicación nueva (o es la primera carga)
-        if (first || (data.publishedAt && data.publishedAt !== window._directorsPublishedAt)) apply(data);
+        if (first) nexusLoaderStatus('Preparando la cartera', 75);
+        var changed = first || (data.publishedAt && data.publishedAt !== window._directorsPublishedAt);
+        if (changed) apply(data);
+        if (first) { nexusLoaderStatus('Listo', 100); revealWhenReady(true); }
       })
       .catch(function(e){
-        if (first) {
-          var cont = document.getElementById('sprint-tab');
-          if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:#8A8A86;font-size:13px">'
-            + '⚠ No se pudo cargar la vista de directores.<br><span style="font-size:11px">' + e.message + '</span></div>';
-        }
+        if (first) { nexusLoaderStatus('Error de conexión', 100); revealWhenReady(false, e.message); }
       });
   };
   setTimeout(function(){
@@ -729,6 +743,63 @@ function initDirectorsLiveView(key) {
     setInterval(function(){ refresh(false); }, 5 * 60 * 1000);
     window.addEventListener('focus', function(){ refresh(false); });
   }, 200);
+}
+
+// ── Pantalla de carga épica (Nexus + mesoestetic) ──
+var _nlRAF = null;
+function nexusLoaderStart() {
+  var ov = document.getElementById('nexus-loader');
+  if (!ov) return;
+  ov.style.display = 'block';
+  // Secuencia de aparición
+  setTimeout(function(){ var w=document.getElementById('nl-wordmark'); if(w){ w.style.opacity='1'; w.style.transform='translateY(0)'; } }, 150);
+  setTimeout(function(){ var l=document.getElementById('nl-line'); if(l) l.style.width='min(320px,60vw)'; }, 400);
+  setTimeout(function(){ var s=document.getElementById('nl-sub'); if(s) s.style.opacity='1'; }, 700);
+  nexusLoaderStatus('Iniciando', 12);
+  // Partículas doradas conectadas (estética "nexus")
+  var cv = document.getElementById('nexus-loader-canvas');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+  var W, H, DPR = Math.min(window.devicePixelRatio||1, 2);
+  var pts = [];
+  var resize = function(){
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W*DPR; cv.height = H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  };
+  resize(); window.addEventListener('resize', resize);
+  var N = Math.min(70, Math.floor(W*H/16000));
+  for (var i=0;i<N;i++) pts.push({ x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4, r:Math.random()*1.6+.6 });
+  var draw = function(){
+    ctx.clearRect(0,0,W,H);
+    // líneas de conexión
+    for (var a=0;a<pts.length;a++){
+      for (var b=a+1;b<pts.length;b++){
+        var dx=pts[a].x-pts[b].x, dy=pts[a].y-pts[b].y, d=Math.sqrt(dx*dx+dy*dy);
+        if (d<120){ ctx.strokeStyle='rgba(196,151,74,'+(0.14*(1-d/120))+')'; ctx.lineWidth=.6;
+          ctx.beginPath(); ctx.moveTo(pts[a].x,pts[a].y); ctx.lineTo(pts[b].x,pts[b].y); ctx.stroke(); }
+      }
+    }
+    // puntos
+    for (var p=0;p<pts.length;p++){
+      var pt=pts[p]; pt.x+=pt.vx; pt.y+=pt.vy;
+      if(pt.x<0||pt.x>W)pt.vx*=-1; if(pt.y<0||pt.y>H)pt.vy*=-1;
+      ctx.fillStyle='rgba(196,151,74,.55)'; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.283); ctx.fill();
+    }
+    _nlRAF = requestAnimationFrame(draw);
+  };
+  draw();
+}
+function nexusLoaderStatus(txt, pct) {
+  var s=document.getElementById('nl-status'); if(s) s.textContent=txt;
+  var b=document.getElementById('nl-bar'); if(b) b.style.width=(pct||0)+'%';
+}
+function nexusLoaderFinish() {
+  var ov = document.getElementById('nexus-loader');
+  if (!ov) return;
+  ov.style.transition = 'opacity .7s ease';
+  ov.style.opacity = '0';
+  setTimeout(function(){ ov.style.display='none'; if(_nlRAF) cancelAnimationFrame(_nlRAF); }, 750);
 }
 
 // Activa una vista aislada: solo la pantalla En Marcha, sin navegación ni otras opciones

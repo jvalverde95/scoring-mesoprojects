@@ -1183,15 +1183,23 @@ function renderSprintSnapshotView() {
             +(arr.length?arr.map(proxCard).join(''):'<div style="font-size:9px;color:#BBB;text-align:center;padding:10px 0">—</div>')+'</div>';
         };
         return '<div style="margin-bottom:20px">'
-          +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none">'
-            +'<div style="width:14px;height:14px;border-radius:50%;background:#C4974A"></div>'
-            +'<div style="font-weight:800;font-size:19px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO ('+prox.length+')</div>'
-            +'<div style="font-size:10px;color:#999">— Prioridad 1 en fase avanzada (fuera de planificación)</div>'
-            +'<div style="margin-left:auto;font-size:11px;color:#8A6D3B;font-weight:700">'+(window._snapProxHidden?'▸ mostrar':'▾ ocultar')+'</div>'
+          +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" '
+            +'onmouseover="this.style.background=\'#F3EAD9\';this.style.borderColor=\'#C4974A\'" '
+            +'onmouseout="this.style.background=\'#FAF7F2\';this.style.borderColor=\'#E8DCC8\'" '
+            +'style="display:flex;align-items:center;gap:10px;margin-bottom:'+(window._snapProxHidden?'0':'14px')+';cursor:pointer;user-select:none;'
+              +'background:#FAF7F2;border:1.5px solid #E8DCC8;border-left:4px solid #C4974A;border-radius:10px;padding:13px 16px;transition:all .18s">'
+            +'<div style="width:12px;height:12px;border-radius:50%;background:#C4974A;flex-shrink:0"></div>'
+            +'<div style="font-weight:800;font-size:18px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="font-size:11px;font-weight:700;color:#fff;background:#C4974A;border-radius:20px;padding:2px 9px;flex-shrink:0">'+prox.length+'</div>'
+            +'<div style="font-size:10px;color:#A8905C;display:none" class="_pxsub">— Prioridad 1 en fase avanzada</div>'
+            +'<div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">'
+              +'<span style="font-size:10px;font-weight:700;color:#8A6D3B">'+(window._snapProxHidden?'Ver proyectos':'Ocultar')+'</span>'
+              +'<span style="font-size:13px;color:#8A6D3B;display:inline-block;transition:transform .2s;transform:rotate('+(window._snapProxHidden?'0':'180')+'deg)">▾</span>'
+            +'</div>'
           +'</div>'
           +(window._snapProxHidden ? '' :
             (prox.length
-              ? '<div style="display:flex;gap:14px;align-items:flex-start">'
+              ? '<div style="display:flex;gap:14px;align-items:flex-start;background:#FCFAF5;border:1px solid #F0E7D6;border-radius:10px;padding:14px">'
                 +proxCol('⚡ Cortos', byPool.corto, '#8A6D3B')
                 +proxCol('◉ Medios', byPool.medio, '#4A5568')
                 +proxCol('▣ Largos', byPool.largo, '#1A1A1A')
