@@ -52,18 +52,18 @@
 
 
 <div id="landing" style="position:fixed;inset:0;z-index:1000;overflow:hidden;
-  background:linear-gradient(160deg,#101A2E 0%,#16243E 45%,#1C2B4A 100%);
+  background:radial-gradient(ellipse at 50% 0%,#161311 0%,#0E0E0F 55%,#0A0A0B 100%);
   font-family:'Inter','Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column">
 
   <!-- ── Aurora blobs (tecnología/investigación) ── -->
   <div style="position:absolute;width:560px;height:560px;border-radius:50%;top:-180px;left:-120px;
-    background:radial-gradient(circle,rgba(64,140,255,.22),transparent 65%);
+    background:radial-gradient(circle,rgba(196,151,74,.14),transparent 65%);
     filter:blur(40px);animation:auroraDrift 14s ease-in-out infinite;pointer-events:none"></div>
   <div style="position:absolute;width:640px;height:640px;border-radius:50%;bottom:-220px;right:-160px;
     background:radial-gradient(circle,rgba(196,151,74,.20),transparent 65%);
     filter:blur(50px);animation:auroraDrift 18s ease-in-out infinite reverse;pointer-events:none"></div>
   <div style="position:absolute;width:420px;height:420px;border-radius:50%;top:30%;left:55%;
-    background:radial-gradient(circle,rgba(80,200,220,.12),transparent 60%);
+    background:radial-gradient(circle,rgba(196,151,74,.08),transparent 60%);
     filter:blur(45px);animation:auroraDrift 22s ease-in-out infinite;pointer-events:none"></div>
 
   <!-- ── Anillos orbitales (ambición/exploración) ── -->
@@ -74,16 +74,16 @@
       background:#C4974A;box-shadow:0 0 14px #C4974A"></div>
   </div>
   <div style="position:absolute;top:50%;left:50%;width:1080px;height:1080px;margin:-540px 0 0 -540px;
-    border:1px dashed rgba(120,170,255,.08);border-radius:50%;
+    border:1px dashed rgba(196,151,74,.07);border-radius:50%;
     animation:orbitSpin 90s linear infinite reverse;pointer-events:none">
     <div style="position:absolute;top:50%;right:-3px;width:6px;height:6px;border-radius:50%;
-      background:#6FA8FF;box-shadow:0 0 12px #6FA8FF"></div>
+      background:#C4974A;box-shadow:0 0 12px #C4974A"></div>
   </div>
 
   <!-- ── Haz de escaneo (investigación) ── -->
   <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
     <div style="position:absolute;top:0;bottom:0;width:180px;
-      background:linear-gradient(90deg,transparent,rgba(140,180,255,.05),transparent);
+      background:linear-gradient(90deg,transparent,rgba(196,151,74,.05),transparent);
       animation:scanBeam 9s ease-in-out infinite"></div>
   </div>
 
@@ -92,8 +92,8 @@
 
   <!-- ── Grid overlay ── -->
   <div style="position:absolute;inset:0;
-    background-image:linear-gradient(rgba(150,180,230,.05) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(150,180,230,.05) 1px,transparent 1px);
+    background-image:linear-gradient(rgba(196,151,74,.04) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(196,151,74,.04) 1px,transparent 1px);
     background-size:48px 48px;pointer-events:none"></div>
 
   <!-- ── Radial glow ── -->
@@ -121,9 +121,9 @@
         </svg>
       </div>
       <div>
-        <div style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-.02em">NEXUS</div>
-        <div style="font-size:8px;color:#C4974A;letter-spacing:.25em;text-transform:uppercase;margin-top:-2px">
-          Project Intelligence Platform
+        <div style="font-size:18px;font-weight:300;color:#fff;letter-spacing:.28em;padding-left:.28em">NEXUS</div>
+        <div style="font-size:8px;color:#C4974A;letter-spacing:.3em;text-transform:uppercase;margin-top:1px">
+          mesoestetic<span style="font-size:.8em;vertical-align:super">&reg;</span> · project intelligence
         </div>
       </div>
     </div>
@@ -153,18 +153,21 @@
           </span>
         </div>
 
-        <h1 style="font-size:clamp(40px,5vw,68px);font-weight:900;color:#fff;line-height:1.05;
-          letter-spacing:-.03em;margin:0 0 24px">
+        <h1 style="font-size:clamp(40px,5vw,68px);font-weight:200;color:#fff;line-height:1.08;
+          letter-spacing:.02em;margin:0 0 20px">
           Enfoca. Prioriza.<br>
-          <span style="background:linear-gradient(135deg,#C4974A,#E8B96A,#C4974A);
+          <span style="font-weight:300;background:linear-gradient(135deg,#C4974A,#E8C888,#C4974A);
             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
             background-size:200%;animation:shimmer 3s linear infinite">
             Avanza.
           </span>
         </h1>
 
-        <p style="font-size:15px;color:rgba(255,255,255,.5);line-height:1.7;
-          max-width:480px;margin:0 0 36px">
+        <div style="height:1px;width:min(280px,70%);margin:0 0 24px;
+          background:linear-gradient(90deg,#C4974A,transparent)"></div>
+
+        <p style="font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;
+          max-width:480px;margin:0 0 36px;font-weight:300">
           Motor de scoring multidimensional para priorizar proyectos tecnológicos.
           Conectado a Azure DevOps · Planificación Gantt · Análisis de capacidad.
         </p>
@@ -202,9 +205,9 @@
       </div>
 
       <!-- Right: Login panel -->
-      <div id="login-panel" style="background:rgba(255,255,255,.055);border:1px solid rgba(196,151,74,.2);
+      <div id="login-panel" style="background:rgba(255,255,255,.04);border:1px solid rgba(196,151,74,.25);
         border-radius:16px;padding:36px;backdrop-filter:blur(20px);
-        box-shadow:0 0 60px rgba(196,151,74,.08),inset 0 1px 0 rgba(255,255,255,.05)">
+        box-shadow:0 0 80px rgba(196,151,74,.10),inset 0 1px 0 rgba(255,255,255,.05)">
 
         <div style="text-align:center;margin-bottom:28px">
           <div style="width:52px;height:52px;border-radius:14px;margin:0 auto 14px;
