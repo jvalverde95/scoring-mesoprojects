@@ -149,3 +149,93 @@ function clearAllCreds() {
   _dvToken = null; _dvTokenExp = 0;
   toast('✓ Credenciales borradas');
 }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PUBLICACIÓN WEB DE LA CARTERA (almacén en GitHub vía /api/store)
+   - publishCartera(): sube snapshot + cartera completa
+   - schedulePublish(): auto-publicación con debounce tras cambios
+   - fetchPublishedCartera(): lee la última publicación
+   - loadPublishedIntoApp(): restaura la cartera publicada en la app
+   ══════════════════════════════════════════════════════════════════ */
+
+function getShareKey() { return localStorage.getItem('nexus_share_key') || ''; }
+function setShareKey(k) { localStorage.setItem('nexus_share_key', (k||'').trim()); }
+
+function directorsLink() {
+  var k = getShareKey();
+  if (!k) return '';
+  return location.origin + location.pathname + '#directores?k=' + encodeURIComponent(k);
+}
+
+async function publishCartera(silent) {
+  var k = getShareKey();
+  if (!k) { if (!silent) toast('⚠ Configura la clave de publicación en Configuración'); return false; }
+  if (!portfolioData || !portfolioData.length) { if (!silent) toast('⚠ No hay cartera que publicar'); return false; }
+  try {
+    var snapshot = (typeof _buildSprintSnapshot === 'function') ? _buildSprintSnapshot() : null;
+    // Cartera completa compacta para poder restaurarla al abrir la app
+    var portfolio = portfolioData.map(function(p){
+      return { nom:p.nom, area:p.area, sponsor:p.sponsor, scores:p.scores, sf:p.sf,
+        dimScores:p.dimScores, horas:p.horas, reqDate:p.reqDate, descripcion:p.descripcion,
+        adoId:p.adoId, adoType:p.adoType, adoState:p.adoState, adoPriority:p.adoPriority,
+        adoAssigned:p.adoAssigned, adoStartDate:p.adoStartDate, adoDesc:p.adoDesc,
+        adoTags:p.adoTags, adoIteration:p.adoIteration, assignedDev:p.assignedDev,
+        _sfExcel:p._sfExcel, _manualEval:p._manualEval };
+    });
+    var payload = { v:2, publishedAt:Date.now(), snapshot:snapshot, portfolio:portfolio,
+      devTeam:(typeof devTeam!=='undefined'?devTeam:[]),
+      thr:(typeof getThr==='function'?getThr():{s:10,m:50}) };
+    var r = await fetch('/api/store?k='+encodeURIComponent(k), {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (!r.ok) { var j=await r.json().catch(function(){return{};}); throw new Error(j.error||('HTTP '+r.status)); }
+    localStorage.setItem('nexus_last_publish', String(Date.now()));
+    var st = document.getElementById('pub-status');
+    if (st) st.textContent = 'Última publicación: ' + new Date().toLocaleString('es-ES');
+    if (!silent) toast('✓ Cartera publicada · la vista de directores ya está actualizada');
+    return true;
+  } catch(e) {
+    if (!silent) toast('✗ Error al publicar: ' + e.message);
+    return false;
+  }
+}
+
+// Auto-publicación con debounce: se llama tras cargar Excel / cambiar notas / replanificar
+var _pubTimer = null;
+function schedulePublish() {
+  if (!getShareKey()) return;                 // sin clave configurada, no publica
+  if (window._sharedViewLocked) return;       // la vista de directores nunca publica
+  if (_pubTimer) clearTimeout(_pubTimer);
+  _pubTimer = setTimeout(function(){ publishCartera(true); }, 4000);   // 4s tras el último cambio
+}
+
+async function fetchPublishedCartera(key) {
+  var k = key || getShareKey();
+  if (!k) return null;
+  var r = await fetch('/api/store?k='+encodeURIComponent(k), { cache:'no-store' });
+  if (!r.ok) return null;
+  return await r.json();
+}
+
+// Restaura la última cartera publicada en la app (para no depender del Excel local)
+async function loadPublishedIntoApp() {
+  var st = document.getElementById('mandatory-excel-status');
+  if (st) { st.style.display='block'; st.style.color='#888'; st.textContent='Descargando última cartera publicada…'; }
+  try {
+    var data = await fetchPublishedCartera();
+    if (!data || !data.portfolio || !data.portfolio.length) throw new Error('No hay cartera publicada aún');
+    portfolioData = data.portfolio;
+    if (data.devTeam && data.devTeam.length && typeof devTeam !== 'undefined') { devTeam = data.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+    // Refrescar todo
+    ['renderPortfolio','renderPools','renderCharts','renderDashboard','renderSprintScreen','renderPlanningSummary','renderCalendar','renderDevAssignPanel'].forEach(function(fn){
+      if (typeof window[fn]==='function') { try{ window[fn](); }catch(_){} }
+    });
+    toast('✓ Cartera publicada cargada · '+portfolioData.length+' proyectos');
+    var ov = document.getElementById('mandatory-excel-overlay');
+    if (ov) ov.style.display='none';
+    return true;
+  } catch(e) {
+    if (st) { st.style.color='#C0392B'; st.textContent='✗ ' + e.message; }
+    return false;
+  }
+}

@@ -993,6 +993,28 @@
           </div>
         </div>
 
+        <!-- ── Publicación web (vista dinámica de directores) ──────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">🌐 Publicación web — vista de directores</div>
+          <div class="cfg-sec-sub">
+            Publica la cartera en la web (almacenada en el repositorio de GitHub, coste 0). La vista de
+            directores pasa a ser un <strong>enlace fijo que se actualiza solo</strong> cuando cambias el scoring
+            o cargas el Excel. Requiere configurar en Vercel: GITHUB_TOKEN, GITHUB_REPO, GITHUB_BRANCH y NEXUS_SHARE_KEY.
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--ink3)">Clave compartida:</span>
+            <input type="password" id="cfg-share-key" placeholder="la misma que NEXUS_SHARE_KEY"
+              oninput="setShareKey(this.value)" style="width:220px;font-size:11px;border:1px solid var(--b);border-radius:4px;padding:5px 8px">
+            <button class="cfg-apply" style="font-size:10px" onclick="publishCartera(false)">📤 Publicar ahora</button>
+            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="var l=directorsLink();if(!l){toast('⚠ Configura la clave primero');return;}navigator.clipboard.writeText(l).then(function(){toast('✓ Enlace de directores copiado')})">🔗 Copiar enlace de directores</button>
+          </div>
+          <div id="pub-status" style="font-size:9px;color:var(--ink4);margin-top:8px"></div>
+          <div style="margin-top:10px;padding:8px 12px;background:var(--surf);border-radius:6px;font-size:9px;color:var(--ink4);border:1px solid var(--b);line-height:1.6">
+            Con la clave configurada, la app <strong>publica automáticamente</strong> unos segundos después de cada cambio
+            (cargar Excel, editar notas, replanificar). Los directores siempre ven la última versión sin regenerar enlaces.
+          </div>
+        </div>
+
         <!-- ── Developer capacity ──────────────────── -->
         <div class="cfg-section">
           <div class="cfg-sec-title">Capacidad del equipo</div>

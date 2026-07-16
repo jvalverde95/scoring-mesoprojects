@@ -59,7 +59,7 @@ function goStep(t) {
     if (navEl) navEl.classList.add('active');
     if (t === 'charts')   refreshChartsStep();
     if (t === 'pools')    refreshPoolsStep();
-    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); }
+    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey(); var _ps=document.getElementById('pub-status'); if(_ps){var t=localStorage.getItem('nexus_last_publish'); _ps.textContent=t?('Última publicación: '+new Date(+t).toLocaleString('es-ES')):'Sin publicaciones aún';} }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
     if (t === 'sprint')     {
@@ -480,6 +480,9 @@ function showMandatoryExcelUpload() {
         +'<div style="font-size:11px;color:#999">Formato .xlsx o .xls</div>'
       +'</div>'
       +'<input type="file" id="mandatory-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleMandatoryExcel(this)">'
+      +'<div style="text-align:center;margin-top:14px">'
+        +'<button onclick="loadPublishedIntoApp()" style="font-size:11px;padding:8px 16px;border:1.5px solid #C4974A;background:#FDFAF3;color:#8A6D3B;border-radius:8px;cursor:pointer;font-weight:700">☁ Cargar última cartera publicada</button>'
+      +'</div>'
       +'<div id="mandatory-excel-status" style="font-size:11px;color:#087B50;margin-top:14px;text-align:center;display:none"></div>'
       +'<div style="font-size:10px;color:#BBB;margin-top:18px;text-align:center">Esta ventana no se cerrará hasta que cargues la cartera.</div>'
     +'</div>';
@@ -679,12 +682,54 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── Detección de enlace compartido de "En Marcha" ──
 document.addEventListener('DOMContentLoaded', function(){
   try {
+    // 1) ENLACE DINÁMICO de directores: #directores?k=<clave> — lee la cartera publicada y se auto-actualiza
+    var h = String(location.hash || '');
+    if (h.indexOf('#directores') === 0) {
+      var m = h.match(/[?&]k=([^&]+)/);
+      var key = m ? decodeURIComponent(m[1]) : '';
+      initDirectorsLiveView(key);
+      return;
+    }
+    // 2) Enlace snapshot clásico (#marcha=...): sigue funcionando
     if (typeof loadSprintSnapshotFromURL === 'function' && loadSprintSnapshotFromURL()) {
-      // Es un enlace compartido: MODO BLOQUEADO de solo lectura, sin acceso al resto de la web
       setTimeout(function(){ enterSharedViewMode(); }, 200);
     }
   } catch(e) { console.error('snapshot init', e); }
 });
+
+// Vista DINÁMICA de directores: descarga la cartera publicada, la renderiza con la vista
+// habitual y se refresca sola (al volver el foco y cada 5 minutos).
+function initDirectorsLiveView(key) {
+  var apply = function(data) {
+    if (!data || !data.snapshot) return false;
+    window._sprintSnapshot = data.snapshot;
+    window._directorsPublishedAt = data.publishedAt || data.snapshot.ts || null;
+    if (typeof renderSprintSnapshotView === 'function') renderSprintSnapshotView();
+    return true;
+  };
+  var refresh = function(first) {
+    fetch('/api/store?k=' + encodeURIComponent(key), { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error(r.status===401?'Clave inválida':(r.status===404?'Aún no hay cartera publicada':'HTTP '+r.status)); return r.json(); })
+      .then(function(data){
+        // Solo re-renderizar si hay publicación nueva (o es la primera carga)
+        if (first || (data.publishedAt && data.publishedAt !== window._directorsPublishedAt)) apply(data);
+      })
+      .catch(function(e){
+        if (first) {
+          var cont = document.getElementById('sprint-tab');
+          if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:#8A8A86;font-size:13px">'
+            + '⚠ No se pudo cargar la vista de directores.<br><span style="font-size:11px">' + e.message + '</span></div>';
+        }
+      });
+  };
+  setTimeout(function(){
+    enterSharedViewMode();
+    refresh(true);
+    // Auto-actualización: cada 5 min y al volver a la pestaña
+    setInterval(function(){ refresh(false); }, 5 * 60 * 1000);
+    window.addEventListener('focus', function(){ refresh(false); });
+  }, 200);
+}
 
 // Activa una vista aislada: solo la pantalla En Marcha, sin navegación ni otras opciones
 function enterSharedViewMode() {

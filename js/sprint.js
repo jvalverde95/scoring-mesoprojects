@@ -970,6 +970,18 @@ function _buildSprintSnapshot() {
 
 function shareSprintSnapshot() {
   if (!portfolioData || !portfolioData.length) { toast('No hay proyectos para compartir'); return; }
+  // Si hay publicación web configurada → enlace DINÁMICO (se actualiza solo)
+  if (typeof getShareKey === 'function' && getShareKey()) {
+    const link = directorsLink();
+    if (typeof publishCartera === 'function') publishCartera(true);   // asegura última versión publicada
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(function(){
+        toast('🔗 Enlace DINÁMICO copiado · se actualiza solo con cada cambio');
+      }, function(){ _showSnapshotLink(link); });
+    } else { _showSnapshotLink(link); }
+    return;
+  }
+  // Sin clave configurada → snapshot clásico (foto congelada en la URL)
   try {
     const snap = _buildSprintSnapshot();
     const json = JSON.stringify(snap);
