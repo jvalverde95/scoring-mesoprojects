@@ -422,6 +422,7 @@ function aiReevaluateAll(opts) {
 
   // Persistir y refrescar todas las vistas
   if (typeof savePortfolio === 'function') savePortfolio();
+  if (typeof schedulePublish === 'function') schedulePublish();   // sincroniza con el almacén web (GitHub)
   if (typeof renderPortfolio === 'function') renderPortfolio();
   if (typeof renderPools === 'function') renderPools();
   if (typeof renderDashboard === 'function') renderDashboard();

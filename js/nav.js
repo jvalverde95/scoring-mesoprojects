@@ -59,7 +59,7 @@ function goStep(t) {
     if (navEl) navEl.classList.add('active');
     if (t === 'charts')   refreshChartsStep();
     if (t === 'pools')    refreshPoolsStep();
-    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey(); var _ps=document.getElementById('pub-status'); if(_ps){var t=localStorage.getItem('nexus_last_publish'); _ps.textContent=t?('Última publicación: '+new Date(+t).toLocaleString('es-ES')):'Sin publicaciones aún';} }
+    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey(); var _ps=document.getElementById('pub-status'); if(_ps){var t=localStorage.getItem('nexus_last_publish'); _ps.textContent=t?('Última publicación: '+new Date(+t).toLocaleString('es-ES')):'Sin publicaciones aún';} var _ss=document.getElementById('saved-status'); if(_ss && typeof loadPortfolioLocal==='function'){var d=loadPortfolioLocal(); _ss.textContent=d?('Guardado: '+d.portfolio.length+' proyectos · '+new Date(d.savedAt).toLocaleString('es-ES')):'Sin datos guardados';} }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
     if (t === 'sprint')     {
@@ -454,10 +454,60 @@ function enterApp() {
   document.getElementById('shell').style.display='';
   document.getElementById('bar').style.display='';
   goStep('dashboard');  // always start at dashboard
-  // Si no hay proyectos cargados, exigir la carga del Excel (modal sin cierre)
+  // Restaurar automáticamente la última cartera guardada (reevaluaciones incluidas).
+  // 1º localStorage (instantáneo), 2º almacén web GitHub (por si hay algo más reciente / otro dispositivo).
+  if (!portfolioData || portfolioData.length === 0) {
+    restoreLastPortfolio();
+  }
+}
+
+// Restaura la cartera: local primero (instantáneo), luego sincroniza con GitHub en segundo plano.
+// Solo pide el Excel si no hay NADA guardado en ninguna parte.
+async function restoreLastPortfolio() {
+  var loadedLocal = false;
+  try {
+    if (typeof loadPortfolioLocal === 'function') {
+      var d = loadPortfolioLocal();
+      if (d && d.portfolio && d.portfolio.length) {
+        portfolioData = d.portfolio;
+        if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+        _refreshAllViews();
+        loadedLocal = true;
+        if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+      }
+    }
+  } catch(e) {}
+
+  // Sincronización en segundo plano con el almacén web (si hay clave configurada)
+  try {
+    if (typeof getShareKey === 'function' && getShareKey() && typeof fetchPublishedCartera === 'function') {
+      var remote = await fetchPublishedCartera();
+      if (remote && remote.portfolio && remote.portfolio.length) {
+        var localAt = 0;
+        try { var ld = loadPortfolioLocal(); localAt = (ld && ld.savedAt) || 0; } catch(_){}
+        // Si la versión remota es más reciente que la local, usarla
+        if (!loadedLocal || (remote.publishedAt && remote.publishedAt > localAt)) {
+          portfolioData = remote.portfolio;
+          if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') { devTeam = remote.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+          if (typeof savePortfolio === 'function') savePortfolio();  // refresca caché local
+          _refreshAllViews();
+          if (typeof toast === 'function') toast('☁ Sincronizado con la última versión publicada');
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Si no había nada en ninguna parte → pedir el Excel
   if (!portfolioData || portfolioData.length === 0) {
     setTimeout(showMandatoryExcelUpload, 300);
   }
+}
+
+function _refreshAllViews() {
+  ['renderPortfolio','renderPools','renderCharts','renderDashboard','renderSprintScreen',
+   'renderPlanningSummary','renderCalendar','renderDevAssignPanel','renderChartsStep'].forEach(function(fn){
+    if (typeof window[fn]==='function') { try{ window[fn](); }catch(_){} }
+  });
 }
 
 // Modal obligatorio de carga de Excel al iniciar sesión (no se puede cerrar sin cargar)
@@ -472,7 +522,7 @@ function showMandatoryExcelUpload() {
   ov.innerHTML =
     '<div style="background:#fff;border-radius:14px;padding:32px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">'
       +'<div style="font-size:20px;font-weight:800;color:#1C2B4A;margin-bottom:8px">Carga la cartera de proyectos</div>'
-      +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px">Para empezar a trabajar necesitas cargar el Excel con los proyectos y sus puntuaciones. Selecciona el archivo exportado por la herramienta.</div>'
+      +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px">No hay ninguna cartera guardada todavía. Carga el Excel con los proyectos y sus puntuaciones para empezar; a partir de ahí se guardará automáticamente y no tendrás que volver a cargarlo.</div>'
       +'<div id="mandatory-excel-drop" onclick="document.getElementById(\'mandatory-excel-input\').click()" '
         +'style="border:2px dashed #C4974A;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#FDFAF3;transition:.2s">'
         +'<div style="font-size:34px;margin-bottom:8px">📊</div>'

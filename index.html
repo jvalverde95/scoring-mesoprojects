@@ -1036,6 +1036,19 @@
           </div>
         </div>
 
+        <!-- ── Datos guardados ──────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">💾 Datos guardados</div>
+          <div class="cfg-sec-sub">
+            La cartera y las reevaluaciones se guardan <strong>automáticamente</strong> en este navegador y (si tienes clave)
+            en el almacén web. Al abrir la app se restauran solas, sin recargar el Excel.
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="if(confirm('¿Borrar la cartera guardada en este navegador? Tendrás que volver a cargar el Excel.')){localStorage.removeItem('nexus_portfolio_v1');toast('Cartera local borrada');}">🗑 Borrar datos guardados (local)</button>
+            <span id="saved-status" style="font-size:9px;color:var(--ink4)"></span>
+          </div>
+        </div>
+
         <!-- ── Developer capacity ──────────────────── -->
         <div class="cfg-section">
           <div class="cfg-sec-title">Capacidad del equipo</div>

@@ -5,6 +5,39 @@
    Not cryptographic — just avoids casual shoulder-surfing.
    ═══════════════════════════════════════════════════════════ */
 
+const _PORTFOLIO_KEY = 'nexus_portfolio_v1';
+
+/* ═══ PERSISTENCIA DE LA CARTERA (localStorage — caché instantánea) ═══
+   Guarda la cartera completa (con las reevaluaciones) en el navegador,
+   para restaurarla al abrir la app sin recargar el Excel. Complementa
+   el almacén en GitHub (compartido entre dispositivos). */
+function savePortfolio() {
+  try {
+    if (!portfolioData || !portfolioData.length) return;
+    var payload = {
+      v: 1, savedAt: Date.now(),
+      portfolio: portfolioData,
+      devTeam: (typeof devTeam !== 'undefined' ? devTeam : []),
+      thr: (typeof getThr === 'function' ? getThr() : {s:10,m:50}),
+    };
+    localStorage.setItem(_PORTFOLIO_KEY, JSON.stringify(payload));
+  } catch(e) { /* cuota excedida u otro: ignorar silenciosamente */ }
+}
+
+function loadPortfolioLocal() {
+  try {
+    var raw = localStorage.getItem(_PORTFOLIO_KEY);
+    if (!raw) return null;
+    var d = JSON.parse(raw);
+    if (!d || !d.portfolio || !d.portfolio.length) return null;
+    return d;
+  } catch(e) { return null; }
+}
+
+function hasStoredPortfolio() {
+  return !!loadPortfolioLocal();
+}
+
 const _STORE_KEY = 'meso_scoring_cfg_v1';
 const _OBFUSCATE_SEED = 'meso2024scr';
 

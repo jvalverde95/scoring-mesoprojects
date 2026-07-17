@@ -648,6 +648,7 @@ function applyProjects(projects, filename, mergeMode) {
   if (typeof renderDevAssignPanel === 'function') { try { renderDevAssignPanel(); } catch(_) {} }
   // Replanificar SIEMPRE tras cargar Excel: el nuevo orden por nota reordena las fechas de ejecución
   if (typeof replanAndNotify === 'function') { try { replanAndNotify(null, {fromExcel:true}); } catch(_) {} }
+  if (typeof savePortfolio === 'function') { try { savePortfolio(); } catch(_) {} }
   if (typeof schedulePublish === 'function') { try { schedulePublish(); } catch(_) {} }
 
   if (window._mergeStats) {
