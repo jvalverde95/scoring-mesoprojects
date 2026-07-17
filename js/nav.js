@@ -59,7 +59,12 @@ function goStep(t) {
     if (navEl) navEl.classList.add('active');
     if (t === 'charts')   refreshChartsStep();
     if (t === 'pools')    refreshPoolsStep();
-    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey(); var _ps=document.getElementById('pub-status'); if(_ps){var t=localStorage.getItem('nexus_last_publish'); _ps.textContent=t?('Última publicación: '+new Date(+t).toLocaleString('es-ES')):'Sin publicaciones aún';} var _ss=document.getElementById('saved-status'); if(_ss && typeof loadPortfolioLocal==='function'){var d=loadPortfolioLocal(); _ss.textContent=d?('Guardado: '+d.portfolio.length+' proyectos · '+new Date(d.savedAt).toLocaleString('es-ES')):'Sin datos guardados';} }
+    if (t === 'config') { if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows();  if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); }
+    if (t === 'data') {
+      var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey();
+      var _ps=document.getElementById('pub-status'); if(_ps){var _t=localStorage.getItem('nexus_last_publish'); _ps.textContent=_t?('Última publicación: '+new Date(+_t).toLocaleString('es-ES')):'Sin publicaciones aún';}
+      var _ss=document.getElementById('saved-status'); if(_ss && typeof loadPortfolioLocal==='function'){var _d=loadPortfolioLocal(); _ss.textContent=_d?('Guardado: '+_d.portfolio.length+' proyectos · '+new Date(_d.savedAt).toLocaleString('es-ES')):'Sin datos guardados';}
+    }
     if (t === 'projects') { if(typeof renderProjectsScreen==='function') renderProjectsScreen(); }
     if (t === 'eval')   { if(typeof renderEvalScreen==='function') renderEvalScreen(); }
     if (t === 'sprint')     {

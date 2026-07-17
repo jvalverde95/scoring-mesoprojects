@@ -5,7 +5,6 @@
    Not cryptographic — just avoids casual shoulder-surfing.
    ═══════════════════════════════════════════════════════════ */
 
-const _PORTFOLIO_KEY = 'nexus_portfolio_v1';
 
 /* ═══ PERSISTENCIA DE LA CARTERA (localStorage — caché instantánea) ═══
    Guarda la cartera completa (con las reevaluaciones) en el navegador,
@@ -13,20 +12,25 @@ const _PORTFOLIO_KEY = 'nexus_portfolio_v1';
    el almacén en GitHub (compartido entre dispositivos). */
 function savePortfolio() {
   try {
-    if (!portfolioData || !portfolioData.length) return;
+    if (!portfolioData || !portfolioData.length) return false;
     var payload = {
       v: 1, savedAt: Date.now(),
       portfolio: portfolioData,
       devTeam: (typeof devTeam !== 'undefined' ? devTeam : []),
       thr: (typeof getThr === 'function' ? getThr() : {s:10,m:50}),
     };
-    localStorage.setItem(_PORTFOLIO_KEY, JSON.stringify(payload));
-  } catch(e) { /* cuota excedida u otro: ignorar silenciosamente */ }
+    localStorage.setItem('nexus_portfolio_v1', JSON.stringify(payload));
+    return true;
+  } catch(e) {
+    console.error('savePortfolio falló:', e);
+    if (typeof toast === 'function') toast('⚠ No se pudo guardar la cartera localmente: ' + (e && e.message || e));
+    return false;
+  }
 }
 
 function loadPortfolioLocal() {
   try {
-    var raw = localStorage.getItem(_PORTFOLIO_KEY);
+    var raw = localStorage.getItem('nexus_portfolio_v1');
     if (!raw) return null;
     var d = JSON.parse(raw);
     if (!d || !d.portfolio || !d.portfolio.length) return null;

@@ -411,6 +411,10 @@
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="currentColor" stroke-width="1.5"/><line x1="7" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="14" x2="10" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
         <span class="lnav-label">Docs</span>
       </div>
+      <div class="lnav-item" id="nav-data" onclick="goStep('data')" title="Datos y publicación">
+        <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><ellipse cx="10" cy="5" rx="6" ry="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M4 5v10c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V5" stroke="currentColor" stroke-width="1.5"/><path d="M4 10c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <span class="lnav-label">Datos</span>
+      </div>
       <div class="lnav-item" id="nav-config" onclick="goStep('config')" title="Configuración">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M15.78 4.22l-1.42 1.42M5.64 14.36l-1.42 1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
         <span class="lnav-label">Config</span>
@@ -841,6 +845,47 @@
     </div>
 
     <!-- STEP: CONFIG -->
+    <div class="step" id="step-data">
+      <div class="s-title">Datos y publicación</div>
+      <div class="s-sub">Guardado automático de la cartera · Publicación web para la vista de directores</div>
+
+        <!-- ── Publicación web (vista dinámica de directores) ──────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">🌐 Publicación web — vista de directores</div>
+          <div class="cfg-sec-sub">
+            Publica la cartera en la web (almacenada en el repositorio de GitHub, coste 0). La vista de
+            directores pasa a ser un <strong>enlace fijo que se actualiza solo</strong> cuando cambias el scoring
+            o cargas el Excel. Requiere configurar en Vercel: GITHUB_TOKEN, GITHUB_REPO, GITHUB_BRANCH y NEXUS_SHARE_KEY.
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--ink3)">Clave compartida:</span>
+            <input type="password" id="cfg-share-key" placeholder="la misma que NEXUS_SHARE_KEY"
+              oninput="setShareKey(this.value)" style="width:220px;font-size:11px;border:1px solid var(--b);border-radius:4px;padding:5px 8px">
+            <button class="cfg-apply" style="font-size:10px" onclick="publishCartera(false)">📤 Publicar ahora</button>
+            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="var l=directorsLink();if(!l){toast('⚠ Configura la clave primero');return;}navigator.clipboard.writeText(l).then(function(){toast('✓ Enlace de directores copiado')})">🔗 Copiar enlace de directores</button>
+          </div>
+          <div id="pub-status" style="font-size:9px;color:var(--ink4);margin-top:8px"></div>
+          <div style="margin-top:10px;padding:8px 12px;background:var(--surf);border-radius:6px;font-size:9px;color:var(--ink4);border:1px solid var(--b);line-height:1.6">
+            Con la clave configurada, la app <strong>publica automáticamente</strong> unos segundos después de cada cambio
+            (cargar Excel, editar notas, replanificar). Los directores siempre ven la última versión sin regenerar enlaces.
+          </div>
+        </div>
+
+        <!-- ── Datos guardados ──────── -->
+        <div class="cfg-section">
+          <div class="cfg-sec-title">💾 Datos guardados</div>
+          <div class="cfg-sec-sub">
+            La cartera y las reevaluaciones se guardan <strong>automáticamente</strong> en este navegador y (si tienes clave)
+            en el almacén web. Al abrir la app se restauran solas, sin recargar el Excel.
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <button class="cfg-apply" style="font-size:10px" onclick="if(savePortfolio()){toast('✓ Cartera guardada');goStep('data');}">💾 Guardar ahora</button>
+            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="if(confirm('¿Borrar la cartera guardada en este navegador? Tendrás que volver a cargar el Excel.')){localStorage.removeItem('nexus_portfolio_v1');toast('Cartera local borrada');goStep('data');}">🗑 Borrar datos guardados (local)</button>
+            <span id="saved-status" style="font-size:9px;color:var(--ink4)"></span>
+          </div>
+        </div>
+    </div>
+
     <div class="step" id="step-config">
       <div class="s-title">Configuración</div>
       <div class="s-sub">Pesos del modelo · Umbrales de pools · Capacidad del equipo · Azure DevOps · Dataverse</div>
@@ -1014,40 +1059,7 @@
           </div>
         </div>
 
-        <!-- ── Publicación web (vista dinámica de directores) ──────── -->
-        <div class="cfg-section">
-          <div class="cfg-sec-title">🌐 Publicación web — vista de directores</div>
-          <div class="cfg-sec-sub">
-            Publica la cartera en la web (almacenada en el repositorio de GitHub, coste 0). La vista de
-            directores pasa a ser un <strong>enlace fijo que se actualiza solo</strong> cuando cambias el scoring
-            o cargas el Excel. Requiere configurar en Vercel: GITHUB_TOKEN, GITHUB_REPO, GITHUB_BRANCH y NEXUS_SHARE_KEY.
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
-            <span style="font-size:10px;color:var(--ink3)">Clave compartida:</span>
-            <input type="password" id="cfg-share-key" placeholder="la misma que NEXUS_SHARE_KEY"
-              oninput="setShareKey(this.value)" style="width:220px;font-size:11px;border:1px solid var(--b);border-radius:4px;padding:5px 8px">
-            <button class="cfg-apply" style="font-size:10px" onclick="publishCartera(false)">📤 Publicar ahora</button>
-            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="var l=directorsLink();if(!l){toast('⚠ Configura la clave primero');return;}navigator.clipboard.writeText(l).then(function(){toast('✓ Enlace de directores copiado')})">🔗 Copiar enlace de directores</button>
-          </div>
-          <div id="pub-status" style="font-size:9px;color:var(--ink4);margin-top:8px"></div>
-          <div style="margin-top:10px;padding:8px 12px;background:var(--surf);border-radius:6px;font-size:9px;color:var(--ink4);border:1px solid var(--b);line-height:1.6">
-            Con la clave configurada, la app <strong>publica automáticamente</strong> unos segundos después de cada cambio
-            (cargar Excel, editar notas, replanificar). Los directores siempre ven la última versión sin regenerar enlaces.
-          </div>
-        </div>
 
-        <!-- ── Datos guardados ──────── -->
-        <div class="cfg-section">
-          <div class="cfg-sec-title">💾 Datos guardados</div>
-          <div class="cfg-sec-sub">
-            La cartera y las reevaluaciones se guardan <strong>automáticamente</strong> en este navegador y (si tienes clave)
-            en el almacén web. Al abrir la app se restauran solas, sin recargar el Excel.
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
-            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="if(confirm('¿Borrar la cartera guardada en este navegador? Tendrás que volver a cargar el Excel.')){localStorage.removeItem('nexus_portfolio_v1');toast('Cartera local borrada');}">🗑 Borrar datos guardados (local)</button>
-            <span id="saved-status" style="font-size:9px;color:var(--ink4)"></span>
-          </div>
-        </div>
 
         <!-- ── Developer capacity ──────────────────── -->
         <div class="cfg-section">
