@@ -1528,8 +1528,9 @@
             en el almacén web. Al abrir la app se restauran solas, sin recargar el Excel.
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
-            <button class="cfg-apply" style="font-size:10px" onclick="if(savePortfolio()){toast('✓ Cartera guardada');goStep('config');}">💾 Guardar ahora</button>
+            <button class="cfg-apply" style="font-size:10px" onclick="if(savePortfolio()){toast('✓ Cartera guardada · '+portfolioData.length+' proyectos');goStep('config');}">💾 Guardar ahora</button>
             <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="if(confirm('¿Borrar la cartera guardada en este navegador? Tendrás que volver a cargar el Excel.')){localStorage.removeItem('nexus_portfolio_v1');toast('Cartera local borrada');goStep('config');}">🗑 Borrar datos guardados (local)</button>
+            <button class="cfg-apply cfg-reset" style="font-size:10px" onclick="var r=localStorage.getItem('nexus_portfolio_v1');alert(r?('✓ HAY datos guardados: '+(r.length/1024).toFixed(0)+' KB\n'+JSON.parse(r).portfolio.length+' proyectos\nGuardado: '+new Date(JSON.parse(r).savedAt).toLocaleString('es-ES')):'✗ NO hay datos guardados en este navegador.\n\nPosibles causas:\n- Modo incógnito/privado\n- El navegador borra datos al cerrar\n- Bloqueo de almacenamiento');">🔍 Comprobar guardado</button>
             <span id="saved-status" style="font-size:9px;color:var(--ink4)"></span>
           </div>
         </div>

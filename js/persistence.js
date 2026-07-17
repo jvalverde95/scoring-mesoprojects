@@ -19,11 +19,20 @@ function savePortfolio() {
       devTeam: (typeof devTeam !== 'undefined' ? devTeam : []),
       thr: (typeof getThr === 'function' ? getThr() : {s:10,m:50}),
     };
-    localStorage.setItem('nexus_portfolio_v1', JSON.stringify(payload));
+    var json = JSON.stringify(payload);
+    localStorage.setItem('nexus_portfolio_v1', json);
+    // Verificar que realmente se escribió (algunos navegadores en modo privado fallan silenciosamente)
+    var check = localStorage.getItem('nexus_portfolio_v1');
+    if (!check || check.length < 10) {
+      console.error('savePortfolio: la escritura no persistió');
+      if (typeof toast === 'function') toast('⚠ El navegador no permite guardar datos (¿modo privado?)');
+      return false;
+    }
+    console.log('[save] cartera guardada:', portfolioData.length, 'proyectos,', (json.length/1024).toFixed(0), 'KB');
     return true;
   } catch(e) {
     console.error('savePortfolio falló:', e);
-    if (typeof toast === 'function') toast('⚠ No se pudo guardar la cartera localmente: ' + (e && e.message || e));
+    if (typeof toast === 'function') toast('⚠ No se pudo guardar: ' + (e && e.message || e));
     return false;
   }
 }

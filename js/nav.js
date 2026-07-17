@@ -473,6 +473,7 @@ async function restoreLastPortfolio() {
   try {
     if (typeof loadPortfolioLocal === 'function') {
       var d = loadPortfolioLocal();
+      console.log('[restore] localStorage:', d ? (d.portfolio.length + ' proyectos') : 'vacío');
       if (d && d.portfolio && d.portfolio.length) {
         portfolioData = d.portfolio;
         if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
@@ -481,29 +482,31 @@ async function restoreLastPortfolio() {
         if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
       }
     }
-  } catch(e) {}
+  } catch(e) { console.error('[restore] error local:', e); }
 
-  // Sincronización en segundo plano con el almacén web (si hay clave configurada)
+  // Sincronización en segundo plano con el almacén web (SOLO si mejora lo local, nunca lo borra)
   try {
     if (typeof getShareKey === 'function' && getShareKey() && typeof fetchPublishedCartera === 'function') {
       var remote = await fetchPublishedCartera();
       if (remote && remote.portfolio && remote.portfolio.length) {
         var localAt = 0;
         try { var ld = loadPortfolioLocal(); localAt = (ld && ld.savedAt) || 0; } catch(_){}
-        // Si la versión remota es más reciente que la local, usarla
-        if (!loadedLocal || (remote.publishedAt && remote.publishedAt > localAt)) {
+        var remoteAt = remote.publishedAt || 0;
+        // Solo reemplaza si NO había local, o si el remoto es estrictamente más reciente
+        if (!loadedLocal || remoteAt > localAt) {
           portfolioData = remote.portfolio;
           if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') { devTeam = remote.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
-          if (typeof savePortfolio === 'function') savePortfolio();  // refresca caché local
+          if (typeof savePortfolio === 'function') savePortfolio();
           _refreshAllViews();
-          if (typeof toast === 'function') toast('☁ Sincronizado con la última versión publicada');
+          if (typeof toast === 'function') toast('☁ Sincronizado con la versión publicada');
         }
       }
     }
-  } catch(e) {}
+  } catch(e) { console.error('[restore] error remoto:', e); }
 
   // Si no había nada en ninguna parte → pedir el Excel
   if (!portfolioData || portfolioData.length === 0) {
+    console.log('[restore] sin datos en ninguna parte → pedir Excel');
     setTimeout(showMandatoryExcelUpload, 300);
   }
 }
