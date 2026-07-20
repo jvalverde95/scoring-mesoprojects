@@ -458,22 +458,45 @@ function enterApp() {
   document.getElementById('landing').style.display='none';
   document.getElementById('shell').style.display='';
   document.getElementById('bar').style.display='';
-  // Restaurar la cartera guardada ANTES de pintar el dashboard, para que las vistas
-  // se rendericen ya con los datos (evita ver la app vacía tras reabrir).
+
+  // ══ RESTAURACIÓN DE LA CARTERA GUARDADA ══
+  // Se hace ANTES de pintar nada, y deja constancia visible de lo ocurrido.
+  var _diag = 'sin datos';
   if (!portfolioData || portfolioData.length === 0) {
     try {
-      if (typeof loadPortfolioLocal === 'function') {
-        var d0 = loadPortfolioLocal();
+      var raw = localStorage.getItem('nexus_portfolio_v1');
+      if (!raw) {
+        _diag = 'localStorage vacío (no hay copia guardada)';
+      } else {
+        var d0 = JSON.parse(raw);
         if (d0 && d0.portfolio && d0.portfolio.length) {
           portfolioData = d0.portfolio;
-          if (d0.devTeam && d0.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d0.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
-          console.log('[enterApp] cartera restaurada:', portfolioData.length, 'proyectos');
+          if (d0.devTeam && d0.devTeam.length && typeof devTeam !== 'undefined') {
+            devTeam = d0.devTeam;
+            if (typeof saveDevTeam==='function') { try{saveDevTeam();}catch(_){} }
+          }
+          _diag = 'restaurados ' + portfolioData.length + ' proyectos (guardado ' + new Date(d0.savedAt).toLocaleString('es-ES') + ')';
+          console.log('[enterApp] ' + _diag);
+        } else {
+          _diag = 'la copia guardada está vacía o corrupta';
         }
       }
-    } catch(e) { console.error('[enterApp] restore local:', e); }
+    } catch(e) {
+      _diag = 'error al leer la copia: ' + (e && e.message);
+      console.error('[enterApp] restore local:', e);
+    }
+  } else {
+    _diag = 'ya había ' + portfolioData.length + ' proyectos en memoria';
   }
-  goStep('dashboard');  // always start at dashboard
-  // Refresco + sincronización remota en segundo plano
+  window._restoreDiag = _diag;
+
+  goStep('dashboard');
+
+  // Refrescar vistas con los datos restaurados + sincronizar con el almacén web
+  if (portfolioData && portfolioData.length) {
+    _refreshAllViews();
+    if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+  }
   restoreLastPortfolio();
 }
 
@@ -554,6 +577,20 @@ function _refreshAllViews() {
 function showMandatoryExcelUpload() {
   if (window._sharedViewLocked || window._sprintSnapshot) return;  // vista de directores: nunca pedir Excel
   if (portfolioData && portfolioData.length > 0) return;  // ya hay datos
+  // Último intento: si hay copia guardada, restaurarla en vez de pedir el Excel
+  try {
+    var raw = localStorage.getItem('nexus_portfolio_v1');
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (d && d.portfolio && d.portfolio.length) {
+        portfolioData = d.portfolio;
+        if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') devTeam = d.devTeam;
+        if (typeof _refreshAllViews === 'function') _refreshAllViews();
+        if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+        return;   // no mostrar el modal
+      }
+    }
+  } catch(e) { console.error('[modal] restore intento:', e); }
   var ov = document.getElementById('mandatory-excel-overlay');
   if (ov) { ov.style.display = 'flex'; return; }
   ov = document.createElement('div');
@@ -563,6 +600,7 @@ function showMandatoryExcelUpload() {
     '<div style="background:#fff;border-radius:14px;padding:32px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">'
       +'<div style="font-size:20px;font-weight:800;color:#1C2B4A;margin-bottom:8px">Carga la cartera de proyectos</div>'
       +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px">No hay ninguna cartera guardada todavía. Carga el Excel con los proyectos y sus puntuaciones para empezar; a partir de ahí se guardará automáticamente y no tendrás que volver a cargarlo.</div>'
+      +'<div style="font-size:10px;color:#B08D57;background:#FDFAF3;border:1px solid #E8DCC8;border-radius:6px;padding:8px 10px;margin-bottom:16px">Diagnóstico: '+(window._restoreDiag||'—')+'</div>'
       +'<div id="mandatory-excel-drop" onclick="document.getElementById(\'mandatory-excel-input\').click()" '
         +'style="border:2px dashed #C4974A;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#FDFAF3;transition:.2s">'
         +'<div style="font-size:34px;margin-bottom:8px">📊</div>'
