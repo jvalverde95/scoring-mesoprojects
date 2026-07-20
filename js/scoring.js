@@ -831,7 +831,12 @@ function filterPortfolio(query) {
 }
 
 function renderPortfolio() {
-  portfolioData=portfolioData.map(p=>computeProj(p));
+  // NO recalcular a ciegas: respetar los scores que vienen del Excel o de una copia
+  // guardada. Solo se computan los proyectos que aún no tienen puntuación calculada.
+  portfolioData = portfolioData.map(function(p){
+    if (p && (p.sf !== undefined && p.sf !== null) && p.dimScores && p.dimScores.length) return p;
+    return computeProj(p);
+  });
   const _dir = (window.portSortDir===undefined?1:window.portSortDir);  // 1=desc, -1=asc
   const _num = (x)=> (x===null||x===undefined||isNaN(x)) ? -Infinity : +x;
   const sorted=[...portfolioData].sort((a,b)=>{
