@@ -606,20 +606,23 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         np.adoStartDate= (prev.adoStartDate != null && prev.adoStartDate !== '') ? prev.adoStartDate : np.adoStartDate;  // fecha inicio: SIEMPRE de ADO
         np.adoTags     = prev.adoTags     || np.adoTags;
         np.adoType     = prev.adoType     || np.adoType;
-        np.adoState    = prev.adoState    || np.adoState;
-        np.adoAssigned = prev.adoAssigned || np.adoAssigned;   // responsable de ADO → "Pendiente de:"
-        np.adoIteration= prev.adoIteration|| np.adoIteration;
+        // Metadatos de ADO: si el origen ES ADO, sus valores mandan (fuente de verdad).
+        // Si el origen es Excel (que no los trae), se conservan los previos.
+        var _fromAdo = !np._fromExcel;
+        np.adoState    = _fromAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
+        np.adoAssigned = _fromAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
+        np.adoIteration= _fromAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
         // Sponsor de ADO si el Excel no lo trae
         if (!np.sponsor && prev.sponsor) np.sponsor = prev.sponsor;
-        // ══ PUNTUACIONES GUARDADAS: PRIORIDAD ABSOLUTA ══
-        // Si el proyecto tiene puntuación guardada (_scoreLocked) o el origen no aporta
-        // nota real, se conservan SIEMPRE las existentes. Lo guardado manda sobre ADO.
-        var _npHasRealScore = (np._sfExcel != null) ||
-          (np.scores && Object.keys(np.scores).length && Object.values(np.scores).some(function(v){ return v != null && v !== 0; }));
-        if (prev._scoreLocked || !_npHasRealScore) {
+        // ══ PUNTUACIONES ══
+        // Regla: el EXCEL manda siempre (trae notas explícitas del usuario).
+        // ADO nunca pisa puntuaciones: solo aporta metadatos (estado, prioridad, etc.).
+        var _isExcelSource = !!np._fromExcel || (np._sfExcel != null);
+        if (!_isExcelSource) {
+          // Origen ADO (u otro sin notas): conservar SIEMPRE lo que ya había
           if (prev.scores && Object.keys(prev.scores).length) np.scores = prev.scores;
           if (prev.sf != null) np.sf = prev.sf;
           if (prev.dimScores && prev.dimScores.length) np.dimScores = prev.dimScores;

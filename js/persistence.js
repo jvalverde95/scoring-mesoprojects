@@ -288,3 +288,63 @@ async function loadPublishedIntoApp() {
     return false;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   BOTONES EXPLÍCITOS DE GUARDAR / CARGAR (barra superior)
+   ══════════════════════════════════════════════════════════════════ */
+
+// 💾 Guardar: almacena la cartera en el navegador y, si hay clave, también en la web
+function btnSaveData() {
+  if (!portfolioData || !portfolioData.length) {
+    toast('⚠ No hay cartera que guardar. Importa el Excel primero.');
+    return;
+  }
+  var okLocal = savePortfolio();
+  if (!okLocal) return;
+  var n = portfolioData.length;
+  var msg = '💾 Guardado · ' + n + ' proyectos con sus puntuaciones';
+  // Si hay clave de publicación, guardar también en el almacén web (GitHub)
+  if (typeof getShareKey === 'function' && getShareKey() && typeof publishCartera === 'function') {
+    publishCartera(true).then(function(ok){
+      toast(ok ? (msg + ' · también en la web ☁') : (msg + ' (solo en este navegador)'));
+    }).catch(function(){ toast(msg + ' (solo en este navegador)'); });
+  } else {
+    toast(msg);
+  }
+}
+
+// 📂 Cargar: restaura la última cartera guardada (local; si no hay, de la web)
+async function btnLoadData() {
+  var d = null;
+  try { d = loadPortfolioLocal(); } catch(e) {}
+  if (d && d.portfolio && d.portfolio.length) {
+    if (portfolioData && portfolioData.length &&
+        !confirm('Se reemplazará la cartera actual (' + portfolioData.length + ' proyectos) por la guardada (' + d.portfolio.length + ' proyectos del ' + new Date(d.savedAt).toLocaleString('es-ES') + ').\n\n¿Continuar?')) {
+      return;
+    }
+    portfolioData = d.portfolio;
+    if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+    if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
+    if (typeof _refreshAllViews === 'function') _refreshAllViews();
+    toast('📂 Cargados ' + portfolioData.length + ' proyectos · guardado ' + new Date(d.savedAt).toLocaleString('es-ES'));
+    return;
+  }
+  // Sin copia local: intentar desde la web
+  if (typeof getShareKey === 'function' && getShareKey()) {
+    toast('Buscando la última cartera publicada en la web…');
+    try {
+      var remote = await fetchPublishedCartera();
+      if (remote && remote.portfolio && remote.portfolio.length) {
+        portfolioData = remote.portfolio;
+        if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') devTeam = remote.devTeam;
+        savePortfolio();
+        if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
+        if (typeof _refreshAllViews === 'function') _refreshAllViews();
+        toast('☁ Cargados ' + portfolioData.length + ' proyectos desde la web');
+        return;
+      }
+    } catch(e) {}
+  }
+  toast('⚠ No hay ninguna cartera guardada todavía. Importa el Excel y pulsa 💾 guardar.');
+}
