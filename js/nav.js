@@ -458,31 +458,48 @@ function enterApp() {
   document.getElementById('landing').style.display='none';
   document.getElementById('shell').style.display='';
   document.getElementById('bar').style.display='';
-  goStep('dashboard');  // always start at dashboard
-  // Restaurar automáticamente la última cartera guardada (reevaluaciones incluidas).
-  // 1º localStorage (instantáneo), 2º almacén web GitHub (por si hay algo más reciente / otro dispositivo).
+  // Restaurar la cartera guardada ANTES de pintar el dashboard, para que las vistas
+  // se rendericen ya con los datos (evita ver la app vacía tras reabrir).
   if (!portfolioData || portfolioData.length === 0) {
-    restoreLastPortfolio();
+    try {
+      if (typeof loadPortfolioLocal === 'function') {
+        var d0 = loadPortfolioLocal();
+        if (d0 && d0.portfolio && d0.portfolio.length) {
+          portfolioData = d0.portfolio;
+          if (d0.devTeam && d0.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d0.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+          console.log('[enterApp] cartera restaurada:', portfolioData.length, 'proyectos');
+        }
+      }
+    } catch(e) { console.error('[enterApp] restore local:', e); }
   }
+  goStep('dashboard');  // always start at dashboard
+  // Refresco + sincronización remota en segundo plano
+  restoreLastPortfolio();
 }
 
 // Restaura la cartera: local primero (instantáneo), luego sincroniza con GitHub en segundo plano.
 // Solo pide el Excel si no hay NADA guardado en ninguna parte.
 async function restoreLastPortfolio() {
-  var loadedLocal = false;
-  try {
-    if (typeof loadPortfolioLocal === 'function') {
-      var d = loadPortfolioLocal();
-      console.log('[restore] localStorage:', d ? (d.portfolio.length + ' proyectos') : 'vacío');
-      if (d && d.portfolio && d.portfolio.length) {
-        portfolioData = d.portfolio;
-        if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
-        _refreshAllViews();
-        loadedLocal = true;
-        if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+  var loadedLocal = !!(portfolioData && portfolioData.length);
+  // Si enterApp no lo cargó aún, intentarlo aquí
+  if (!loadedLocal) {
+    try {
+      if (typeof loadPortfolioLocal === 'function') {
+        var d = loadPortfolioLocal();
+        console.log('[restore] localStorage:', d ? (d.portfolio.length + ' proyectos') : 'vacío');
+        if (d && d.portfolio && d.portfolio.length) {
+          portfolioData = d.portfolio;
+          if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+          loadedLocal = true;
+        }
       }
-    }
-  } catch(e) { console.error('[restore] error local:', e); }
+    } catch(e) { console.error('[restore] error local:', e); }
+  }
+  // Refrescar vistas con lo que haya (venga de enterApp o de aquí)
+  if (loadedLocal) {
+    _refreshAllViews();
+    if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+  }
 
   // Sincronización en segundo plano con el almacén web (SOLO si mejora lo local, nunca lo borra)
   try {
@@ -512,10 +529,25 @@ async function restoreLastPortfolio() {
 }
 
 function _refreshAllViews() {
-  ['renderPortfolio','renderPools','renderCharts','renderDashboard','renderSprintScreen',
-   'renderPlanningSummary','renderCalendar','renderDevAssignPanel','renderChartsStep'].forEach(function(fn){
-    if (typeof window[fn]==='function') { try{ window[fn](); }catch(_){} }
+  // Llamada DIRECTA (no via window[]) para que funcione con funciones declaradas
+  // en scripts clásicos, y con los errores visibles en consola para diagnóstico.
+  var calls = [
+    ['renderPortfolio', typeof renderPortfolio==='function' ? renderPortfolio : null],
+    ['renderPools', typeof renderPools==='function' ? renderPools : null],
+    ['renderDashboard', typeof renderDashboard==='function' ? renderDashboard : null],
+    ['renderSprintScreen', typeof renderSprintScreen==='function' ? renderSprintScreen : null],
+    ['renderPlanningSummary', typeof renderPlanningSummary==='function' ? renderPlanningSummary : null],
+    ['renderCalendar', typeof renderCalendar==='function' ? renderCalendar : null],
+    ['renderDevAssignPanel', typeof renderDevAssignPanel==='function' ? renderDevAssignPanel : null],
+    ['renderChartsStep', typeof renderChartsStep==='function' ? renderChartsStep : null],
+    ['renderPriorityAnalysis', typeof renderPriorityAnalysis==='function' ? renderPriorityAnalysis : null],
+  ];
+  calls.forEach(function(pair){
+    if (!pair[1]) return;
+    try { pair[1](); }
+    catch(e) { console.warn('[refresh] ' + pair[0] + ' falló:', e && e.message); }
   });
+  console.log('[refresh] vistas actualizadas con', (portfolioData||[]).length, 'proyectos');
 }
 
 // Modal obligatorio de carga de Excel al iniciar sesión (no se puede cerrar sin cargar)

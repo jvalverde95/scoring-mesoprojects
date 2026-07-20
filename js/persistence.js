@@ -272,10 +272,9 @@ async function loadPublishedIntoApp() {
     if (!data || !data.portfolio || !data.portfolio.length) throw new Error('No hay cartera publicada aún');
     portfolioData = data.portfolio;
     if (data.devTeam && data.devTeam.length && typeof devTeam !== 'undefined') { devTeam = data.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
-    // Refrescar todo
-    ['renderPortfolio','renderPools','renderCharts','renderDashboard','renderSprintScreen','renderPlanningSummary','renderCalendar','renderDevAssignPanel'].forEach(function(fn){
-      if (typeof window[fn]==='function') { try{ window[fn](); }catch(_){} }
-    });
+    if (typeof savePortfolio === 'function') savePortfolio();   // cachear en local
+    // Refrescar todo (llamada directa, no via window[])
+    if (typeof _refreshAllViews === 'function') _refreshAllViews();
     toast('✓ Cartera publicada cargada · '+portfolioData.length+' proyectos');
     var ov = document.getElementById('mandatory-excel-overlay');
     if (ov) ov.style.display='none';
