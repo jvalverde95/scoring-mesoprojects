@@ -492,8 +492,10 @@ function enterApp() {
 
   goStep('dashboard');
 
-  // Refrescar vistas con los datos restaurados + sincronizar con el almacén web
+  // Refrescar vistas con los datos restaurados + replanificar según los scores guardados
   if (portfolioData && portfolioData.length) {
+    // La planificación se reconstruye desde cero con el orden por score restaurado
+    if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
     _refreshAllViews();
     if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
   }
@@ -799,6 +801,26 @@ function updateLandingAdoStatus(state, msg) {
 
 // Init on load
 document.addEventListener('DOMContentLoaded', function() {
+  // ══ RESTAURACIÓN TEMPRANA ══
+  // Cargar la cartera guardada nada más abrir la página (antes incluso del login),
+  // para que esté disponible en memoria en cuanto se entre a la app.
+  try {
+    var raw = localStorage.getItem('nexus_portfolio_v1');
+    if (raw) {
+      var d = JSON.parse(raw);
+      if (d && d.portfolio && d.portfolio.length) {
+        portfolioData = d.portfolio;
+        if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') devTeam = d.devTeam;
+        console.log('[init] cartera precargada:', portfolioData.length, 'proyectos · guardada',
+          new Date(d.savedAt).toLocaleString('es-ES'));
+      } else {
+        console.log('[init] copia guardada vacía');
+      }
+    } else {
+      console.log('[init] no hay copia guardada en este navegador');
+    }
+  } catch(e) { console.error('[init] error al precargar:', e); }
+
   initLandingCanvas();
   // Auto-focus login
   setTimeout(function(){

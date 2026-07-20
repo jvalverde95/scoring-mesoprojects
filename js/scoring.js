@@ -557,7 +557,7 @@ function parseExcelBuffer(buffer) {
 }
 
 /* Apply projects to app, preserving horas */
-function applyProjects(projects, filename, mergeMode) {
+function applyProjects(projects, filename, mergeMode, allowAdd) {
   const prevHoras = {};
   portfolioData.forEach(p => { if (p.horas!=null) prevHoras[p.nom]=p.horas; });
   Object.assign(prevHoras, _savedHoras);
@@ -614,16 +614,39 @@ function applyProjects(projects, filename, mergeMode) {
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
         // Sponsor de ADO si el Excel no lo trae
         if (!np.sponsor && prev.sponsor) np.sponsor = prev.sponsor;
+        // ══ PUNTUACIONES: nunca se pierden ══
+        // Si el origen no aporta puntuación (típico de ADO, que solo trae metadatos),
+        // se conservan las que ya había: del Excel, editadas a mano o restauradas de
+        // una copia guardada. Solo se sobrescriben si el origen trae una nota real.
+        var _npHasScore = (np._sfExcel != null) ||
+          (np.scores && Object.keys(np.scores).length && Object.values(np.scores).some(function(v){ return v != null && v !== 0; }));
+        if (!_npHasScore) {
+          if (prev.scores && Object.keys(prev.scores).length) np.scores = prev.scores;
+          if (prev.sf != null) np.sf = prev.sf;
+          if (prev.dimScores && prev.dimScores.length) np.dimScores = prev.dimScores;
+          if (prev._sfExcel != null) np._sfExcel = prev._sfExcel;
+          if (prev._manualEval) np._manualEval = prev._manualEval;
+          if (prev._fromExcel) np._fromExcel = prev._fromExcel;
+        }
+        // Horas: si el origen no las trae, conservar las guardadas
+        if ((np.horas == null || np.horas === 0) && prev.horas != null) np.horas = prev.horas;
         portfolioData[idx[k]] = np;   // sobrescribe el que coincide
         updated++;
       } else {
-        // NO se añade: si el proyecto no está en la cartera (ADO no lo trajo,
-        // p.ej. porque está cerrado), el Excel NO debe resucitarlo.
-        skipped++;
+        // Desde ADO (allowAdd) SÍ se añaden los proyectos nuevos: ADO es la fuente
+        // de verdad de qué proyectos existen. Desde Excel NO, para no resucitar
+        // proyectos cerrados que ADO ya no devuelve.
+        if (allowAdd) {
+          portfolioData.push(np);
+          idx[k] = portfolioData.length - 1;
+          added++;
+        } else {
+          skipped++;
+        }
       }
     });
     portfolioData.forEach(p=>{ if(p.horas===undefined) p.horas=null; });
-    window._mergeStats = { updated: updated, added: 0, skipped: skipped, kept: portfolioData.length - updated };
+    window._mergeStats = { updated: updated, added: added, skipped: skipped, kept: portfolioData.length - updated - added };
   } else {
     // ── REPLACE: reemplaza toda la cartera (carga desde ADO o Excel sin merge) ──
     portfolioData = incoming;
@@ -653,7 +676,7 @@ function applyProjects(projects, filename, mergeMode) {
 
   if (window._mergeStats) {
     const m = window._mergeStats;
-    toast('✓ Excel fusionado · '+m.updated+' actualizados, '+m.kept+' conservados'
+    toast('✓ Fusionado · '+m.updated+' actualizados'+(m.added?', '+m.added+' nuevos':'')+', '+m.kept+' conservados'
       + (m.skipped ? ' · '+m.skipped+' ignorados (no están en ADO, p. ej. cerrados)' : ''));
   } else {
     toast('✓ '+portfolioData.length+' proyectos cargados · exporta a Excel cuando quieras');

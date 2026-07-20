@@ -453,21 +453,26 @@ async function adoAutoSync(silent) {
       return;
     }
 
-    // Step 3: apply to portfolio (same as manual import)
+    // Step 3: apply to portfolio
+    // IMPORTANTE: si ya hay cartera cargada (restaurada de una copia guardada o del Excel),
+    // ADO debe FUSIONAR — actualizar metadatos y añadir los que falten — pero NUNCA
+    // machacar los scores y horas ya guardados. Solo hace replace si la cartera está vacía.
     const mapped = allItems.map(wi => adoMapToProject(wi));
+    const _hadData = !!(portfolioData && portfolioData.length);
     if (typeof applyProjects === 'function') {
-      applyProjects(mapped, ADO_AUTO_QUERY_NAME);
+      applyProjects(mapped, ADO_AUTO_QUERY_NAME, _hadData, true);   // merge si ya hay datos, y SÍ añade los nuevos de ADO
     }
 
-    // ── Auto-score every project using Description + Title keywords ──
-    // Runs ruleScoresCriterios (already in evaluator.js) on each project
-    // then re-computes D1-D6 and final score — no modal, no user interaction
+    // ── Auto-score SOLO los proyectos nuevos, sin puntuación previa ──
+    // Nunca se recalculan los que ya tienen score: del Excel, evaluados a mano,
+    // o restaurados de una copia guardada. Solo se puntúan los recién llegados de ADO.
     if (typeof ruleScoresCriterios === 'function' && typeof computeProj === 'function') {
       let scored = 0;
       portfolioData.forEach(function(p) {
         try {
-          // Respetar proyectos importados de Excel o evaluados a mano
-          if (p._fromExcel || p._manualEval) { return; }
+          // Respetar TODO lo que ya tenga puntuación (Excel, manual o guardado)
+          if (p._fromExcel || p._manualEval || p._sfExcel != null) { return; }
+          if (p.sf !== undefined && p.sf !== null && p.dimScores && p.dimScores.length) { return; }
           // Apply rule-based criterion scores from Description + Title
           var critScores = ruleScoresCriterios(p);
           CRIT_IDS.forEach(function(cid) { p.scores[cid] = critScores[cid]; });
@@ -480,10 +485,13 @@ async function adoAutoSync(silent) {
       // Re-render with new scores
       if (typeof renderPortfolio === 'function') renderPortfolio();
       if (typeof renderPools     === 'function') renderPools();
+      // Guardar la cartera fusionada (mantiene scores previos + añade los nuevos de ADO)
+      if (typeof savePortfolio === 'function') savePortfolio();
       adoSyncStatusBar('ok',
-        '✓ '+allItems.length+' items · scoring aplicado automáticamente',
+        '✓ '+allItems.length+' items · '+(scored?scored+' nuevos puntuados':'scores guardados respetados'),
         allItems.length);
-      if (!silent) toast('✓ '+scored+' proyectos puntuados automáticamente desde ADO');
+      if (!silent) toast(scored ? ('✓ '+scored+' proyectos nuevos puntuados desde ADO')
+                                : '✓ Sincronizado con ADO · puntuaciones guardadas intactas');
     }
 
     // Save the resolved queryId for manual re-use
