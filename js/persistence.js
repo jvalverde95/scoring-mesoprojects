@@ -13,15 +13,19 @@
 function savePortfolio() {
   try {
     if (!portfolioData || !portfolioData.length) return false;
+    // Marcar cada proyecto como "puntuación guardada" para que ninguna sincronización
+    // posterior (ADO, auto-scoring) pueda sobrescribirla.
+    portfolioData.forEach(function(p){
+      if (p && p.sf !== undefined && p.sf !== null) p._scoreLocked = true;
+    });
     var payload = {
-      v: 1, savedAt: Date.now(),
+      v: 2, savedAt: Date.now(),
       portfolio: portfolioData,
       devTeam: (typeof devTeam !== 'undefined' ? devTeam : []),
       thr: (typeof getThr === 'function' ? getThr() : {s:10,m:50}),
     };
     var json = JSON.stringify(payload);
     localStorage.setItem('nexus_portfolio_v1', json);
-    // Verificar que realmente se escribió (algunos navegadores en modo privado fallan silenciosamente)
     var check = localStorage.getItem('nexus_portfolio_v1');
     if (!check || check.length < 10) {
       console.error('savePortfolio: la escritura no persistió');

@@ -497,7 +497,11 @@ function enterApp() {
     // La planificación se reconstruye desde cero con el orden por score restaurado
     if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
     _refreshAllViews();
-    if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
+    if (typeof toast === 'function') {
+      var _sv = '';
+      try { var _r = JSON.parse(localStorage.getItem('nexus_portfolio_v1')||'{}'); if(_r.savedAt) _sv = ' · guardado ' + new Date(_r.savedAt).toLocaleString('es-ES'); } catch(_){}
+      toast('📂 Datos guardados cargados · ' + portfolioData.length + ' proyectos con sus puntuaciones' + _sv);
+    }
   }
   restoreLastPortfolio();
 }

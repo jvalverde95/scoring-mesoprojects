@@ -614,19 +614,19 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
         // Sponsor de ADO si el Excel no lo trae
         if (!np.sponsor && prev.sponsor) np.sponsor = prev.sponsor;
-        // ══ PUNTUACIONES: nunca se pierden ══
-        // Si el origen no aporta puntuación (típico de ADO, que solo trae metadatos),
-        // se conservan las que ya había: del Excel, editadas a mano o restauradas de
-        // una copia guardada. Solo se sobrescriben si el origen trae una nota real.
-        var _npHasScore = (np._sfExcel != null) ||
+        // ══ PUNTUACIONES GUARDADAS: PRIORIDAD ABSOLUTA ══
+        // Si el proyecto tiene puntuación guardada (_scoreLocked) o el origen no aporta
+        // nota real, se conservan SIEMPRE las existentes. Lo guardado manda sobre ADO.
+        var _npHasRealScore = (np._sfExcel != null) ||
           (np.scores && Object.keys(np.scores).length && Object.values(np.scores).some(function(v){ return v != null && v !== 0; }));
-        if (!_npHasScore) {
+        if (prev._scoreLocked || !_npHasRealScore) {
           if (prev.scores && Object.keys(prev.scores).length) np.scores = prev.scores;
           if (prev.sf != null) np.sf = prev.sf;
           if (prev.dimScores && prev.dimScores.length) np.dimScores = prev.dimScores;
           if (prev._sfExcel != null) np._sfExcel = prev._sfExcel;
           if (prev._manualEval) np._manualEval = prev._manualEval;
           if (prev._fromExcel) np._fromExcel = prev._fromExcel;
+          if (prev._scoreLocked) np._scoreLocked = true;
         }
         // Horas: si el origen no las trae, conservar las guardadas
         if ((np.horas == null || np.horas === 0) && prev.horas != null) np.horas = prev.horas;
@@ -671,7 +671,15 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
   if (typeof renderDevAssignPanel === 'function') { try { renderDevAssignPanel(); } catch(_) {} }
   // Replanificar SIEMPRE tras cargar Excel: el nuevo orden por nota reordena las fechas de ejecución
   if (typeof replanAndNotify === 'function') { try { replanAndNotify(null, {fromExcel:true}); } catch(_) {} }
-  if (typeof savePortfolio === 'function') { try { savePortfolio(); } catch(_) {} }
+  if (typeof savePortfolio === 'function') {
+    try {
+      if (savePortfolio()) {
+        setTimeout(function(){
+          toast('💾 Guardado · ' + portfolioData.length + ' proyectos almacenados. No necesitarás recargar el Excel al volver.');
+        }, 1200);
+      }
+    } catch(_) {}
+  }
   if (typeof schedulePublish === 'function') { try { schedulePublish(); } catch(_) {} }
 
   if (window._mergeStats) {

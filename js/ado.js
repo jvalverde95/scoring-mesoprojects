@@ -458,7 +458,11 @@ async function adoAutoSync(silent) {
     // ADO debe FUSIONAR — actualizar metadatos y añadir los que falten — pero NUNCA
     // machacar los scores y horas ya guardados. Solo hace replace si la cartera está vacía.
     const mapped = allItems.map(wi => adoMapToProject(wi));
-    const _hadData = !!(portfolioData && portfolioData.length);
+    // ¿Hay cartera cargada o guardada? Entonces SIEMPRE merge, nunca replace.
+    var _hasSaved = false;
+    try { _hasSaved = !!localStorage.getItem('nexus_portfolio_v1'); } catch(_) {}
+    const _hadData = !!(portfolioData && portfolioData.length) || _hasSaved;
+    if (_hadData) console.log('[ado] fusionando con la cartera existente (scores guardados protegidos)');
     if (typeof applyProjects === 'function') {
       applyProjects(mapped, ADO_AUTO_QUERY_NAME, _hadData, true);   // merge si ya hay datos, y SÍ añade los nuevos de ADO
     }
@@ -471,7 +475,7 @@ async function adoAutoSync(silent) {
       portfolioData.forEach(function(p) {
         try {
           // Respetar TODO lo que ya tenga puntuación (Excel, manual o guardado)
-          if (p._fromExcel || p._manualEval || p._sfExcel != null) { return; }
+          if (p._scoreLocked || p._fromExcel || p._manualEval || p._sfExcel != null) { return; }
           if (p.sf !== undefined && p.sf !== null && p.dimScores && p.dimScores.length) { return; }
           // Apply rule-based criterion scores from Description + Title
           var critScores = ruleScoresCriterios(p);
