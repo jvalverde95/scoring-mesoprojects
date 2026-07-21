@@ -310,9 +310,17 @@
       style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;
              border-radius:20px;cursor:pointer;background:#3D3D3D;color:#AAA;
              font-size:9px;font-weight:700;letter-spacing:.04em;user-select:none"
-      title="Haz clic para re-sincronizar con ADO">
+      title="Descargar de ADO: actualiza prioridades, horas y estados (no toca las puntuaciones)">
       <span class="sync-icon" style="font-size:10px">◌</span>
       <span id="ado-sync-label">ADO</span>
+    </div>
+    <div onclick="adoSyncAllScores()"
+      style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;
+             border-radius:20px;cursor:pointer;background:#2E3D52;color:#8FB8E8;
+             font-size:9px;font-weight:700;letter-spacing:.04em;user-select:none"
+      title="Enviar a ADO las puntuaciones calculadas de todos los proyectos">
+      <span style="font-size:10px">↑</span>
+      <span>enviar scores</span>
     </div>
     <span class="bar-badge">sigmoid boost · aging · v3</span>
     <button class="bar-pesos" onclick="btnSaveData()" title="Guardar la cartera actual (puntuaciones y horas) en este navegador"

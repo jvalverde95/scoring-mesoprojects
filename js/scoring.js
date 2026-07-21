@@ -601,17 +601,20 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         // ── El Excel SOLO actualiza notas, horas, área y descripción ──
         // Los metadatos que provienen de ADO se conservan SIEMPRE (la prioridad NUNCA
         // se toca desde el Excel, porque el Excel no es la fuente de verdad de ese campo).
-        np.adoPriority = (prev.adoPriority != null) ? prev.adoPriority : np.adoPriority;
+        // Prioridad: si el origen es ADO, su valor manda (P1, P2...). Si es Excel, se conserva.
+        var _srcAdo = !np._fromExcel;
+        np.adoPriority = _srcAdo
+          ? ((np.adoPriority != null) ? np.adoPriority : prev.adoPriority)
+          : ((prev.adoPriority != null) ? prev.adoPriority : np.adoPriority);
         np.adoId       = (prev.adoId != null)       ? prev.adoId       : np.adoId;
         np.adoStartDate= (prev.adoStartDate != null && prev.adoStartDate !== '') ? prev.adoStartDate : np.adoStartDate;  // fecha inicio: SIEMPRE de ADO
         np.adoTags     = prev.adoTags     || np.adoTags;
         np.adoType     = prev.adoType     || np.adoType;
         // Metadatos de ADO: si el origen ES ADO, sus valores mandan (fuente de verdad).
         // Si el origen es Excel (que no los trae), se conservan los previos.
-        var _fromAdo = !np._fromExcel;
-        np.adoState    = _fromAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
-        np.adoAssigned = _fromAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
-        np.adoIteration= _fromAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
+        np.adoState    = _srcAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
+        np.adoAssigned = _srcAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
+        np.adoIteration= _srcAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
@@ -631,8 +634,9 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
           if (prev._fromExcel) np._fromExcel = prev._fromExcel;
           if (prev._scoreLocked) np._scoreLocked = true;
         }
-        // Horas: si el origen no las trae, conservar las guardadas
-        if ((np.horas == null || np.horas === 0) && prev.horas != null) np.horas = prev.horas;
+        // Horas: si ADO trae estimación, manda (es la fuente de la planificación).
+        // Si el origen no las trae, se conservan las que ya había.
+        if (np.horas == null || np.horas === 0) { if (prev.horas != null) np.horas = prev.horas; }
         portfolioData[idx[k]] = np;   // sobrescribe el que coincide
         updated++;
       } else {

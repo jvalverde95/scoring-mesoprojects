@@ -654,6 +654,12 @@ async function adoSyncAllScores() {
     return;
   }
 
+  // Confirmación: es una escritura real sobre ADO
+  if (!confirm('Se enviarán las puntuaciones de ' + eligible.length + ' proyectos al campo de score de Azure DevOps.\n\n'
+      + 'Esto sobrescribe el valor actual en ADO de cada work item.\n\n¿Continuar?')) {
+    return;
+  }
+
   const btn = document.getElementById('ado-sync-all-btn');
   if (btn) { btn.disabled=true; btn.textContent='⟳ Sincronizando…'; }
 
@@ -677,9 +683,16 @@ async function adoSyncAllScores() {
 
   if (errors.length) {
     console.error('[adoSyncAll errors]', errors);
-    toast('⚠ ' + ok + ' OK · ' + errors.length + ' errores — ver consola');
+    toast('⚠ ' + ok + ' enviados · ' + errors.length + ' con error');
+    // Mostrar el detalle de los primeros errores para poder actuar
+    setTimeout(function(){
+      alert('Errores al enviar scores a ADO (' + errors.length + '):\n\n'
+        + errors.slice(0,8).join('\n')
+        + (errors.length > 8 ? '\n\n…y ' + (errors.length-8) + ' más (ver consola).' : '')
+        + '\n\nCausa habitual: el PAT no tiene permiso de escritura, o el campo de score no existe en ese tipo de work item.');
+    }, 600);
   } else {
-    toast('✓ ' + ok + ' scores guardados en ADO');
+    toast('✓ ' + ok + ' scores enviados a ADO correctamente');
   }
 
   if (btn) {
