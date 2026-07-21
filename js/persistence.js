@@ -330,21 +330,32 @@ async function btnLoadData() {
     toast('📂 Cargados ' + portfolioData.length + ' proyectos · guardado ' + new Date(d.savedAt).toLocaleString('es-ES'));
     return;
   }
-  // Sin copia local: intentar desde la web
-  if (typeof getShareKey === 'function' && getShareKey()) {
-    toast('Buscando la última cartera publicada en la web…');
-    try {
-      var remote = await fetchPublishedCartera();
-      if (remote && remote.portfolio && remote.portfolio.length) {
-        portfolioData = remote.portfolio;
-        if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') devTeam = remote.devTeam;
-        savePortfolio();
-        if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
-        if (typeof _refreshAllViews === 'function') _refreshAllViews();
-        toast('☁ Cargados ' + portfolioData.length + ' proyectos desde la web');
-        return;
-      }
-    } catch(e) {}
+  // ── Sin copia local (navegador nuevo, incógnito, otro equipo) ──
+  // Descargar del almacén web. Si este navegador no tiene la clave, pedirla.
+  var key = (typeof getShareKey === 'function') ? getShareKey() : '';
+  if (!key) {
+    key = prompt('No hay ninguna cartera guardada en este navegador.\n\n'
+      + 'Introduce la clave de publicación web para descargar la última cartera guardada\n'
+      + '(la misma que configuraste en Configuración → Publicación web):');
+    if (!key) { toast('Cancelado · sin clave no se puede recuperar la cartera de la web'); return; }
+    key = key.trim();
+    if (typeof setShareKey === 'function') setShareKey(key);   // recordarla en este navegador
   }
-  toast('⚠ No hay ninguna cartera guardada todavía. Importa el Excel y pulsa 💾 guardar.');
+  toast('Buscando la última cartera publicada en la web…');
+  try {
+    var remote = await fetchPublishedCartera(key);
+    if (remote && remote.portfolio && remote.portfolio.length) {
+      portfolioData = remote.portfolio;
+      if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') devTeam = remote.devTeam;
+      savePortfolio();   // dejar copia local en este navegador
+      if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
+      if (typeof _refreshAllViews === 'function') _refreshAllViews();
+      toast('☁ Cargados ' + portfolioData.length + ' proyectos desde la web'
+        + (remote.publishedAt ? ' · publicado ' + new Date(remote.publishedAt).toLocaleString('es-ES') : ''));
+      return;
+    }
+    toast('⚠ No hay cartera publicada en la web. Publícala desde tu navegador principal: configura la clave y pulsa 💾 guardar.');
+  } catch(e) {
+    toast('✗ No se pudo descargar: ' + (e && e.message || e) + ' · revisa que la clave sea correcta');
+  }
 }
