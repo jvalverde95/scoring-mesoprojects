@@ -70,7 +70,12 @@ async function adoFetchRequirements(org, project, pat, queryId) {
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
     // ── Fechas: dos vienen de ADO (fijas) y una la calcula la app ──
     'Custom.MPGStartDate','Custom.MPGTaskStartDate',  // MPG Start Date: inicio REAL (ADO manda)
-    'Microsoft.VSTS.Scheduling.TargetDate',           // Target Date: entrega comprometida (ADO manda)
+    // Target Date: entrega comprometida (ADO manda). Se consultan las variantes
+    // habituales según la plantilla de proceso y los campos personalizados MPG.
+    'Microsoft.VSTS.Scheduling.TargetDate',
+    'Microsoft.VSTS.Scheduling.FinishDate',
+    'Microsoft.VSTS.Scheduling.DueDate',
+    'Custom.MPGTargetDate','Custom.MPGEndDate','Custom.MPGTaskEndDate',
     'Custom.MPGEstimatedStartDate',                   // MPG Estimated Start Date: la calcula y escribe la APP
     // Effort / estimation fields — ADO uses different field names depending on process template
     'Microsoft.VSTS.Scheduling.OriginalEstimate',   // Scrum: Original Estimate (Hours)
@@ -83,9 +88,22 @@ async function adoFetchRequirements(org, project, pat, queryId) {
   ];
   const allItems=[];
   for(let i=0;i<ids.length;i+=200){
-    const bRes=await adoProxy(org, project, `_apis/wit/workitemsbatch?api-version=7.1`, pat, 'POST', {ids:ids.slice(i,i+200),fields});
-    if(!bRes.ok) throw new Error(`Error ${bRes.status} cargando detalles.`);
-    const bData=await bRes.json(); allItems.push(...(bData.value||[]));
+    const batch = ids.slice(i,i+200);
+    let bData = null;
+    // 1º intento: pedir la lista explícita de campos (respuesta más ligera)
+    let bRes = await adoProxy(org, project, `_apis/wit/workitemsbatch?api-version=7.1`, pat, 'POST', {ids:batch, fields});
+    if (bRes.ok) {
+      bData = await bRes.json();
+    } else {
+      // 2º intento: si algún campo no existe en el tipo de work item, ADO rechaza la
+      // petición entera. En ese caso se piden TODOS los campos (sin lista) para que
+      // lleguen igualmente los que sí existan (Target Date, fechas MPG, etc.).
+      console.warn('[ADO] Petición con lista de campos falló ('+bRes.status+'). Reintentando sin filtro de campos…');
+      const bRes2 = await adoProxy(org, project, `_apis/wit/workitemsbatch?api-version=7.1`, pat, 'POST', {ids:batch, $expand:'fields'});
+      if (!bRes2.ok) throw new Error(`Error ${bRes2.status} cargando detalles.`);
+      bData = await bRes2.json();
+    }
+    allItems.push(...((bData && bData.value) || []));
   }
   return allItems;
 }
@@ -122,6 +140,23 @@ function adoMapToProject(wi) {
     ? parseFloat(rawHours) || null
     : null;
 
+  // Diagnóstico (una sola vez por carga): lista en consola TODOS los campos con
+  // formato fecha que devuelve este ADO, señalando cuál se ha usado como Target Date.
+  if (!window._adoDateDiagShown) {
+    var _dateFields = Object.keys(f).filter(function(k){
+      var v = f[k];
+      return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v);
+    });
+    if (_dateFields.length) {
+      var _tgtFound = f['Custom.MPGTargetDate'] || f['Custom.MPGEndDate'] || f['Custom.MPGTaskEndDate']
+                   || f['Microsoft.VSTS.Scheduling.TargetDate'] || f['Microsoft.VSTS.Scheduling.FinishDate']
+                   || f['Microsoft.VSTS.Scheduling.DueDate'];
+      console.log('[ADO] Campos de fecha disponibles en work item ' + wi.id + ':',
+        _dateFields.map(function(k){ return k + ' = ' + f[k]; }));
+      console.log('[ADO] Target Date detectada:', _tgtFound || '(ninguna) — si alguno de los campos de arriba es la fecha objetivo, indícalo para mapearlo');
+      window._adoDateDiagShown = true;
+    }
+  }
   return {nom:`${wi.id} — ${title}`,area,sponsor,scores,
     horas,                          // ← mapped from ADO estimation field
     horasSource: rawHours !== null ? 'OriginalEstimate' : null,
@@ -134,7 +169,12 @@ function adoMapToProject(wi) {
     // Vacío = no iniciado (planificación normal). Con valor = en curso desde esa fecha.
     adoStartDate: (f['Custom.MPGStartDate'] || f['Custom.MPGTaskStartDate'] || null),
     // Target Date: fecha de entrega comprometida en ADO (fija, manda sobre la estimación)
-    adoTargetDate: (f['Microsoft.VSTS.Scheduling.TargetDate'] || null),
+    // Target Date es el campo estándar del sistema en ADO, así que tiene prioridad.
+    // Los personalizados MPG solo se usan si el estándar no está informado.
+    adoTargetDate: (f['Microsoft.VSTS.Scheduling.TargetDate']
+                 || f['Microsoft.VSTS.Scheduling.FinishDate']
+                 || f['Microsoft.VSTS.Scheduling.DueDate']
+                 || f['Custom.MPGTargetDate'] || f['Custom.MPGEndDate'] || f['Custom.MPGTaskEndDate'] || null),
     // MPG Estimated Start Date: inicio ESTIMADO que calcula la app y sincroniza hacia ADO
     adoEstStartDate: (f['Custom.MPGEstimatedStartDate'] || null),
     // Seguimiento de esfuerzo: horas ya dedicadas y horas que faltan
