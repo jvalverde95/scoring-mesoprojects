@@ -45,6 +45,7 @@ function loadLocked() {
 // una replanificación LIMPIA por score. Se usa al cargar Excel o al repriorizar,
 // porque los locks viejos congelaban fechas (p. ej. de 2028) y rompían el orden.
 function clearPlanningLocks() {
+  if (typeof invalidatePlanCache === 'function') invalidatePlanCache();
   lockedAssignments = [];
   activeProjects = [];
   try { localStorage.removeItem('nexus_lk'); } catch(e) {}
@@ -119,7 +120,41 @@ function pPool(p) {
 
 // ── Build timeline ─────────────────────────────────────────────
 // Returns array of timeline items WITHOUT modifying lockedAssignments
+// ══ CACHÉ DE PLANIFICACIÓN ══
+// planBuildTimeline se invoca decenas de veces por refresco de vistas. Como el cálculo
+// es determinista, se cachea el resultado y se invalida solo cuando cambia algo que
+// afecta al plan (cartera, equipo, bloqueos, umbrales o configuración de vencidos).
+var _planCache = null, _planCacheKey = '';
+
+function _planCacheSignature() {
+  try {
+    var pd = (portfolioData || []).map(function(p){
+      return [p.nom, p.sf, p.horas, p.adoStartDate, p.adoTargetDate,
+              p.adoRemainingWork, p.adoCompletedWork, p.adoState, p.assignedDev].join('|');
+    }).join('~');
+    var dt = (typeof devTeam !== 'undefined' ? devTeam : []).map(function(d){
+      return [d.name, d.corto, d.medio, d.largo].join('|');
+    }).join('~');
+    var lk = JSON.stringify(typeof lockedAssignments !== 'undefined' ? lockedAssignments : []);
+    var ap = JSON.stringify(typeof activeProjects !== 'undefined' ? activeProjects : []);
+    var thr = (document.getElementById('thr-s')||{}).value + '/' + (document.getElementById('thr-m')||{}).value;
+    var od = (typeof getOverdueDays === 'function') ? getOverdueDays() : 10;
+    return pd + '#' + dt + '#' + lk + '#' + ap + '#' + thr + '#' + od;
+  } catch(e) { return String(Math.random()); }   // ante la duda, no cachear
+}
+
+// Fuerza el recálculo en la próxima llamada (tras cambios de datos)
+function invalidatePlanCache() { _planCache = null; _planCacheKey = ''; }
+
 function planBuildTimeline() {
+  var sig = _planCacheSignature();
+  if (_planCache && _planCacheKey === sig) return _planCache;
+  var result = _planBuildTimelineUncached();
+  _planCache = result; _planCacheKey = sig;
+  return result;
+}
+
+function _planBuildTimelineUncached() {
   if (!devTeam || !devTeam.length) return [];
 
   var today = new Date(); today.setHours(0,0,0,0);
@@ -141,7 +176,13 @@ function planBuildTimeline() {
   var activeNoms = {}; activeProjects.forEach(function(a){ activeNoms[a.nom] = true; });
   var lockMap = {}; lockedAssignments.forEach(function(l){ lockMap[l.nom] = l; });
 
-  var enCursoOf = function(p){ return !!(p.adoStartDate && String(p.adoStartDate).trim() !== ''); };
+  // Un proyecto está "en curso" solo si su fecha de inicio de ADO es una fecha VÁLIDA.
+  // Un valor corrupto o no parseable se trata como "sin fecha" (la app lo planifica).
+  var enCursoOf = function(p){
+    if (!p || !p.adoStartDate || String(p.adoStartDate).trim() === '') return false;
+    var d = new Date(p.adoStartDate);
+    return !isNaN(+d);
+  };
 
   // ══ COLA ÚNICA, ORDENADA ESTRICTAMENTE POR SCORE (desc) ══
   // Los proyectos EN CURSO (fecha de ADO) se planifican en su fecha real, pero NO alteran
@@ -210,11 +251,35 @@ function planBuildTimeline() {
     var days = Math.ceil((p.horas / wh) * 5);
     var start, end;
 
+    // ── Jerarquía de fechas ──
+    // 1) MPG Start Date (adoStartDate) → proyecto YA INICIADO: fecha real, intocable.
+    // 2) Target Date (adoTargetDate)   → entrega COMPROMETIDA en ADO: manda sobre la estimación.
+    // 3) Sin ninguna de las dos        → hueco que la app calcula y sincroniza a
+    //    "MPG Estimated Start Date". La estimada previa NO condiciona el cálculo.
     if (enCursoOf(p)) {
-      // EN CURSO: inicio real de ADO. Fin nunca en el pasado (regla +N días si venció).
+      // EN CURSO: inicio real de ADO.
+      // La duración pendiente se calcula con las HORAS QUE FALTAN según ADO
+      // (RemainingWork), o con las totales menos las ya dedicadas (CompletedWork).
       start = new Date(p.adoStartDate);
-      end = pAddDays(new Date(start), days);
-      if (end < today) end = new Date(+today + _od * 86400000);
+      var restH = null;
+      if (p.adoRemainingWork != null && p.adoRemainingWork >= 0) {
+        restH = p.adoRemainingWork;
+      } else if (p.adoCompletedWork != null && p.horas != null) {
+        restH = Math.max(0, p.horas - p.adoCompletedWork);
+      }
+      if (restH != null && wh > 0) {
+        // Las horas que faltan se cuentan desde HOY (no desde el inicio original)
+        var diasRest = Math.max(1, Math.ceil((restH / wh) * 5));
+        end = pAddDays(new Date(today), diasRest);
+      } else {
+        end = pAddDays(new Date(start), days);
+        if (end < today) end = new Date(+today + _od * 86400000);
+      }
+      // Si ADO fija fecha de entrega objetivo, esa manda sobre la estimación
+      if (p.adoTargetDate) {
+        var _tgt = new Date(p.adoTargetDate);
+        if (!isNaN(_tgt)) end = _tgt;
+      }
     } else {
       // NORMAL: arranca cuando su dev queda libre, pero NUNCA antes que el proyecto
       // anterior de la cola (respeta el orden por score) ni en el pasado.
@@ -224,6 +289,17 @@ function planBuildTimeline() {
       if (s0 < prevStartPool[pool]) s0 = new Date(prevStartPool[pool]);
       start = pNextWork(s0);
       end = pAddDays(new Date(start), days);
+      // Si ADO fija fecha de entrega objetivo, esa manda: la entrega es la de ADO y
+      // el inicio se deduce hacia atrás (sin caer en el pasado ni romper el orden).
+      if (p.adoTargetDate) {
+        var _tgtN = new Date(p.adoTargetDate);
+        if (!isNaN(_tgtN)) {
+          end = _tgtN;
+          var _back = new Date(_tgtN), _n = days;
+          while (_n > 0) { _back.setDate(_back.getDate()-1); var _dw=_back.getDay(); if(_dw!==0&&_dw!==6) _n--; }
+          if (_back > start) start = pNextWork(_back);   // solo retrasa, nunca adelanta
+        }
+      }
       // Garantía fuerte: un proyecto de menor score no puede TERMINAR antes que el anterior
       // (de mayor score) del mismo pool. Si ocurriera, se retrasa su inicio hasta que su
       // fin coincida al menos con el del proyecto previo (mantiene la monotonía visual).
@@ -246,7 +322,10 @@ function planBuildTimeline() {
     timeline.push({
       proj:p, pool:pool, devName:dev.name, startDate:start, endDate:end,
       hoursPerWeek:wh, totalHours:p.horas, weeks:+(p.horas/wh).toFixed(1),
-      locked:false, enCurso:enCursoOf(p), manualDev:!!manualName
+      locked:false, enCurso:enCursoOf(p), manualDev:!!manualName,
+      // Origen de cada fecha: 'ado' si viene informada de ADO, 'calc' si la calcula la app
+      startSource: enCursoOf(p) ? 'ado' : 'calc',
+      endSource:   p.adoTargetDate ? 'ado' : 'calc'
     });
 
     // Ocupar al desarrollador hasta el fin (la disponibilidad nunca retrocede)
@@ -279,6 +358,19 @@ function planBuildTimeline() {
       t.startDate = ns;
       t.endDate = new Date(+ns + dur);
     });
+  });
+
+  // ══ RED DE SEGURIDAD FINAL ══
+  // Ninguna fecha inválida puede llegar a las vistas: si algo salió mal (dato corrupto
+  // en ADO, cálculo imposible), se sustituye por una estimación segura desde hoy.
+  timeline.forEach(function(t){
+    if (!t.startDate || isNaN(+t.startDate)) t.startDate = new Date(today);
+    if (!t.endDate || isNaN(+t.endDate)) {
+      var _d = Math.max(1, Math.ceil(((t.totalHours || 8) / (t.hoursPerWeek || 8)) * 5));
+      t.endDate = pAddDays(new Date(t.startDate), _d);
+    }
+    // El fin nunca puede ser anterior al inicio
+    if (+t.endDate < +t.startDate) t.endDate = pAddDays(new Date(t.startDate), 1);
   });
 
   return timeline;
@@ -2726,6 +2818,7 @@ function renderDevAssignPanel() {
 // + capacidad de los equipos) y, si se pasa projNom, muestra un popup con su nueva fecha de inicio.
 function replanAndNotify(projNom, opts) {
   opts = opts || {};
+  if (typeof invalidatePlanCache === 'function') invalidatePlanCache();
   // Fuerza el recálculo de todas las vistas dependientes del timeline
   if (typeof recalcAndRenderPlanning === 'function') recalcAndRenderPlanning();
   else if (typeof renderSprintScreen === 'function') renderSprintScreen();

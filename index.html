@@ -322,6 +322,14 @@
       <span style="font-size:10px">↑</span>
       <span>enviar scores</span>
     </div>
+    <div onclick="adoSyncEstimatedDates()"
+      style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;
+             border-radius:20px;cursor:pointer;background:#3A3520;color:#E8C888;
+             font-size:9px;font-weight:700;letter-spacing:.04em;user-select:none"
+      title="Enviar a ADO la fecha estimada de inicio (campo MPG Estimated Start Date) de los proyectos sin fecha propia">
+      <span style="font-size:10px">📅</span>
+      <span>enviar fechas est.</span>
+    </div>
     <span class="bar-badge">sigmoid boost · aging · v3</span>
     <button class="bar-pesos" onclick="btnSaveData()" title="Guardar la cartera actual (puntuaciones y horas) en este navegador"
       style="background:#2E4A3A;border-color:#3E6A50;color:#9FE0BC">💾 guardar</button>
@@ -2593,6 +2601,127 @@
         <div style="font-size:10px;font-weight:700;color:#087B50;margin-bottom:4px">📊 Excel / Manual</div>
         <div style="font-size:10px;color:var(--ink3);line-height:1.6">Importa ficheros .xlsx con columnas: nombre, área, sponsor, fecha. También evaluación manual criterio a criterio con el wizard de 6 pasos. Los datos persisten en localStorage (cifrado XOR).</div>
       </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ Sincronización con Azure DevOps ═══ -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">Sincronización con Azure DevOps</div>
+    <div class="cfg-sec-sub">La app y ADO comparten información en las dos direcciones. Cada campo tiene un origen único de verdad para evitar que un lado sobrescriba al otro.</div>
+
+    <!-- Dirección de cada campo -->
+    <div style="margin-top:14px;background:var(--surf);border-radius:8px;padding:14px;border:1px solid var(--b)">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:10px">Quién manda en cada campo</div>
+      <div style="display:grid;grid-template-columns:1.4fr .8fr 2fr;gap:8px;font-size:10px">
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px;letter-spacing:.05em">Campo</div>
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px;letter-spacing:.05em;text-align:center">Dirección</div>
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px;letter-spacing:.05em">Regla</div>
+
+        <div style="color:var(--ink);font-weight:600;padding:5px 0;border-top:1px solid var(--b)">Prioridad (P1, P2…)</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b)"><span style="background:#E8F0FA;color:#1848A0;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700">ADO → app</span></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b);line-height:1.5">ADO es la fuente. Cada sincronización actualiza la prioridad en la app.</div>
+
+        <div style="color:var(--ink);font-weight:600;padding:5px 0;border-top:1px solid var(--b)">Estado / Responsable / Iteración</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b)"><span style="background:#E8F0FA;color:#1848A0;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700">ADO → app</span></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b);line-height:1.5">Los estados cerrados sacan el proyecto de pools y planificación. El responsable alimenta "Pendiente de:".</div>
+
+        <div style="color:var(--ink);font-weight:600;padding:5px 0;border-top:1px solid var(--b)">Horas estimadas / dedicadas / restantes</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b)"><span style="background:#E8F0FA;color:#1848A0;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700">ADO → app</span></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b);line-height:1.5">Las horas restantes recalculan la entrega de los proyectos en curso desde hoy.</div>
+
+        <div style="color:var(--ink);font-weight:600;padding:5px 0;border-top:1px solid var(--b)">Puntuación (score final)</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b)"><span style="background:#EAF6F0;color:#087B50;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700">app → ADO</span></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b);line-height:1.5">La calcula la app. ADO nunca la sobrescribe. Se envía con el botón <b>↑ enviar scores</b>.</div>
+
+        <div style="color:var(--ink);font-weight:600;padding:5px 0;border-top:1px solid var(--b)">MPG Estimated Start Date</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b)"><span style="background:#EAF6F0;color:#087B50;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700">app → ADO</span></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b);line-height:1.5">Fecha de inicio que calcula el planificador. Se envía con el botón <b>📅 fechas est.</b></div>
+      </div>
+    </div>
+
+    <!-- Los tres campos de fecha -->
+    <div style="margin-top:12px;background:var(--surf);border-radius:8px;padding:14px;border:1px solid var(--b)">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">Los tres campos de fecha</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="background:var(--w);border-radius:6px;padding:10px;border:1px solid var(--b)">
+          <div style="font-size:9px;font-weight:700;color:#1848A0;margin-bottom:4px">MPG Start Date</div>
+          <div style="font-size:9px;color:var(--ink3);line-height:1.6">Inicio <b>real</b>. Si está informado, el proyecto está en curso y el planificador usa esta fecha, no la estimada.</div>
+        </div>
+        <div style="background:var(--w);border-radius:6px;padding:10px;border:1px solid var(--b)">
+          <div style="font-size:9px;font-weight:700;color:#1848A0;margin-bottom:4px">Target Date</div>
+          <div style="font-size:9px;color:var(--ink3);line-height:1.6">Entrega <b>comprometida</b>. Manda sobre cualquier estimación. La app no escribe fechas en estos proyectos.</div>
+        </div>
+        <div style="background:var(--w);border-radius:6px;padding:10px;border:1px solid var(--b)">
+          <div style="font-size:9px;font-weight:700;color:#087B50;margin-bottom:4px">MPG Estimated Start Date</div>
+          <div style="font-size:9px;color:var(--ink3);line-height:1.6">Inicio <b>estimado</b> por el planificador según score, horas y capacidad. Lo calcula y lo escribe la app.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cómo decide el planificador -->
+    <div style="margin-top:12px;background:var(--surf);border-radius:8px;padding:14px;border:1px solid var(--b)">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">Qué fecha usa el planificador en cada caso</div>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr .9fr;gap:8px;font-size:10px">
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px">Situación en ADO</div>
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px">Inicio</div>
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px">Entrega</div>
+        <div style="font-weight:700;color:var(--ink4);text-transform:uppercase;font-size:8px;text-align:center">¿Escribe?</div>
+
+        <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Sin fechas</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Calculado</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Calculada</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:#087B50;font-weight:700">Sí</div>
+
+        <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Solo Estimated Start</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Recalculado</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Calculada</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:#087B50;font-weight:700">Sí</div>
+
+        <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Con MPG Start Date</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)"><b>Real de ADO</b></div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Por horas restantes</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:#8A6D3B;font-weight:700">Sí, informativa</div>
+
+        <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Con Target Date</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Deducido hacia atrás</div>
+        <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)"><b>Target de ADO</b></div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:var(--ink4);font-weight:700">No</div>
+      </div>
+      <div style="font-size:9px;color:var(--ink4);margin-top:10px;line-height:1.6;padding-top:8px;border-top:1px solid var(--b)">
+        Los proyectos sin fechas en ADO (los <b>huecos</b>) son los que la app planifica y puede actualizar.
+        Los que ya tienen fecha real o comprometida se respetan siempre: ADO manda.
+      </div>
+    </div>
+
+    <!-- Reglas de fusión -->
+    <div style="margin-top:12px;background:var(--surf);border-radius:8px;padding:14px;border:1px solid var(--b)">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:8px">Reglas de fusión al importar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--w);border-radius:6px;padding:10px;border:1px solid var(--b)">
+          <div style="font-size:9px;font-weight:700;color:var(--ink);margin-bottom:4px">Desde ADO</div>
+          <div style="font-size:9px;color:var(--ink3);line-height:1.7">
+            · Actualiza prioridad, estado, responsable, horas y fechas<br>
+            · <b>Nunca</b> toca las puntuaciones guardadas<br>
+            · Añade los proyectos nuevos que no estén en la cartera
+          </div>
+        </div>
+        <div style="background:var(--w);border-radius:6px;padding:10px;border:1px solid var(--b)">
+          <div style="font-size:9px;font-weight:700;color:var(--ink);margin-bottom:4px">Desde Excel</div>
+          <div style="font-size:9px;color:var(--ink3);line-height:1.7">
+            · Actualiza puntuaciones y horas (es la fuente de notas)<br>
+            · Conserva los metadatos que vinieron de ADO<br>
+            · <b>No añade</b> proyectos nuevos, para no resucitar cerrados
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Requisitos -->
+    <div style="margin-top:12px;padding:10px 12px;background:#FDFAF3;border:1px solid #E8DCC8;border-radius:6px;font-size:9px;color:#8A6D3B;line-height:1.7">
+      <b>Requisitos para la escritura:</b> el PAT configurado debe tener permisos <b>Work Items: Read &amp; Write</b>.
+      Los campos personalizados (MPG Start Date, MPG Estimated Start Date) deben existir en el tipo de work item correspondiente;
+      si no, ADO devuelve un error 400 que la app muestra con el detalle.
     </div>
   </div>
 

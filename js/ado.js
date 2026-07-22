@@ -68,9 +68,14 @@ async function adoFetchRequirements(org, project, pat, queryId) {
     'System.Id','System.Title','System.WorkItemType','System.State',
     'System.AssignedTo','System.CreatedDate','System.Description',
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
-    'Custom.MPGStartDate','Custom.MPGTaskStartDate',  // fecha de inicio (Requirement / Task)
+    // ── Fechas: dos vienen de ADO (fijas) y una la calcula la app ──
+    'Custom.MPGStartDate','Custom.MPGTaskStartDate',  // MPG Start Date: inicio REAL (ADO manda)
+    'Microsoft.VSTS.Scheduling.TargetDate',           // Target Date: entrega comprometida (ADO manda)
+    'Custom.MPGEstimatedStartDate',                   // MPG Estimated Start Date: la calcula y escribe la APP
     // Effort / estimation fields — ADO uses different field names depending on process template
     'Microsoft.VSTS.Scheduling.OriginalEstimate',   // Scrum: Original Estimate (Hours)
+    'Microsoft.VSTS.Scheduling.CompletedWork',       // Horas ya dedicadas
+    'Microsoft.VSTS.Scheduling.RemainingWork',       // Horas pendientes
     'Microsoft.VSTS.Scheduling.StoryPoints',         // Agile: Story Points
     'Microsoft.VSTS.Scheduling.Effort',              // CMMI: Effort
     'Microsoft.VSTS.Scheduling.Size',                // CMMI: Size
@@ -128,6 +133,15 @@ function adoMapToProject(wi) {
     // Fecha de inicio según el tipo: Requirement → MPGStartDate, Task → MPGTaskStartDate.
     // Vacío = no iniciado (planificación normal). Con valor = en curso desde esa fecha.
     adoStartDate: (f['Custom.MPGStartDate'] || f['Custom.MPGTaskStartDate'] || null),
+    // Target Date: fecha de entrega comprometida en ADO (fija, manda sobre la estimación)
+    adoTargetDate: (f['Microsoft.VSTS.Scheduling.TargetDate'] || null),
+    // MPG Estimated Start Date: inicio ESTIMADO que calcula la app y sincroniza hacia ADO
+    adoEstStartDate: (f['Custom.MPGEstimatedStartDate'] || null),
+    // Seguimiento de esfuerzo: horas ya dedicadas y horas que faltan
+    adoCompletedWork: (f['Microsoft.VSTS.Scheduling.CompletedWork'] != null
+                        ? Number(f['Microsoft.VSTS.Scheduling.CompletedWork']) : null),
+    adoRemainingWork: (f['Microsoft.VSTS.Scheduling.RemainingWork'] != null
+                        ? Number(f['Microsoft.VSTS.Scheduling.RemainingWork']) : null),
     adoDesc:desc, adoTags:tags, adoRaw:f};
 }
 
@@ -611,6 +625,89 @@ async function adoWriteScore(adoId, workItemType, score, pool, autoP) {
   }
 
   return await res.json();
+}
+
+// ── Escribir la fecha estimada de inicio calculada por la app ──
+// Campo destino en ADO: Custom.MPGEstimatedStartDate ("MPG Estimated Start Date").
+// Solo se escribe en proyectos que NO tienen fecha real (MPG Start Date) ni Target Date:
+// esos ya tienen fechas propias en ADO y la app no debe tocarlos.
+const ADO_EST_START_FIELD = 'Custom.MPGEstimatedStartDate';
+
+async function adoWriteEstStart(adoId, dateISO) {
+  const {org, project, pat} = _cfgAdoCreds();
+  if (!org || !project) throw new Error('Configura organización y proyecto ADO en ⚙ Config');
+  const patchOps = [{ op: 'add', path: '/fields/' + ADO_EST_START_FIELD, value: dateISO }];
+  const path = `_apis/wit/workitems/${adoId}?api-version=7.1`;
+  const res = await adoProxy(org, project, path, pat, 'PATCH', patchOps);
+  if (res.status === 401) throw new Error('PAT sin permisos de escritura (401).');
+  if (res.status === 400) {
+    const body = await res.json().catch(()=>({}));
+    throw new Error('Campo "' + ADO_EST_START_FIELD + '" no encontrado (400). ' + (body.message||'').substring(0,100));
+  }
+  if (!res.ok) throw new Error('Error ' + res.status + ' al actualizar ' + adoId);
+  return await res.json();
+}
+
+// ── Enviar a ADO las fechas estimadas de inicio de toda la cartera ──
+async function adoSyncEstimatedDates() {
+  if (typeof planBuildTimeline !== 'function') { toast('Planificación no disponible'); return; }
+  const tl = planBuildTimeline();
+  if (!tl.length) { toast('No hay planificación. Configura el equipo en Configuración.'); return; }
+
+  // Solo los que la app planifica: sin fecha real de inicio y sin Target Date en ADO
+  // A quién se le escribe la fecha estimada:
+  //  · Sin fechas en ADO      → la app la calcula y la escribe (caso principal)
+  //  · Con MPG Start Date     → el planificador usa esa fecha REAL, pero la estimada
+  //                             se escribe igualmente como referencia informativa
+  //  · Con Target Date        → entrega comprometida: la app no toca ese proyecto
+  const eligible = tl.filter(function(t){
+    const p = t.proj;
+    if (!p.adoId) return false;
+    const tieneTarget = !!(p.adoTargetDate && String(p.adoTargetDate).trim() !== '');
+    return !tieneTarget;
+  });
+  const conInicioReal = eligible.filter(function(t){
+    return !!(t.proj.adoStartDate && String(t.proj.adoStartDate).trim() !== '');
+  }).length;
+
+  if (!eligible.length) {
+    toast('No hay proyectos a los que escribir la fecha estimada: todos tienen Target Date comprometida en ADO.');
+    return;
+  }
+  if (!confirm('Se enviará la fecha estimada de inicio de ' + eligible.length + ' proyectos al campo\n'
+      + '"MPG Estimated Start Date" de Azure DevOps.\n\n'
+      + (conInicioReal ? ('De ellos, ' + conInicioReal + ' ya tienen MPG Start Date: el planificador seguirá usando\n'
+          + 'esa fecha real; la estimada se escribe solo como referencia.\n\n') : '')
+      + 'Los proyectos con Target Date comprometida quedan excluidos.\n\n¿Continuar?')) return;
+
+  adoSyncStatusBar('syncing', 'Enviando fechas estimadas a ADO…');
+  let ok = 0; const errors = [];
+  for (const t of eligible) {
+    try {
+      // Fecha a escribir: la que calcula el planificador.
+      // En proyectos en curso, t.startDate es la fecha REAL de ADO; en ese caso se
+      // escribe igualmente (queda como confirmación de la fecha que maneja la app).
+      const iso = new Date(t.startDate).toISOString().split('T')[0];
+      await adoWriteEstStart(t.proj.adoId, iso);
+      t.proj.adoEstStartDate = iso;
+      ok++;
+    } catch(err) {
+      errors.push(t.proj.adoId + ': ' + err.message.substring(0,60));
+    }
+    await new Promise(function(r){ setTimeout(r, 120); });
+  }
+  adoSyncStatusBar('ok', '✓ ' + ok + '/' + eligible.length + ' fechas estimadas enviadas', ok);
+  if (errors.length) {
+    console.error('[adoSyncEstimatedDates]', errors);
+    toast('⚠ ' + ok + ' enviadas · ' + errors.length + ' con error');
+    setTimeout(function(){
+      alert('Errores al enviar fechas estimadas (' + errors.length + '):\n\n'
+        + errors.slice(0,8).join('\n')
+        + '\n\nCausa habitual: el campo "MPG Estimated Start Date" no existe en ese tipo de work item, o el PAT no tiene permiso de escritura.');
+    }, 600);
+  } else {
+    toast('✓ ' + ok + ' fechas estimadas de inicio enviadas a ADO');
+  }
 }
 
 // ── Sync a single project to ADO ─────────────────────────────

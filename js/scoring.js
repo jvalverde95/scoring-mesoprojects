@@ -607,11 +607,16 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
           ? ((np.adoPriority != null) ? np.adoPriority : prev.adoPriority)
           : ((prev.adoPriority != null) ? prev.adoPriority : np.adoPriority);
         np.adoId       = (prev.adoId != null)       ? prev.adoId       : np.adoId;
-        np.adoStartDate= (prev.adoStartDate != null && prev.adoStartDate !== '') ? prev.adoStartDate : np.adoStartDate;  // fecha inicio: SIEMPRE de ADO
         np.adoTags     = prev.adoTags     || np.adoTags;
         np.adoType     = prev.adoType     || np.adoType;
         // Metadatos de ADO: si el origen ES ADO, sus valores mandan (fuente de verdad).
         // Si el origen es Excel (que no los trae), se conservan los previos.
+        // Fechas y esfuerzo: ADO es la fuente de verdad cuando el origen es ADO
+        np.adoStartDate    = _srcAdo ? (np.adoStartDate    != null ? np.adoStartDate    : prev.adoStartDate)    : (prev.adoStartDate    != null ? prev.adoStartDate    : np.adoStartDate);
+        np.adoTargetDate   = _srcAdo ? (np.adoTargetDate   != null ? np.adoTargetDate   : prev.adoTargetDate)   : (prev.adoTargetDate   != null ? prev.adoTargetDate   : np.adoTargetDate);
+        np.adoEstStartDate = _srcAdo ? (np.adoEstStartDate != null ? np.adoEstStartDate : prev.adoEstStartDate) : (prev.adoEstStartDate != null ? prev.adoEstStartDate : np.adoEstStartDate);
+        np.adoCompletedWork= _srcAdo ? (np.adoCompletedWork!= null ? np.adoCompletedWork: prev.adoCompletedWork): (prev.adoCompletedWork!= null ? prev.adoCompletedWork: np.adoCompletedWork);
+        np.adoRemainingWork= _srcAdo ? (np.adoRemainingWork!= null ? np.adoRemainingWork: prev.adoRemainingWork): (prev.adoRemainingWork!= null ? prev.adoRemainingWork: np.adoRemainingWork);
         np.adoState    = _srcAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
         np.adoAssigned = _srcAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
         np.adoIteration= _srcAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
@@ -678,6 +683,7 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
   if (typeof renderDevAssignPanel === 'function') { try { renderDevAssignPanel(); } catch(_) {} }
   // Replanificar SIEMPRE tras cargar Excel: el nuevo orden por nota reordena las fechas de ejecución
   if (typeof replanAndNotify === 'function') { try { replanAndNotify(null, {fromExcel:true}); } catch(_) {} }
+  if (typeof invalidatePlanCache === 'function') { try { invalidatePlanCache(); } catch(_) {} }
   if (typeof savePortfolio === 'function') {
     try {
       if (savePortfolio()) {
