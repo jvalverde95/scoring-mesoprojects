@@ -976,9 +976,9 @@ function renderPortfolio() {
       <td style="font-weight:600;max-width:300px;min-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${p.nom}">${dvDot} ${p.nom}</td>
       <td style="font-size:10px;color:var(--ink3);white-space:nowrap;">${p.area||'—'}</td>
       ${dimCells}
-      <td style="text-align:center;font-family:'Playfair Display',serif;font-size:16px;">${p.sb.toFixed(1)}</td>
+      <td style="text-align:center;font-family:'Playfair Display',serif;font-size:16px;">${((p.sb)||0).toFixed(1)}</td>
       <td style="text-align:center;">${agingStr}</td>
-      <td style="text-align:center;font-family:'Playfair Display',serif;font-size:18px;color:${scColorHex(p.sf)};">${p.sf.toFixed(1)}</td>
+      <td style="text-align:center;font-family:'Playfair Display',serif;font-size:18px;color:${scColorHex(p.sf)};">${((p.sf)||0).toFixed(1)}</td>
       <td><span class="cls-badge" style="${clsStyle}">${p.autoP?'⚑ AUTO':cl.et}</span></td>
       <td style="text-align:center;">${regStr}</td>
       <td style="text-align:center;">
@@ -1000,7 +1000,7 @@ function renderPortfolio() {
         ${p.adoId ? `<button
           id="ado-write-btn-${p.adoId}"
           onclick="event.stopPropagation();adoSyncProject('${p.nom.replace(/'/g,'\\')}')"
-          title="Guardar Score ${p.sf.toFixed(2)} en ADO\nCampo: ${p.adoType==='Task'?'MPGTaskScore':'MPGScore'}\nWork Item: ${p.adoId}"
+          title="Guardar Score ${((p.sf)||0).toFixed(2)} en ADO\nCampo: ${p.adoType==='Task'?'MPGTaskScore':'MPGScore'}\nWork Item: ${p.adoId}"
           style="padding:3px 9px;font-size:9px;font-weight:700;border-radius:5px;cursor:pointer;
             border:1px solid ${p._adoSynced?'#087B50':'rgba(24,72,160,.4)'};
             background:${p._adoSynced?'#ECF8F3':'rgba(24,72,160,.07)'};
@@ -1103,7 +1103,7 @@ function renderPools() {
             </div>
             <div class="pool-item-right">
               <span class="cls-badge" style="${clsStyle};font-size:7px;padding:2px 7px;">${cl.et.split(' ')[0]}</span>
-              <span class="pool-score" style="color:${scColorHex(p.sf)};">${p.sf.toFixed(1)}</span>
+              <span class="pool-score" style="color:${scColorHex(p.sf)};">${((p.sf)||0).toFixed(1)}</span>
             </div>
           </div>`;
         }).join('');
@@ -1325,7 +1325,7 @@ function renderBubble(){
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:true,position:'bottom',labels:{font:CHART_FONT,boxWidth:10,padding:10}},
-        tooltip:{callbacks:{label:d=>[`${d.raw.nom}`,`Score: ${d.raw.score.toFixed(2)} · ${d.raw.area}`,`D3 Valor: ${d.raw.x} · D1 Compliance: ${d.raw.y}`]}}
+        tooltip:{callbacks:{label:d=>[`${d.raw.nom}`,`Score: ${((d.raw.score)||0).toFixed(2)} · ${d.raw.area}`,`D3 Valor: ${d.raw.x} · D1 Compliance: ${d.raw.y}`]}}
       },
       scales:{
         x:{title:{display:true,text:'D3 — Valor de Negocio',font:CHART_FONT,color:'#8A8A8A'},
@@ -1347,7 +1347,7 @@ function renderBars(){
       labels:top.map(p=>sn(p.nom)),
       datasets:[{
         label:'Score final',
-        data:top.map(p=>+p.sf.toFixed(2)),
+        data:top.map(p=>+((p.sf)||0).toFixed(2)),
         backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
         borderWidth:1,borderRadius:3,
@@ -1414,7 +1414,7 @@ function renderScatter(){
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:d=>[d.raw.nom,`D5 Facilidad: ${d.raw.x} · D3 Valor: ${d.raw.y}`,`Score: ${d.raw.score.toFixed(2)}`]}},
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D5 Facilidad: ${d.raw.x} · D3 Valor: ${d.raw.y}`,`Score: ${((d.raw.score)||0).toFixed(2)}`]}},
         annotation:{annotations:{
           vLine:{type:'line',xMin:5.5,xMax:5.5,borderColor:'rgba(0,0,0,.15)',borderWidth:1,borderDash:[4,4]},
           hLine:{type:'line',yMin:5.5,yMax:5.5,borderColor:'rgba(0,0,0,.15)',borderWidth:1,borderDash:[4,4]},
@@ -1446,7 +1446,7 @@ function renderHeat(){
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:d=>[d.raw.nom,`D1: ${d.raw.x} · D2: ${d.raw.y}`,`Score final: ${d.raw.score.toFixed(2)}`]}}
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D1: ${d.raw.x} · D2: ${d.raw.y}`,`Score final: ${((d.raw.score)||0).toFixed(2)}`]}}
       },
       scales:{
         x:{title:{display:true,text:'D1 — Compliance / Riesgo →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
@@ -1474,7 +1474,7 @@ function renderQuad(){
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:d=>[d.raw.nom,`D3 Valor: ${d.raw.x} · D2 Estrategia: ${d.raw.y}`,`Score: ${d.raw.score.toFixed(2)} · ${d.raw.cls}`]}}
+        tooltip:{callbacks:{label:d=>[d.raw.nom,`D3 Valor: ${d.raw.x} · D2 Estrategia: ${d.raw.y}`,`Score: ${((d.raw.score)||0).toFixed(2)} · ${d.raw.cls}`]}}
       },
       scales:{
         x:{title:{display:true,text:'D3 — ROI / Valor de negocio →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
@@ -1785,14 +1785,14 @@ function renderChartsStep() {
         borderColor:CLS_BORDER[cls]||'#888',borderWidth:1.5}))},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{font:FONT,boxWidth:10,padding:10}},
-          tooltip:{callbacks:{label:d=>[d.raw.nom,'Score: '+d.raw.score.toFixed(2)+' · '+d.raw.area,'D3: '+d.raw.x+' · D1: '+d.raw.y]}}},
+          tooltip:{callbacks:{label:d=>[d.raw.nom,'Score: '+((d.raw.score)||0).toFixed(2)+' · '+d.raw.area,'D3: '+d.raw.x+' · D1: '+d.raw.y]}}},
         scales:{x:{title:{display:true,text:'D3 — Valor de negocio →',font:FONT,color:'#888'},min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}},
                 y:{title:{display:true,text:'D1 — Compliance / Riesgo ↑',font:FONT,color:'#888'},min:0,max:10,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:FONT}}}}});
   } else if (curChart2==='bars') {
     const top=[...portfolioData].sort((a,b)=>b.sf-a.sf).slice(0,30);
     chart2Inst.bars = new Chart(canvas, {type:'bar',
       data:{labels:top.map(p=>sn(p)),
-        datasets:[{label:'Score',data:top.map(p=>+p.sf.toFixed(2)),
+        datasets:[{label:'Score',data:top.map(p=>+((p.sf)||0).toFixed(2)),
           backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
           borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
           borderWidth:1,borderRadius:3}]},
@@ -1820,7 +1820,7 @@ function renderChartsStep() {
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.5)',borderWidth:1.5}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D5: '+d.raw.x+' · D3: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D5: '+d.raw.x+' · D3: '+d.raw.y,'Score: '+((d.raw.score)||0).toFixed(2)]}}},
         scales:{x:{title:{display:true,text:'D5 — Facilidad de implantación →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{title:{display:true,text:'D3 — Valor de negocio ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
   } else if (curChart2==='heat') {
@@ -1830,7 +1830,7 @@ function renderChartsStep() {
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.4)',borderWidth:1}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D1: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D1: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+((d.raw.score)||0).toFixed(2)]}}},
         scales:{x:{title:{display:true,text:'D1 — Compliance / Riesgo →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{title:{display:true,text:'D2 — Prioridad Estratégica ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
   } else if (curChart2==='quad') {
@@ -1840,7 +1840,7 @@ function renderChartsStep() {
         backgroundColor:portfolioData.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
         borderColor:'rgba(255,255,255,.4)',borderWidth:1.5}]},
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D3: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)]}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>[d.raw.nom,'D3: '+d.raw.x+' · D2: '+d.raw.y,'Score: '+((d.raw.score)||0).toFixed(2)]}}},
         scales:{x:{title:{display:true,text:'D3 — ROI / Valor →',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}},
                 y:{title:{display:true,text:'D2 — Urgencia Estratégica ↑',font:FONT,color:'#888'},min:0,max:10,ticks:{font:FONT},grid:{color:'rgba(0,0,0,.04)'}}}}});
   }
@@ -1939,7 +1939,7 @@ function renderPoolsStep() {
               <div style="font-size:8px;color:#AAA;margin-top:1px">${p.area||'—'} · ${p.horas!=null?p.horas+'h':'—h'}</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
-              <span style="font-family:'Inter',sans-serif;font-size:15px;font-weight:800;color:${sfCol};line-height:1">${p.sf.toFixed(1)}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:15px;font-weight:800;color:${sfCol};line-height:1">${((p.sf)||0).toFixed(1)}</span>
               <span style="font-size:7px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;
                            background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et.split(' ').slice(0,2).join(' ')}</span>
             </div>
@@ -2120,9 +2120,9 @@ function updSummary() {
   setSafe('qs-base',  sb.toFixed(2));
   setSafe('qs-aging', af>1.001 ? '×'+af.toFixed(3) : '×1.000');
   setSafe('qs-aging-sub', af>1.001 ? '+'+((af-1)*100).toFixed(1)+'% por antigüedad' : 'sin fecha de solicitud');
-  setSafe('qs-best',  best.score.toFixed(1));
+  setSafe('qs-best',  ((best.score)||0).toFixed(1));
   setSafe('qs-best-sub', best.id+' — '+best.nom.split(',')[0]);
-  setSafe('qs-worst', worst.score.toFixed(1));
+  setSafe('qs-worst', ((worst.score)||0).toFixed(1));
   setSafe('qs-worst-sub', worst.id+' — '+worst.nom.split(',')[0]);
 
   // Quick stats colors

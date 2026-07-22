@@ -491,14 +491,24 @@ async function adoAutoSync(silent) {
           // Respetar TODO lo que ya tenga puntuación (Excel, manual o guardado)
           if (p._scoreLocked || p._fromExcel || p._manualEval || p._sfExcel != null) { return; }
           if (p.sf !== undefined && p.sf !== null && p.dimScores && p.dimScores.length) { return; }
+          // Asegurar que el objeto de criterios existe antes de escribir en él
+          if (!p.scores || typeof p.scores !== 'object') p.scores = {};
           // Apply rule-based criterion scores from Description + Title
-          var critScores = ruleScoresCriterios(p);
-          CRIT_IDS.forEach(function(cid) { p.scores[cid] = critScores[cid]; });
+          var critScores = ruleScoresCriterios(p) || {};
+          CRIT_IDS.forEach(function(cid) { p.scores[cid] = critScores[cid] != null ? critScores[cid] : 5; });
           // Recompute dimension scores + final score
           var computed = computeProj(p);
-          Object.assign(p, computed);
+          if (computed) Object.assign(p, computed);
           scored++;
-        } catch(e) { /* skip silently */ }
+        } catch(e) { console.warn('[ado autoscore]', p && p.nom, e && e.message); }
+      });
+      // Red de seguridad: ningún proyecto puede quedarse sin score válido,
+      // porque las vistas hacen .toFixed() sobre él y romperían el render.
+      portfolioData.forEach(function(p){
+        if (p.sf == null || isNaN(p.sf)) p.sf = 0;
+        if (!Array.isArray(p.dimScores) || p.dimScores.length < 6) p.dimScores = [0,0,0,0,0,0];
+        p.dimScores = p.dimScores.map(function(d){ return (d == null || isNaN(d)) ? 0 : +d; });
+        if (!p.scores || typeof p.scores !== 'object') p.scores = {};
       });
       // Re-render with new scores
       if (typeof renderPortfolio === 'function') renderPortfolio();

@@ -1061,7 +1061,7 @@ function renderSprintSnapshotView() {
   const tipOf = (p, active)=>{
     let t = p.nom + '\n';
     t += '────────────────\n';
-    t += 'Score: ' + p.sf.toFixed(1) + '  ·  ' + (clsf(p.sf).et||'') + '\n';
+    t += 'Score: ' + ((p.sf)||0).toFixed(1) + '  ·  ' + (clsf(p.sf).et||'') + '\n';
     t += 'Área: ' + (p.area||'—') + '  ·  Prioridad ADO: P' + (p.adoPriority||3) + '\n';
     t += 'Horas: ' + p.horas + 'h  ·  ' + (active?'En marcha':'Próximo') + '\n';
     t += 'Inicio: ' + pf2(p.start) + (p.reqDate ? '  ·  Solicitado: ' + pf2(+new Date(p.reqDate)) : '') + '\n';
@@ -1080,7 +1080,7 @@ function renderSprintSnapshotView() {
         +'<div style="display:flex;gap:4px;align-items:center">'
           +'<span style="font-size:8px;background:'+(active?'#1A1A1A':'#F2F2F0')+';color:'+(active?'#fff':'#8A8A86')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
         +'</div>'
-        +'<div style="text-align:right"><div style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif;line-height:1">'+p.sf.toFixed(1)+'</div>'+(ordNum?'<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden '+ordNum+'</div>':'')+'</div>'
+        +'<div style="text-align:right"><div style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif;line-height:1">'+((p.sf)||0).toFixed(1)+'</div>'+(ordNum?'<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden '+ordNum+'</div>':'')+'</div>'
       +'</div>'
       +'<div style="font-size:10px;font-weight:'+(active?'800':'400')+';color:var(--ink);margin-bottom:3px">'+p.nom+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
@@ -1164,7 +1164,7 @@ function renderSprintSnapshotView() {
           return '<div style="padding:9px 11px;background:#FAF7F2;border:2px solid #C4974A;border-radius:8px;margin-bottom:6px">'
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
               +'<span style="font-size:8px;background:#C4974A;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
-              +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+p.sf.toFixed(1)+'</span>'
+              +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+((p.sf)||0).toFixed(1)+'</span>'
             +'</div>'
             +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">'+p.nom+'</div>'
             +'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">'

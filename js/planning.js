@@ -218,7 +218,7 @@ function _planBuildTimelineUncached() {
       var sL = new Date(l.startDate), eL = new Date(l.endDate);
       timeline.push({
         proj:p, pool:pool, devName:l.devName, startDate:sL, endDate:eL,
-        hoursPerWeek:whL, totalHours:p.horas, weeks:+(p.horas/whL).toFixed(1),
+        hoursPerWeek:whL, totalHours:p.horas, weeks:+(((p.horas||0)/(whL||1))||0).toFixed(1),
         locked:true, enCurso:enCursoOf(p), manualDev:true
       });
       if (avail[l.devName] && eL > avail[l.devName][pool]) avail[l.devName][pool] = new Date(eL);
@@ -321,7 +321,7 @@ function _planBuildTimelineUncached() {
 
     timeline.push({
       proj:p, pool:pool, devName:dev.name, startDate:start, endDate:end,
-      hoursPerWeek:wh, totalHours:p.horas, weeks:+(p.horas/wh).toFixed(1),
+      hoursPerWeek:wh, totalHours:p.horas, weeks:+(((p.horas||0)/(wh||1))||0).toFixed(1),
       locked:false, enCurso:enCursoOf(p), manualDev:!!manualName,
       // Origen de cada fecha: 'ado' si viene informada de ADO, 'calc' si la calcula la app
       startSource: enCursoOf(p) ? 'ado' : 'calc',
@@ -633,7 +633,7 @@ function renderWeekV4(el, timeline) {
     var devTL=timeline.filter(function(t){return t.devName===dev.name;});
     var wh=pDevHours(dev);
     var whT=Object.keys(wh).filter(function(k){return wh[k]>0;})
-      .map(function(k){return '<span style="color:'+POOL_COLORS[k]+'">'+wh[k].toFixed(0)+'h</span>';}).join(' ');
+      .map(function(k){return '<span style="color:'+POOL_COLORS[k]+'">'+((wh[k])||0).toFixed(0)+'h</span>';}).join(' ');
 
     var cells=days.map(function(day){
       var dw=['D','L','M','X','J','V','S'][day.getDay()];
@@ -1087,7 +1087,7 @@ function exportPlanningExcel() {
     var qi = sortedTL.filter(function(x){return x.devName===t.devName&&x.pool===t.pool;}).indexOf(t)+1;
     return [t.devName, t.pool, qi, t.proj.nom,
             pFmt(t.startDate), pFmt(t.endDate),
-            t.totalHours, +t.hoursPerWeek.toFixed(1), t.weeks,
+            t.totalHours, +((t.hoursPerWeek)||0).toFixed(1), t.weeks,
             +(t.proj.sf||0).toFixed(2)];
   });
 
@@ -1452,7 +1452,7 @@ var GANTT = (function() {
       Object.keys(wh).forEach(function(k){
         if(!wh[k]) return;
         var s = _mkEl('span','color:'+PCOL[k]+';font-weight:600');
-        s.textContent = k+' '+wh[k].toFixed(0)+'h';
+        s.textContent = k+' '+((wh[k])||0).toFixed(0)+'h';
         whDiv.appendChild(s);
       });
       labelDiv.appendChild(whDiv);
@@ -1822,7 +1822,7 @@ var GANTT = (function() {
       +'<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:10px;opacity:.85">'
         +'<span>Pool</span><span style="color:'+PCOL[t.pool]+';font-weight:600">'+t.pool+'</span>'
         +'<span>Dev</span><span>'+t.devName+'</span>'
-        +'<span>Horas</span><span>'+t.totalHours+'h a '+t.hoursPerWeek.toFixed(1)+'h/sem</span>'
+        +'<span>Horas</span><span>'+t.totalHours+'h a '+((t.hoursPerWeek)||0).toFixed(1)+'h/sem</span>'
         +'<span>Duración</span><span>'+t.weeks+' semanas</span>'
         +'<span>Inicio</span><span>'+pFmt(t.startDate)+'</span>'
         +'<span>Fin est.</span><span>'+pFmt(t.endDate)+'</span>'
@@ -2011,7 +2011,7 @@ function renderPlanningSummary() {
             return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
               +'<span style="font-size:8px;padding:1px 7px;border-radius:10px;background:'+POOL_BGS[s.pool]+';color:'+col+';border:1px solid '+col+';font-weight:600;min-width:38px;text-align:center">'+s.pool+'</span>'
               +'<span style="font-size:10px;color:'+(isSoon?'#087B50':'#333')+';font-weight:'+(isSoon?700:600)+'">'+pShort(s.nextFree)+'</span>'
-              +'<span style="font-size:8px;color:#AAA">'+s.wh.toFixed(0)+'h/sem</span>'
+              +'<span style="font-size:8px;color:#AAA">'+((s.wh)||0).toFixed(0)+'h/sem</span>'
               +(isSoon?'<span style="font-size:8px;color:#087B50;font-weight:700">● libre pronto</span>':'')
               +'</div>';
           }).join('')
@@ -2520,7 +2520,7 @@ function renderHourlyView(el, timeline) {
       +'</div>'
       +'<div style="font-size:8px;color:#AAA;margin-top:2px">'
       +Object.keys(wh).filter(function(k){return wh[k]>0;}).map(function(k){
-        return '<span style="color:'+POOL_COLORS[k]+'">'+k+' '+wh[k].toFixed(0)+'h</span>';
+        return '<span style="color:'+POOL_COLORS[k]+'">'+k+' '+((wh[k])||0).toFixed(0)+'h</span>';
       }).join(' ')+'</div>';
 
     // Time area

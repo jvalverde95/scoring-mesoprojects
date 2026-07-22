@@ -23,7 +23,7 @@ function buildAiCard(item,i){
   const col=sf!==null?scColorHex(sf):'#BBBBBB', cl=sf!==null?clsf(sf):null;
   const tag=cl?`<span class="ev-tag" style="background:${cl.bg};color:${cl.c};border-color:${cl.b}">${cl.et}</span>`:'<span class="ev-tag" style="background:#F5F5F5;color:#AAA;border-color:#E5E5E5">Sin evaluar</span>';
   const btn=item.status==='pending'?`<button class="ev-btn score" onclick="aiScoreOne(${i})">✦ Evaluar</button>`:`<button class="ev-btn rescore" onclick="aiScoreOne(${i})">↻ Reevaluar</button>`;
-  const scoreNum=sf!==null?`<div class="ev-score-big" style="color:${col}">${sf.toFixed(1)}</div>`:'<div class="ev-score-big" style="color:#DDD">—</div>';
+  const scoreNum=(sf!==null&&sf!==undefined&&!isNaN(sf))?`<div class="ev-score-big" style="color:${col}">${(+sf).toFixed(1)}</div>`:'<div class="ev-score-big" style="color:#DDD">—</div>';
   return `<div class="ev-card${item.selected?' selected':''}" id="ev-card-${i}">
     <div style="display:flex;align-items:flex-start;gap:8px">
       <input type="checkbox" class="ev-check" id="ev-chk-${i}" onchange="_aiScored[${i}].selected=this.checked" ${item.selected?'checked':''}/>
@@ -389,8 +389,8 @@ function aiTestScore() {
         </div>`).join('')}
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--ink)">
-      Score final: <span style="color:${full.sf>=7.5?'var(--d3)':full.sf>=5?'#C07800':'var(--d1)'}">${full.sf.toFixed(2)}</span>
-      → <span style="font-size:10px">${clsf(full.sf).et}</span>
+      Score final: <span style="color:${(full.sf||0)>=7.5?'var(--d3)':(full.sf||0)>=5?'#C07800':'var(--d1)'}">${(full.sf||0).toFixed(2)}</span>
+      → <span style="font-size:10px">${clsf(full.sf||0).et}</span>
     </div>`;
 }
 

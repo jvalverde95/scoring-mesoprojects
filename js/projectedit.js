@@ -26,7 +26,7 @@ function pemSetScore(projIdx,critId,val,valSpan,dimIdx){
   const p=portfolioData[projIdx], updated=computeProj(p);
   portfolioData[projIdx].sf=updated.sf;
   const scoreEl=document.getElementById('pem-score');
-  if(scoreEl){scoreEl.textContent=updated.sf.toFixed(1);scoreEl.style.color=scColorHex(updated.sf);}
+  if(scoreEl){scoreEl.textContent=((updated.sf)||0).toFixed(1);scoreEl.style.color=scColorHex(updated.sf);}
   const d=DIMS[dimIdx];
   const ds=scoreDim(d.criterios.map(c=>({...c,val:portfolioData[projIdx].scores[c.id]||5})));
   const dsEl=document.getElementById('pem-ds-'+d.id);

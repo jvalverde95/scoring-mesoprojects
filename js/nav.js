@@ -178,8 +178,8 @@ function _ch_ranking(p) {
   // Insight
   const d1dom = top.slice(0,5).map(x=>(x.dimScores||[])[0]||0);
   const avgD1 = d1dom.reduce((a,b)=>a+b,0)/d1dom.length;
-  const insight = avgD1>7 ? 'El top 5 tiene D1 Compliance muy alto ('+avgD1.toFixed(1)+') — los proyectos prioritarios vienen principalmente de obligaciones regulatorias'
-    : 'El top 5 tiene D1 moderado ('+avgD1.toFixed(1)+') — la prioridad viene de valor estratégico y ROI, no solo de cumplimiento';
+  const insight = avgD1>7 ? 'El top 5 tiene D1 Compliance muy alto ('+(avgD1||0).toFixed(1)+') — los proyectos prioritarios vienen principalmente de obligaciones regulatorias'
+    : 'El top 5 tiene D1 moderado ('+(avgD1||0).toFixed(1)+') — la prioridad viene de valor estratégico y ROI, no solo de cumplimiento';
   _chartInsight('ch-ranking-insight', insight);
 }
 
@@ -197,7 +197,7 @@ function _ch_dims(p) {
         <div style="position:absolute;left:0;top:0;height:100%;width:${(avg/10*100).toFixed(1)}%;background:${DIM_COLORS[di]};border-radius:4px;opacity:.85"></div>
         <div style="position:absolute;left:60%;top:-4px;width:1.5px;height:16px;background:rgba(0,0,0,.2)"></div>
       </div>
-      <div style="font-size:12px;font-weight:700;text-align:right;color:${DIM_COLORS[di]}">${avg.toFixed(1)}${warn?' ⚠':''}</div>
+      <div style="font-size:12px;font-weight:700;text-align:right;color:${DIM_COLORS[di]}">${(avg||0).toFixed(1)}${warn?' ⚠':''}</div>
     </div>`;
   }).join('');
   const warnings = DIMS.filter((_,di)=>avgs[di]<6.0).map((_,di)=>DIM_NAMES[di]);
@@ -229,7 +229,7 @@ function _ch_quad(p) {
       layout:{padding:{top:24,right:24,bottom:8,left:8}},
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:d=>[d.raw.nom,'ROI: '+d.raw.x+' · Estrategia: '+d.raw.y,'Score: '+d.raw.score.toFixed(2)+' · '+d.raw.cls]}},
+        tooltip:{callbacks:{label:d=>[d.raw.nom,'ROI: '+d.raw.x+' · Estrategia: '+d.raw.y,'Score: '+(d.raw.score||0).toFixed(2)+' · '+d.raw.cls]}},
       },
       scales:{
         x:{title:{display:true,text:'D3 — ROI / Valor de negocio →',font:CHART_FONT,color:'#8A8A8A'},min:0,max:10,ticks:{font:CHART_FONT},grid:{color:'rgba(0,0,0,.04)'}},
@@ -268,7 +268,7 @@ function _ch_areas(p) {
       const bg  = avg>=7.5?'#E8F5F0':avg>=6?'#FEF9EC':'#FEF0F1';
       return `<tr>
         <td style="padding:6px 8px;border-bottom:0.5px solid var(--b);font-weight:600;color:var(--ink)">${area}</td>
-        <td style="padding:6px 8px;border-bottom:0.5px solid var(--b);text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:${bg};color:${c};font-weight:700;font-size:11px">${avg.toFixed(1)}</span></td>
+        <td style="padding:6px 8px;border-bottom:0.5px solid var(--b);text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:${bg};color:${c};font-weight:700;font-size:11px">${(avg||0).toFixed(1)}</span></td>
         <td style="padding:6px 8px;border-bottom:0.5px solid var(--b);text-align:center;color:var(--ink3)">${v.n}</td>
         <td style="padding:6px 8px;border-bottom:0.5px solid var(--b)">
           <div style="background:var(--b);border-radius:3px;height:6px;overflow:hidden">
@@ -387,14 +387,14 @@ function _ch_gaps(p) {
       <div style="background:var(--b);border-radius:3px;height:6px;overflow:hidden">
         <div style="height:6px;border-radius:3px;background:#C07800;width:${(v.sigma/maxSigma*100).toFixed(1)}%;opacity:.85"></div>
       </div>
-      <div style="font-size:11px;text-align:right;color:#C07800;font-weight:600">σ=${v.sigma.toFixed(1)}</div>
+      <div style="font-size:11px;text-align:right;color:#C07800;font-weight:600">σ=${(v.sigma||0).toFixed(1)}</div>
     </div>`;
   }).join('');
   const topGap = sorted[0];
   if (topGap) {
     let topNom = topGap[0];
     DIMS.forEach((d,di)=>{ const c=d.criterios.find(x=>x.id===topGap[0]); if(c) topNom=c.nom.substring(0,40); });
-    _chartInsight('ch-gaps-insight', `"${topNom}" tiene la mayor varianza (σ=${topGap[1].sigma.toFixed(1)}) — el equipo evalúa este criterio de forma muy dispar · considera añadir una escala de referencia o ejemplos por valor`);
+    _chartInsight('ch-gaps-insight', `"${topNom}" tiene la mayor varianza (σ=${(topGap[1].sigma||0).toFixed(1)}) — el equipo evalúa este criterio de forma muy dispar · considera añadir una escala de referencia o ejemplos por valor`);
   }
 }
 
