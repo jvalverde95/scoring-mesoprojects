@@ -611,12 +611,15 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         np.adoType     = prev.adoType     || np.adoType;
         // Metadatos de ADO: si el origen ES ADO, sus valores mandan (fuente de verdad).
         // Si el origen es Excel (que no los trae), se conservan los previos.
-        // Fechas y esfuerzo: ADO es la fuente de verdad cuando el origen es ADO
-        np.adoStartDate    = _srcAdo ? (np.adoStartDate    != null ? np.adoStartDate    : prev.adoStartDate)    : (prev.adoStartDate    != null ? prev.adoStartDate    : np.adoStartDate);
-        np.adoTargetDate   = _srcAdo ? (np.adoTargetDate   != null ? np.adoTargetDate   : prev.adoTargetDate)   : (prev.adoTargetDate   != null ? prev.adoTargetDate   : np.adoTargetDate);
-        np.adoEstStartDate = _srcAdo ? (np.adoEstStartDate != null ? np.adoEstStartDate : prev.adoEstStartDate) : (prev.adoEstStartDate != null ? prev.adoEstStartDate : np.adoEstStartDate);
-        np.adoCompletedWork= _srcAdo ? (np.adoCompletedWork!= null ? np.adoCompletedWork: prev.adoCompletedWork): (prev.adoCompletedWork!= null ? prev.adoCompletedWork: np.adoCompletedWork);
-        np.adoRemainingWork= _srcAdo ? (np.adoRemainingWork!= null ? np.adoRemainingWork: prev.adoRemainingWork): (prev.adoRemainingWork!= null ? prev.adoRemainingWork: np.adoRemainingWork);
+        // ══ Fechas y esfuerzo ══
+        // Si el origen es ADO, sus valores se aplican TAL CUAL, incluidos los vacíos:
+        // si en ADO se borra la fecha de inicio, aquí también debe quedar vacía para
+        // que el proyecto vuelva a la cola y la app recalcule su fecha estimada.
+        np.adoStartDate    = _srcAdo ? (np.adoStartDate    || null) : (prev.adoStartDate    != null ? prev.adoStartDate    : np.adoStartDate);
+        np.adoTargetDate   = _srcAdo ? (np.adoTargetDate   || null) : (prev.adoTargetDate   != null ? prev.adoTargetDate   : np.adoTargetDate);
+        np.adoEstStartDate = _srcAdo ? (np.adoEstStartDate || null) : (prev.adoEstStartDate != null ? prev.adoEstStartDate : np.adoEstStartDate);
+        np.adoCompletedWork= _srcAdo ? (np.adoCompletedWork!= null ? np.adoCompletedWork : null) : (prev.adoCompletedWork!= null ? prev.adoCompletedWork: np.adoCompletedWork);
+        np.adoRemainingWork= _srcAdo ? (np.adoRemainingWork!= null ? np.adoRemainingWork : null) : (prev.adoRemainingWork!= null ? prev.adoRemainingWork: np.adoRemainingWork);
         np.adoState    = _srcAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
         np.adoAssigned = _srcAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
         np.adoIteration= _srcAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
