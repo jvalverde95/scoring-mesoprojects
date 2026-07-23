@@ -620,9 +620,12 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         np.adoEstStartDate = _srcAdo ? (np.adoEstStartDate || null) : (prev.adoEstStartDate != null ? prev.adoEstStartDate : np.adoEstStartDate);
         np.adoCompletedWork= _srcAdo ? (np.adoCompletedWork!= null ? np.adoCompletedWork : null) : (prev.adoCompletedWork!= null ? prev.adoCompletedWork: np.adoCompletedWork);
         np.adoRemainingWork= _srcAdo ? (np.adoRemainingWork!= null ? np.adoRemainingWork : null) : (prev.adoRemainingWork!= null ? prev.adoRemainingWork: np.adoRemainingWork);
-        np.adoState    = _srcAdo ? (np.adoState    || prev.adoState)    : (prev.adoState    || np.adoState);
-        np.adoAssigned = _srcAdo ? (np.adoAssigned || prev.adoAssigned) : (prev.adoAssigned || np.adoAssigned);
-        np.adoIteration= _srcAdo ? (np.adoIteration|| prev.adoIteration): (prev.adoIteration|| np.adoIteration);
+        // Estado, responsable e iteración: si el origen es ADO, sus valores se aplican
+        // SIEMPRE tal cual, incluidos los vacíos (si allí se desasigna a alguien, aquí
+        // también queda sin asignar). Desde Excel se conservan los que ya había.
+        np.adoState    = _srcAdo ? (np.adoState    || '') : (prev.adoState    || np.adoState);
+        np.adoAssigned = _srcAdo ? (np.adoAssigned || '') : (prev.adoAssigned || np.adoAssigned);
+        np.adoIteration= _srcAdo ? (np.adoIteration|| '') : (prev.adoIteration|| np.adoIteration);
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
