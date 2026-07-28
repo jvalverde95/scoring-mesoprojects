@@ -66,7 +66,8 @@ async function adoFetchRequirements(org, project, pat, queryId) {
   if(!ids.length) throw new Error('La query no devolvió work items.');
   const fields=[
     'System.Id','System.Title','System.WorkItemType','System.State',
-    'System.AssignedTo','System.CreatedDate','System.Description',
+    'System.AssignedTo','System.CreatedDate','System.ChangedDate','System.Description',
+    'Microsoft.VSTS.Common.ClosedDate',
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
     // ── Fechas: dos vienen de ADO (fijas) y una la calcula la app ──
     'Custom.MPGStartDate','Custom.MPGTaskStartDate',  // MPG Start Date: inicio REAL (ADO manda)
@@ -168,6 +169,8 @@ function adoMapToProject(wi) {
     // Fecha de inicio según el tipo: Requirement → MPGStartDate, Task → MPGTaskStartDate.
     // Vacío = no iniciado (planificación normal). Con valor = en curso desde esa fecha.
     adoStartDate: (f['Custom.MPGStartDate'] || f['Custom.MPGTaskStartDate'] || null),
+    adoCreatedDate: (f['System.CreatedDate'] || null),
+    adoClosedDate: (f['Microsoft.VSTS.Common.ClosedDate'] || f['System.ChangedDate'] || null),
     // Target Date: fecha de entrega comprometida en ADO (fija, manda sobre la estimación)
     // Target Date es el campo estándar del sistema en ADO, así que tiene prioridad.
     // Los personalizados MPG solo se usan si el estándar no está informado.
@@ -401,7 +404,7 @@ async function cfgAdoLoad(){
    Also exposes adoAutoSync() for manual re-trigger.
    ═══════════════════════════════════════════════════════════════ */
 
-const ADO_AUTO_QUERY_NAME_DEFAULT = 'EVOLUTIVO D365 GAPs Pendientes';
+const ADO_AUTO_QUERY_NAME_DEFAULT = 'EVOLUTIVOS';
 // Nombre de la query de evolutivos: editable desde Config, con valor por defecto.
 function getAdoQueryName() {
   var e = document.getElementById('cfg-ado-query-name');

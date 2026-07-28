@@ -1244,6 +1244,7 @@ function getClosedProjects() {
 
 function renderClosedScreen() {
   var closed = getClosedProjects();
+  var open = (Array.isArray(portfolioData) ? portfolioData : []).filter(function(p){ return !isProjClosed(p); });
 
   // ── Poblar el filtro de departamentos ──
   var sel = document.getElementById('closed-dept-filter');
@@ -1255,58 +1256,100 @@ function renderClosedScreen() {
     if (cur && depts.indexOf(cur) >= 0) sel.value = cur;
   }
 
+  // ── Tiempos de ciclo (días entre creación y cierre) ──
+  var cycleTimes = [];
+  closed.forEach(function(p){
+    if (p.adoCreatedDate && p.adoClosedDate) {
+      var c0 = new Date(p.adoCreatedDate), c1 = new Date(p.adoClosedDate);
+      if (!isNaN(+c0) && !isNaN(+c1) && c1 >= c0) {
+        cycleTimes.push((c1 - c0) / 86400000);
+      }
+    }
+  });
+  var avgCycle = cycleTimes.length ? (cycleTimes.reduce(function(a,b){return a+b;},0) / cycleTimes.length) : null;
+  var medCycle = null;
+  if (cycleTimes.length) {
+    var srt = cycleTimes.slice().sort(function(a,b){return a-b;});
+    var mid = Math.floor(srt.length/2);
+    medCycle = srt.length % 2 ? srt[mid] : (srt[mid-1]+srt[mid])/2;
+  }
+
   // ── KPIs ──
   var kp = document.getElementById('closed-kpis');
   if (kp) {
     var totalH = closed.reduce(function(s,p){ return s + (p.horas || 0); }, 0);
     var avgScore = closed.length ? (closed.reduce(function(s,p){ return s + (p.sf || 0); }, 0) / closed.length) : 0;
     var nDepts = new Set(closed.map(_closedDept)).size;
-    var kpi = function(val, lbl){
-      return '<div style="flex:1;min-width:130px;background:var(--w);border:1px solid var(--b);border-left:3px solid #1A1A1A;border-radius:10px;padding:14px 16px">'
-        + '<div style="font-size:26px;font-weight:800;color:#1A1A1A;line-height:1">'+val+'</div>'
+    var totalAll = closed.length + open.length;
+    var closeRate = totalAll ? (closed.length / totalAll * 100) : 0;
+    var kpi = function(val, lbl, accent){
+      return '<div style="flex:1;min-width:120px;background:var(--w);border:1px solid var(--b);border-left:3px solid '+(accent||'#1A1A1A')+';border-radius:10px;padding:14px 16px">'
+        + '<div style="font-size:24px;font-weight:800;color:#1A1A1A;line-height:1">'+val+'</div>'
         + '<div style="font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:.04em;margin-top:4px">'+lbl+'</div></div>';
     };
-    kp.innerHTML = kpi(closed.length, 'Proyectos cerrados')
-      + kpi(nDepts, 'Departamentos')
-      + kpi(Math.round(totalH).toLocaleString('es-ES'), 'Horas invertidas')
-      + kpi((avgScore||0).toFixed(1), 'Score medio');
+    kp.innerHTML = kpi(closed.length, 'Cerrados', '#1A1A1A')
+      + kpi(open.length, 'Abiertos', '#C4974A')
+      + kpi(closeRate.toFixed(0)+'%', 'Tasa de cierre', '#1A1A1A')
+      + kpi(nDepts, 'Departamentos', '#1A1A1A')
+      + kpi(Math.round(totalH).toLocaleString('es-ES'), 'Horas invertidas', '#C4974A')
+      + kpi((avgScore||0).toFixed(1), 'Score medio', '#1A1A1A')
+      + kpi(avgCycle!=null ? Math.round(avgCycle)+'d' : '—', 'Ciclo medio', '#1A1A1A')
+      + kpi(medCycle!=null ? Math.round(medCycle)+'d' : '—', 'Ciclo mediano', '#1A1A1A');
   }
 
-  // ── Datos agregados por departamento ──
-  var byDept = {};
+  if (typeof Chart === 'undefined') { renderClosedProjects(); return; }
+  var mkBar = function(id, labels, datasets, opts){
+    var el = document.getElementById(id); if (!el) return;
+    if (_closedCharts[id]) { try { _closedCharts[id].destroy(); } catch(e){} }
+    _closedCharts[id] = new Chart(el.getContext('2d'), {
+      type: (opts&&opts.type)||'bar',
+      data: { labels: labels, datasets: datasets },
+      options: Object.assign({ responsive: true, plugins: { legend: { display: !!(opts&&opts.legend), labels:{ font:{size:10} } } },
+        scales: (opts&&opts.noScales) ? {} : { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 }, autoSkip:false, maxRotation:40 }, stacked: !!(opts&&opts.stacked) }, ...(opts&&opts.stacked?{y2:{}}:{} ) } }, (opts&&opts.extra)||{})
+    });
+  };
+
+  // Agregados por departamento (cerrados y abiertos)
+  var deptSet = Array.from(new Set(closed.map(_closedDept).concat(open.map(_closedDept)))).sort();
+  var closedByD = {}, openByD = {}, hoursByD = {};
+  closed.forEach(function(p){ var d=_closedDept(p); closedByD[d]=(closedByD[d]||0)+1; hoursByD[d]=(hoursByD[d]||0)+(p.horas||0); });
+  open.forEach(function(p){ var d=_closedDept(p); openByD[d]=(openByD[d]||0)+1; });
+
+  // 1) Cerrados vs abiertos (barras apiladas)
+  mkBar('closed-vs-open', deptSet,
+    [ { label:'Cerrados', data: deptSet.map(function(d){return closedByD[d]||0;}), backgroundColor:'#1A1A1A', borderRadius:3, maxBarThickness:34 },
+      { label:'Abiertos', data: deptSet.map(function(d){return openByD[d]||0;}), backgroundColor:'#C4974A', borderRadius:3, maxBarThickness:34 } ],
+    { legend:true, stacked:true });
+
+  // 2) Tasa de cierre por departamento
+  mkBar('closed-rate-dept', deptSet,
+    [ { data: deptSet.map(function(d){ var t=(closedByD[d]||0)+(openByD[d]||0); return t? Math.round((closedByD[d]||0)/t*100):0; }), backgroundColor:'#0E7C5A', borderRadius:3, maxBarThickness:34 } ],
+    { extra:{ scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:function(v){return v+'%';}, font:{size:10} } }, x:{ ticks:{font:{size:10},autoSkip:false,maxRotation:40} } } } });
+
+  // 3) Volumen cerrados por departamento (ordenado)
+  var byDeptSorted = deptSet.slice().filter(function(d){return closedByD[d];}).sort(function(a,b){return (closedByD[b]||0)-(closedByD[a]||0);});
+  mkBar('closed-by-dept', byDeptSorted,
+    [ { data: byDeptSorted.map(function(d){return closedByD[d]||0;}), backgroundColor:'#1A1A1A', borderRadius:4, maxBarThickness:38 } ]);
+
+  // 4) Horas por departamento
+  mkBar('closed-hours-dept', byDeptSorted,
+    [ { data: byDeptSorted.map(function(d){return Math.round(hoursByD[d]||0);}), backgroundColor:'#C4974A', borderRadius:4, maxBarThickness:38 } ]);
+
+  // 5) Cerrados por mes
+  var byMonth = {};
   closed.forEach(function(p){
-    var d = _closedDept(p);
-    if (!byDept[d]) byDept[d] = { count: 0, hours: 0 };
-    byDept[d].count++;
-    byDept[d].hours += (p.horas || 0);
+    if (p.adoClosedDate) { var dt=new Date(p.adoClosedDate); if(!isNaN(+dt)){ var key=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'); byMonth[key]=(byMonth[key]||0)+1; } }
   });
-  var labels = Object.keys(byDept).sort(function(a,b){ return byDept[b].count - byDept[a].count; });
-  var counts = labels.map(function(d){ return byDept[d].count; });
-  var hours = labels.map(function(d){ return Math.round(byDept[d].hours); });
+  var months = Object.keys(byMonth).sort();
+  mkBar('closed-by-month', months,
+    [ { data: months.map(function(m){return byMonth[m];}), backgroundColor:'#3A5BA0', borderRadius:3, maxBarThickness:30 } ],
+    { type:'line', extra:{ elements:{ line:{ tension:.3, borderColor:'#3A5BA0' }, point:{ radius:3 } } } });
 
-  // ── Gráfica: volumen por departamento ──
-  if (typeof Chart !== 'undefined') {
-    var c1 = document.getElementById('closed-by-dept');
-    if (c1) {
-      if (_closedCharts.dept) { try { _closedCharts.dept.destroy(); } catch(e){} }
-      _closedCharts.dept = new Chart(c1.getContext('2d'), {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ data: counts, backgroundColor: '#1A1A1A', borderRadius: 4, maxBarThickness: 38 }] },
-        options: { responsive: true, plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
-      });
-    }
-    var c2 = document.getElementById('closed-hours-dept');
-    if (c2) {
-      if (_closedCharts.hours) { try { _closedCharts.hours.destroy(); } catch(e){} }
-      _closedCharts.hours = new Chart(c2.getContext('2d'), {
-        type: 'bar',
-        data: { labels: labels, datasets: [{ data: hours, backgroundColor: '#C4974A', borderRadius: 4, maxBarThickness: 38 }] },
-        options: { responsive: true, plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
-      });
-    }
-  }
+  // 6) Distribución por tramo de score
+  var tramos = { 'Alta (≥7,5)':0, 'Media (5–7,5)':0, 'Baja (<5)':0 };
+  closed.forEach(function(p){ var s=p.sf||0; if(s>=7.5) tramos['Alta (≥7,5)']++; else if(s>=5) tramos['Media (5–7,5)']++; else tramos['Baja (<5)']++; });
+  mkBar('closed-score-dist', Object.keys(tramos),
+    [ { data: Object.values(tramos), backgroundColor:['#0E7C5A','#C4974A','#B03A2E'], borderRadius:4, maxBarThickness:60 } ]);
 
   renderClosedProjects();
 }

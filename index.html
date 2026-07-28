@@ -412,6 +412,15 @@
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
         <span class="lnav-label">Resumen</span>
       </div>
+      <div class="lnav-item" id="nav-closed" onclick="goStep('closed')" title="Proyectos cerrados">
+        <div class="lnav-icon">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6.5 10l2.2 2.2L14 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="lnav-label">Cerrados</span>
+      </div>
       <div class="lnav-item" id="nav-charts" onclick="goStep('charts')" title="Análisis">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 14l4-5 4 3 4-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="14" r="1.5" fill="currentColor"/><circle cx="7" cy="9" r="1.5" fill="currentColor"/><circle cx="11" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/></svg></div>
         <span class="lnav-label">Análisis</span>
@@ -440,15 +449,6 @@
           </svg>
         </div>
         <span class="lnav-label">Plan.</span>
-      </div>
-      <div class="lnav-item" id="nav-closed" onclick="goStep('closed')" title="Proyectos cerrados">
-        <div class="lnav-icon">
-          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
-            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M6.5 10l2.2 2.2L14 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <span class="lnav-label">Cerrados</span>
       </div>
     </div>
 
@@ -1309,7 +1309,7 @@
           <div class="cfg-field">
             <label>Query de evolutivos (nombre en ADO)</label>
             <input type="text" class="cfg-inp" id="cfg-ado-query-name"
-              placeholder="EVOLUTIVO D365 GAPs Pendientes"
+              placeholder="EVOLUTIVOS"
               oninput="if(typeof saveAllCreds==='function')saveAllCreds()">
             <div class="cfg-note">Nombre exacto de la query en Azure DevOps que trae todos los evolutivos. La app la busca por este nombre.</div>
           </div>
@@ -2461,15 +2461,39 @@
   <!-- KPIs resumen -->
   <div id="closed-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin:18px 0 22px"></div>
 
-  <!-- Gráficas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px">
+  <!-- Gráficas fila 1 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
     <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Volumen por departamento</div>
-      <canvas id="closed-by-dept" height="200"></canvas>
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Cerrados vs. abiertos por departamento</div>
+      <canvas id="closed-vs-open" height="210"></canvas>
+    </div>
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Tasa de cierre por departamento (%)</div>
+      <canvas id="closed-rate-dept" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 2 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Volumen de cerrados por departamento</div>
+      <canvas id="closed-by-dept" height="210"></canvas>
     </div>
     <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
       <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Horas invertidas por departamento</div>
-      <canvas id="closed-hours-dept" height="200"></canvas>
+      <canvas id="closed-hours-dept" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 3 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px">
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Proyectos cerrados por mes</div>
+      <canvas id="closed-by-month" height="210"></canvas>
+    </div>
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Distribución por tramo de puntuación</div>
+      <canvas id="closed-score-dist" height="210"></canvas>
     </div>
   </div>
 

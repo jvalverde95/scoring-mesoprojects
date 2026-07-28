@@ -1080,6 +1080,11 @@ function renderPools() {
   const { s, m } = getThr();
   const pools = { L:[], M:[], S:[], null:[] };
   portfolioData.forEach(p => {
+    // Los proyectos cerrados NO aparecen en los pools (ni siquiera en "sin estimar"),
+    // tengan o no horas. Van a la pantalla de Proyectos cerrados. Los "Próximamente
+    // en PRO" tampoco entran en la operativa de pools.
+    if (typeof isProjClosed === 'function' && isProjClosed(p)) return;
+    if (typeof isProxPro === 'function' && isProxPro(p)) return;
     const pool = getPool(p);
     (pools[pool] || pools[null]).push(p);
   });
@@ -1865,6 +1870,9 @@ function renderPoolsStep() {
   // Bucket projects
   const pools = { L:[], M:[], S:[], N:[] };
   portfolioData.forEach(p => {
+    // Cerrados y "Próximamente en PRO" fuera de los pools, tengan o no horas
+    if (typeof isProjClosed === 'function' && isProjClosed(p)) return;
+    if (typeof isProxPro === 'function' && isProxPro(p)) return;
     const h = p.horas != null ? parseFloat(p.horas) : null;
     const k = h === null ? 'N' : h < thrS ? 'S' : h < thrM ? 'M' : 'L';
     pools[k].push(p);
