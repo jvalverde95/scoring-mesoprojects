@@ -401,7 +401,16 @@ async function cfgAdoLoad(){
    Also exposes adoAutoSync() for manual re-trigger.
    ═══════════════════════════════════════════════════════════════ */
 
-const ADO_AUTO_QUERY_NAME = 'EVOLUTIVO D365 GAPs Pendientes';
+const ADO_AUTO_QUERY_NAME_DEFAULT = 'EVOLUTIVO D365 GAPs Pendientes';
+// Nombre de la query de evolutivos: editable desde Config, con valor por defecto.
+function getAdoQueryName() {
+  var e = document.getElementById('cfg-ado-query-name');
+  var v = e ? (e.value || '').trim() : '';
+  if (v) return v;
+  var cfg = (typeof loadAllCreds === 'function') ? loadAllCreds() : null;
+  return (cfg && (cfg.ado_query_evolutivos)) || ADO_AUTO_QUERY_NAME_DEFAULT;
+}
+Object.defineProperty(window, 'ADO_AUTO_QUERY_NAME', { get: getAdoQueryName, configurable: true });
 let   _autoSyncTimer      = null;
 
 function adoSyncStatusBar(state, msg, count) {
@@ -600,20 +609,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.head.appendChild(st);
   }
 
-  // loadAllCreds populates the form fields from localStorage
+  // Rellena los campos del formulario desde localStorage y restaura las credenciales en memoria
   if (typeof loadAllCreds === 'function') loadAllCreds();
 
-  // Auto-sync after a short delay (gives DOM time to settle)
+  // Inicializa la conexión con ADO DESPUÉS de que los proyectos guardados se hayan cargado,
+  // para que la sincronización fusione (y no machaque) la cartera existente.
   setTimeout(function() {
-    const org = (document.getElementById('cfg-ado-org')?.value || '').trim();
-    const pat = (document.getElementById('cfg-ado-pat')?.value || '').trim();
-    if (org) {
-      // We have at least org: attempt auto-sync silently
+    const cfg = (typeof loadAllCreds === 'function') ? loadAllCreds() : null;
+    const org = (cfg && cfg.org) || (document.getElementById('cfg-ado-org')?.value || '').trim();
+    const pat = (cfg && cfg.pat) || (document.getElementById('cfg-ado-pat')?.value || '').trim();
+    if (org && pat) {
+      // Hay credenciales guardadas: sincronizar en silencio (fusiona con lo cargado)
       adoAutoSync(true);
     } else {
       adoSyncStatusBar('idle', 'Configura credenciales ADO en ⚙ Config');
     }
-  }, 800);
+  }, 900);
 });
 
 /* ═══════════════════════════════════════════════════════════════
@@ -850,3 +861,5 @@ async function adoSyncAllScores() {
 
   if (typeof renderPortfolio === 'function') renderPortfolio();
 }
+
+

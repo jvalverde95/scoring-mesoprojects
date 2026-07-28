@@ -1,7 +1,7 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary','closed'];
 
 function goStep(t) {
   if (window._sharedViewLocked) return;  // vista compartida: navegación bloqueada
@@ -18,7 +18,7 @@ function goStep(t) {
     if (!area) { toast('⚠ Selecciona un área antes de continuar'); document.getElementById('f-area')?.focus(); return; }
   }
 
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','closed'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -79,8 +79,11 @@ function goStep(t) {
     if(typeof loadDevAssignments==='function') loadDevAssignments();
     if(typeof renderDevAssignPanel==='function') renderDevAssignPanel();}
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
+    if (t === 'closed')     { if(typeof renderClosedScreen==='function') renderClosedScreen(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
-    if (t === 'config')    { if(typeof aiLoadKeywords==='function') aiLoadKeywords(); }
+    if (t === 'config') {
+      if(typeof loadAllCreds==='function') loadAllCreds();
+      if(typeof aiLoadKeywords==='function') aiLoadKeywords(); }
   } else {
     const p = document.getElementById('step-' + idx);
     if (p) p.classList.add('on');

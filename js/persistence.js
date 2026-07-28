@@ -91,6 +91,7 @@ function saveAllCreds() {
     ado_pat:       _xor(g('cfg-ado-pat'), _OBFUSCATE_SEED),
     // ADO query selection (persist last used query)
     ado_query_id:  g('cfg-ado-query-id') || existing.ado_query_id || '',
+    ado_query_evolutivos: g('cfg-ado-query-name') || existing.ado_query_evolutivos || '',
     ado_query_name:document.getElementById('cfg-ado-query-select')
       ? (document.getElementById('cfg-ado-query-select').selectedOptions?.[0]?.textContent || existing.ado_query_name || '')
       : (existing.ado_query_name || ''),
@@ -126,6 +127,7 @@ function loadAllCreds() {
   set('ado-project', cfg.ado_project);
 
   // ADO query selection — restore last used query info
+  if (cfg.ado_query_evolutivos) set('cfg-ado-query-name', cfg.ado_query_evolutivos);
   if (cfg.ado_query_id) {
     set('cfg-ado-query-id', cfg.ado_query_id);
     const note = document.getElementById('cfg-ado-query-note');
@@ -150,6 +152,16 @@ function loadAllCreds() {
     _dvCfg.tenant   = cfg.dv_tenant   || '';
     _dvCfg.clientId = cfg.dv_clientid || '';
     _dvCfg.secret   = cfg.dv_secret   ? _dxor(cfg.dv_secret, _OBFUSCATE_SEED) : '';
+  }
+
+  // Restaurar credenciales de ADO en memoria para poder sincronizar sin reconectar
+  if (cfg.ado_org && cfg.ado_project && cfg.ado_pat) {
+    try {
+      if (typeof _adoCreds !== 'undefined') {
+        _adoCreds = { org: cfg.ado_org, project: cfg.ado_project,
+                      pat: _dxor(cfg.ado_pat, _OBFUSCATE_SEED), queryId: cfg.ado_query_id || '' };
+      }
+    } catch(e) {}
   }
 
   // Show DV badge

@@ -7,8 +7,12 @@ let devTeam = [];  // [{name, corto, medio, largo}]
 
 // ¿El proyecto está cerrado en ADO? (el estado lo manda ADO — los cerrados no van a pools ni planificación)
 function isProjClosed(p) {
-  const st = String(p && p.adoState || '').toLowerCase().trim();
-  return st==='closed' || st==='done' || st==='removed' || st==='completed' || st==='cerrado';
+  var st = String(p && p.adoState || '').toLowerCase().trim();
+  if (!st) return false;
+  // Quitar el prefijo numérico si existe: "12 - Closed" / "12-Closed" → "closed"
+  st = st.replace(/^\s*\d+\s*[-–—]\s*/, '').trim();
+  return st === 'closed' || st === 'done' || st === 'removed' ||
+         st === 'completed' || st === 'cerrado' || st === 'cerrada';
 }
 
 // ¿"Próximamente en PRO"? Requirement + Prioridad 1 + estado con número > 6 (ej. "7-...", "8-...").
@@ -1217,4 +1221,124 @@ function renderSprintSnapshotView() {
 
   // (análisis de prioridad NO se muestra en el snapshot)
 
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PANTALLA DE PROYECTOS CERRADOS
+   Iniciativas con estado Closed en ADO. Salen de la operativa activa
+   pero se conservan aquí con analítica por departamento.
+   ══════════════════════════════════════════════════════════════════ */
+
+var _closedCharts = { dept: null, hours: null };
+
+// Departamento de un proyecto (área, con fallback)
+function _closedDept(p) {
+  return (p.area && String(p.area).trim()) || (p.adoIteration && String(p.adoIteration).trim()) || 'Sin departamento';
+}
+
+function getClosedProjects() {
+  if (!Array.isArray(portfolioData)) return [];
+  return portfolioData.filter(function(p){ return isProjClosed(p); });
+}
+
+function renderClosedScreen() {
+  var closed = getClosedProjects();
+
+  // ── Poblar el filtro de departamentos ──
+  var sel = document.getElementById('closed-dept-filter');
+  if (sel) {
+    var cur = sel.value;
+    var depts = Array.from(new Set(closed.map(_closedDept))).sort();
+    sel.innerHTML = '<option value="">Todos los departamentos</option>' +
+      depts.map(function(d){ return '<option value="'+d.replace(/"/g,'&quot;')+'">'+d+'</option>'; }).join('');
+    if (cur && depts.indexOf(cur) >= 0) sel.value = cur;
+  }
+
+  // ── KPIs ──
+  var kp = document.getElementById('closed-kpis');
+  if (kp) {
+    var totalH = closed.reduce(function(s,p){ return s + (p.horas || 0); }, 0);
+    var avgScore = closed.length ? (closed.reduce(function(s,p){ return s + (p.sf || 0); }, 0) / closed.length) : 0;
+    var nDepts = new Set(closed.map(_closedDept)).size;
+    var kpi = function(val, lbl){
+      return '<div style="flex:1;min-width:130px;background:var(--w);border:1px solid var(--b);border-left:3px solid #1A1A1A;border-radius:10px;padding:14px 16px">'
+        + '<div style="font-size:26px;font-weight:800;color:#1A1A1A;line-height:1">'+val+'</div>'
+        + '<div style="font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:.04em;margin-top:4px">'+lbl+'</div></div>';
+    };
+    kp.innerHTML = kpi(closed.length, 'Proyectos cerrados')
+      + kpi(nDepts, 'Departamentos')
+      + kpi(Math.round(totalH).toLocaleString('es-ES'), 'Horas invertidas')
+      + kpi((avgScore||0).toFixed(1), 'Score medio');
+  }
+
+  // ── Datos agregados por departamento ──
+  var byDept = {};
+  closed.forEach(function(p){
+    var d = _closedDept(p);
+    if (!byDept[d]) byDept[d] = { count: 0, hours: 0 };
+    byDept[d].count++;
+    byDept[d].hours += (p.horas || 0);
+  });
+  var labels = Object.keys(byDept).sort(function(a,b){ return byDept[b].count - byDept[a].count; });
+  var counts = labels.map(function(d){ return byDept[d].count; });
+  var hours = labels.map(function(d){ return Math.round(byDept[d].hours); });
+
+  // ── Gráfica: volumen por departamento ──
+  if (typeof Chart !== 'undefined') {
+    var c1 = document.getElementById('closed-by-dept');
+    if (c1) {
+      if (_closedCharts.dept) { try { _closedCharts.dept.destroy(); } catch(e){} }
+      _closedCharts.dept = new Chart(c1.getContext('2d'), {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ data: counts, backgroundColor: '#1A1A1A', borderRadius: 4, maxBarThickness: 38 }] },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+      });
+    }
+    var c2 = document.getElementById('closed-hours-dept');
+    if (c2) {
+      if (_closedCharts.hours) { try { _closedCharts.hours.destroy(); } catch(e){} }
+      _closedCharts.hours = new Chart(c2.getContext('2d'), {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ data: hours, backgroundColor: '#C4974A', borderRadius: 4, maxBarThickness: 38 }] },
+        options: { responsive: true, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+      });
+    }
+  }
+
+  renderClosedProjects();
+}
+
+// Tabla filtrable
+function renderClosedProjects() {
+  var closed = getClosedProjects();
+  var sel = document.getElementById('closed-dept-filter');
+  var filter = sel ? sel.value : '';
+  var rows = closed.filter(function(p){ return !filter || _closedDept(p) === filter; });
+  rows.sort(function(a,b){ return (b.sf || 0) - (a.sf || 0); });
+
+  var tb = document.getElementById('closed-tbody');
+  if (tb) {
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--ink4);font-size:12px">No hay proyectos cerrados'
+        + (filter ? ' en este departamento.' : ' todavía.') + '</td></tr>';
+    } else {
+      tb.innerHTML = rows.map(function(p, i){
+        var bg = i % 2 ? '#FAFAF8' : '#fff';
+        var nm = String(p.nom || '').replace(/</g,'&lt;');
+        return '<tr style="background:'+bg+';border-top:1px solid #EEE">'
+          + '<td style="padding:9px 12px;color:#1A1A1A;font-weight:600">'+nm+'</td>'
+          + '<td style="padding:9px 12px;color:var(--ink3)">'+_closedDept(p)+'</td>'
+          + '<td style="padding:9px 12px;color:var(--ink3)">'+(p.adoAssigned || '—')+'</td>'
+          + '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#1A1A1A">'+(p.sf!=null?(p.sf||0).toFixed(1):'—')+'</td>'
+          + '<td style="padding:9px 12px;text-align:center;color:var(--ink3)">'+(p.horas!=null?p.horas:'—')+'</td>'
+          + '<td style="padding:9px 12px;text-align:center"><span style="font-size:10px;background:#EEE;color:#555;padding:2px 8px;border-radius:20px">'+(p.adoState||'Closed')+'</span></td>'
+          + '</tr>';
+      }).join('');
+    }
+  }
+  var cnt = document.getElementById('closed-count');
+  if (cnt) cnt.textContent = rows.length + (rows.length === 1 ? ' proyecto' : ' proyectos');
 }
