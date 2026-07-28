@@ -192,12 +192,41 @@ function adoMapToProject(wi) {
 let _adoCreds=null, _adoConnected=false;
 
 function _cfgAdoCreds(){
-  return {
-    org:     (document.getElementById('cfg-ado-org')?.value     || '').trim(),
-    project: (document.getElementById('cfg-ado-project')?.value || '').trim(),
-    // PAT is optional — if empty, server uses ADO_PAT env var
-    pat:     (document.getElementById('cfg-ado-pat')?.value     || '').trim(),
-  };
+  var g = function(id){ var e=document.getElementById(id); return e ? (e.value||'').trim() : ''; };
+  var org = g('cfg-ado-org'), project = g('cfg-ado-project'), pat = g('cfg-ado-pat');
+  // Si los campos del formulario están vacíos (p. ej. sincronizando desde otra pantalla
+  // o tras recargar sin abrir Config), usar las credenciales en memoria y, si no, las
+  // guardadas en localStorage.
+  if (!org || !project) {
+    if (typeof _adoCreds !== 'undefined' && _adoCreds) {
+      org = org || _adoCreds.org || '';
+      project = project || _adoCreds.project || '';
+      pat = pat || _adoCreds.pat || '';
+    }
+  }
+  if (!org || !project) {
+    var cfg = (typeof loadAllCreds === 'function') ? _readAdoCfgRaw() : null;
+    if (cfg) {
+      org = org || cfg.org || '';
+      project = project || cfg.project || '';
+      pat = pat || cfg.pat || '';
+    }
+  }
+  return { org: org, project: project, pat: pat };
+}
+
+// Lee la configuración ADO cruda de localStorage (con el PAT descifrado si aplica)
+function _readAdoCfgRaw(){
+  try {
+    var raw = localStorage.getItem(typeof _STORE_KEY !== 'undefined' ? _STORE_KEY : 'nexus_cfg_v1');
+    if (!raw) return null;
+    var c = JSON.parse(raw);
+    var pat = c.ado_pat || '';
+    if (pat && typeof _dxor === 'function' && typeof _OBFUSCATE_SEED !== 'undefined') {
+      try { pat = _dxor(pat, _OBFUSCATE_SEED); } catch(e){}
+    }
+    return { org: c.ado_org || '', project: c.ado_project || '', pat: pat, queryId: c.ado_query_id || '' };
+  } catch(e) { return null; }
 }
 
 function cfgAdoStatusShow(type,msg){
