@@ -67,6 +67,7 @@ async function adoFetchRequirements(org, project, pat, queryId) {
   const fields=[
     'System.Id','System.Title','System.WorkItemType','System.State',
     'System.AssignedTo','System.CreatedDate','System.ChangedDate','System.Description',
+    'Microsoft.VSTS.CodeReview.AcceptedBy',
     'Microsoft.VSTS.Common.ClosedDate',
     'System.AreaPath','System.Tags','Microsoft.VSTS.Common.Priority','System.Parent',
     // ── Fechas: dos vienen de ADO (fijas) y una la calcula la app ──
@@ -123,6 +124,14 @@ function adoMapToProject(wi) {
   }
   const descRaw=f['System.Description']||'';
   const desc=descRaw.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().substring(0,400);
+  // Microsoft.VSTS.CodeReview.AcceptedBy — puede venir como objeto identidad o string
+  var acceptedRaw = f['Microsoft.VSTS.CodeReview.AcceptedBy'];
+  var acceptedBy = '';
+  if (acceptedRaw && typeof acceptedRaw === 'object') {
+    acceptedBy = (acceptedRaw.displayName || acceptedRaw.uniqueName || acceptedRaw.name || '').replace(/<[^>]+>/g,'').trim();
+  } else if (acceptedRaw) {
+    acceptedBy = String(acceptedRaw).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  }
   const areaPath=f['System.AreaPath']||'';
   const areaFromPath=(areaPath.includes('\\') ? areaPath.split('\\').pop() : areaPath.split('/').pop()).trim();
   // Prefer MPG prefix decode (e.g. MPG-LOG-001 → Almacén y Logística)
@@ -163,6 +172,7 @@ function adoMapToProject(wi) {
     horasSource: rawHours !== null ? 'OriginalEstimate' : null,
     reqDate, regDate:null,
     adoAssigned: sponsor || '',     // System.AssignedTo (persona responsable) → "Pendiente de:"
+    adoAcceptedBy: acceptedBy || '',  // Microsoft.VSTS.CodeReview.AcceptedBy
     adoId:wi.id, adoTitle:title, adoType:f['System.WorkItemType']||'',
     adoState:f['System.State']||'', adoPriority:parseInt(f['Microsoft.VSTS.Common.Priority'])||3,
     adoIteration:f['System.IterationPath']||'',

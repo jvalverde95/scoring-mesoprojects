@@ -624,6 +624,7 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         // SIEMPRE tal cual, incluidos los vacíos (si allí se desasigna a alguien, aquí
         // también queda sin asignar). Desde Excel se conservan los que ya había.
         np.adoState    = _srcAdo ? (np.adoState    || '') : (prev.adoState    || np.adoState);
+        np.adoAcceptedBy = _srcAdo ? (np.adoAcceptedBy || '') : (prev.adoAcceptedBy || np.adoAcceptedBy);
         np.adoAssigned = _srcAdo ? (np.adoAssigned || '') : (prev.adoAssigned || np.adoAssigned);
         np.adoIteration= _srcAdo ? (np.adoIteration|| '') : (prev.adoIteration|| np.adoIteration);
         // Descripción: la de ADO manda si el Excel no trae una propia
@@ -1110,7 +1111,7 @@ function renderPools() {
           return `<div class="pool-item">
             <div class="pool-item-left">
               <div class="pool-item-name" title="${p.nom}">${p.nom.substring(0,52)}</div>
-              <div class="pool-item-meta">${p.area||'—'} · ${p.horas}h</div>
+              <div class="pool-item-meta">${p.area||'—'} · ${p.horas}h${p.adoAcceptedBy?' · ✓ '+p.adoAcceptedBy:''}</div>
             </div>
             <div class="pool-item-right">
               <span class="cls-badge" style="${clsStyle};font-size:7px;padding:2px 7px;">${cl.et.split(' ')[0]}</span>

@@ -385,6 +385,10 @@ function renderSprintScreen() {
           <span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>
           <span style="font-size:9px;font-weight:800;color:#5B3FD6">${pend}</span>
         </div>
+        ${p.adoAcceptedBy ? `<div style="display:flex;align-items:center;gap:5px;padding-top:4px">
+          <span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>
+          <span style="font-size:9px;font-weight:700;color:#087B50">${p.adoAcceptedBy}</span>
+        </div>` : ''}
       </div>`;
   };
 
@@ -437,6 +441,10 @@ function renderSprintScreen() {
             ${_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—'}
           </span>
         </div>
+        ${p.adoAcceptedBy ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
+          <span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>
+          <span style="font-size:9px;font-weight:700;color:#087B50">${p.adoAcceptedBy}</span>
+        </div>` : ''}
       </div>`;
   };
 
@@ -935,6 +943,7 @@ function _buildSprintSnapshot() {
       reqDate:p.reqDate||null,
       proxPro:(typeof isProxPro==='function' && isProxPro(p)),   // Próximamente en PRO
       adoState:p.adoState||'', adoAssigned:p.adoAssigned||'',    // estado y responsable
+      adoAcceptedBy:p.adoAcceptedBy||'',                          // Aceptado por (CodeReview.AcceptedBy)
       adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre
@@ -1097,7 +1106,12 @@ function renderSprintSnapshotView() {
       +'<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
         +'<span style="font-size:8px;color:var(--ink4)">'+(p.adoStart?'🟢 En curso desde:':(active?'🟢 Inicio:':'📅 Inicio est.:'))+'</span>'
         +'<span style="font-size:11px;font-weight:800;color:'+((p.adoStart||active)?'#8A6D3B':'#1A1A1A')+'">'+(p.adoStart?pf(+new Date(p.adoStart)):pf(p.start))+'</span>'
-      +'</div></div>';
+      +'</div>'
+      +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
+        +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
+        +'<span style="font-size:9px;font-weight:700;color:#087B50">'+p.adoAcceptedBy+'</span>'
+      +'</div>':'')
+      +'</div>';
   };
 
   const col = (title, arr, color, poolKey)=>{
@@ -1183,6 +1197,10 @@ function renderSprintSnapshotView() {
               +'<span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>'
               +'<span style="font-size:9px;font-weight:800;color:#8A6D3B">'+pend+'</span>'
             +'</div>'
+            +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
+              +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
+              +'<span style="font-size:9px;font-weight:700;color:#087B50">'+p.adoAcceptedBy+'</span>'
+            +'</div>':'')
           +'</div>';
         };
         var proxCol = function(title,arr,color){
