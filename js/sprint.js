@@ -23,9 +23,12 @@ function isProxPro(p) {
   if (parseInt(p.adoPriority) !== 1) return false;
   if (typeof isProjClosed === 'function' && isProjClosed(p)) return false;
   var st = String(p.adoState || '').trim();
-  var m = st.match(/^\s*(\d+)\s*[-–—]/);   // número al inicio seguido de guion (normal, medio o largo)
+  // Número al inicio (admite decimales como "11.1") seguido de guion: "7 - PRE",
+  // "11.1 - Deployed to PRO", "8-Algo". Un estado en un número > 6 y no cerrado
+  // se considera "Próximamente en PRO".
+  var m = st.match(/^\s*(\d+(?:[.,]\d+)?)\s*[-–—]/);
   if (!m) return false;
-  return parseInt(m[1]) > 6;
+  return parseFloat(m[1].replace(',', '.')) > 6;
 }
 
 // Colapsar/expandir la sección "Próximamente en PRO"
