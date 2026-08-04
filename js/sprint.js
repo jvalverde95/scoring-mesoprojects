@@ -264,6 +264,7 @@ function renderSprintScreen() {
   // Lookup de fechas de inicio esperadas desde la planificación
   var _startDates = {};
   var _endDates = {};
+  var _devByProj = {};
   // Tooltip enriquecido para las tarjetas (descripción, notas por dimensión, fechas, horas)
   var _DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
   var _liveTip = function(p, active){
@@ -284,7 +285,11 @@ function renderSprintScreen() {
   try {
     if (typeof planBuildTimeline === 'function') {
       planBuildTimeline().forEach(function(t){
-        if (t.proj && t.proj.nom) { _startDates[t.proj.nom] = t.startDate; _endDates[t.proj.nom] = t.endDate; }
+        if (t.proj && t.proj.nom) {
+          _startDates[t.proj.nom] = t.startDate;
+          _endDates[t.proj.nom] = t.endDate;
+          _devByProj[t.proj.nom] = { name: t.devName, manual: !!t.manualDev };
+        }
       });
     }
   } catch(e){}
@@ -321,10 +326,22 @@ function renderSprintScreen() {
     }
   }
   const topSel = document.getElementById('sprint-filter-top');
+  // Filtro por "Aceptado por" (solo afecta a la visualización, no al orden)
+  const accSel = document.getElementById('sprint-filter-accepted');
+  if (accSel) {
+    const accepted = [...new Set(portfolioData.map(p => p.adoAcceptedBy).filter(Boolean))].sort();
+    const cur = accSel.value;
+    if (!accSel.options || accSel.options.length !== accepted.length + 1) {
+      accSel.innerHTML = '<option value="">Todos (aceptado por)</option>'
+        + accepted.map(a => '<option value="' + a.replace(/"/g,'&quot;') + '">' + a + '</option>').join('');
+      accSel.value = cur;
+    }
+  }
   const fArea = areaSel ? areaSel.value : '';
   const fTop  = (topSel && topSel.value) ? parseInt(topSel.value) : 0;
+  const fAcc  = accSel ? accSel.value : '';
   const topSet = fTop ? new Set(fullSorted.slice(0, fTop).map(p => p.nom)) : null;
-  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom));
+  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom)) && (!fAcc || p.adoAcceptedBy === fAcc);
 
   const allCortos = fCortos.filter(passes);
   const allMedios = fMedios.filter(passes);
@@ -436,11 +453,18 @@ function renderSprintScreen() {
           </span>
         </div>
         <div style="display:flex;align-items:center;gap:5px;padding-top:3px">
-          <span style="font-size:8px;color:var(--ink4)">📦 Entrega est.:</span>
+          <span style="font-size:8px;color:var(--ink4)">📦 Entrega est.:${isPlanPinned(p.nom)?' <span style="color:#C4974A">🔒 fijada</span>':''}</span>
           <span style="font-size:9px;font-weight:800;color:var(--ink)">
             ${_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—'}
           </span>
         </div>
+        ${_devByProj[p.nom] && _devByProj[p.nom].name ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
+          <span style="font-size:8px;color:var(--ink4)">${_devByProj[p.nom].manual?'📌 Dev fijado:':'👤 Dev asignado:'}</span>
+          <span style="font-size:9px;font-weight:700;color:#2E5B9A">${_devByProj[p.nom].name}</span>
+          <span onclick="event.stopPropagation();togglePlanPin('${p.nom.replace(/'/g,"\\'")}')"
+            title="${isPlanPinned(p.nom)?'Liberar fecha (volverá a recalcularse)':'Fijar esta fecha (no se moverá al replanificar)'}"
+            style="margin-left:auto;cursor:pointer;font-size:11px;user-select:none">${isPlanPinned(p.nom)?'📌':'📍'}</span>
+        </div>` : ''}
         ${p.adoAcceptedBy ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
           <span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>
           <span style="font-size:9px;font-weight:700;color:#087B50">${p.adoAcceptedBy}</span>
@@ -1064,8 +1088,9 @@ function renderSprintSnapshotView() {
   // ═══ 2) Filtros: SOLO ocultan tarjetas; estado y orden no cambian ═══
   const fArea = window._snapFilterArea || '';
   const fTop  = window._snapFilterTop  || '';
+  const fAcc  = window._snapFilterAccepted || '';
   const topSet = fTop ? new Set(fullSorted.slice(0, parseInt(fTop)).map(p=>p.nom)) : null;
-  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom));
+  const passes = p => (!fArea || p.area === fArea) && (!topSet || topSet.has(p.nom)) && (!fAcc || p.adoAcceptedBy === fAcc);
   const sorted = fullSorted.filter(passes);
   const cortos = fCortos.filter(passes);
   const medios = fMedios.filter(passes);
@@ -1162,7 +1187,15 @@ function renderSprintSnapshotView() {
             +'<option value="">Todos los proyectos</option>'
             +[10,20,30].map(n=>'<option value="'+n+'"'+(fTop==String(n)?' selected':'')+'>Top '+n+' por nota</option>').join('')
           +'</select>'
-          +((fArea||fTop)?'<span style="font-size:9px;color:#999">'+sorted.length+' proyectos · '+cortos.length+' cortos · '+medios.length+' medios · '+largos.length+' largos</span>':'')
+          +(function(){
+            var acc=[...new Set(snap.projects.map(p=>p.adoAcceptedBy).filter(Boolean))].sort();
+            if(!acc.length) return '';
+            return '<select onchange="window._snapFilterAccepted=this.value;renderSprintSnapshotView()" style="font-size:10px;padding:5px 8px;border:1px solid #DEDEDE;border-radius:6px;background:#fff;max-width:200px">'
+              +'<option value="">Todos (aceptado por)</option>'
+              +acc.map(a=>'<option value="'+a.replace(/"/g,'&quot;')+'"'+(fAcc===a?' selected':'')+'>'+a+'</option>').join('')
+            +'</select>';
+          })()
+          +((fArea||fTop||fAcc)?'<span style="font-size:9px;color:#999">'+sorted.length+' proyectos · '+cortos.length+' cortos · '+medios.length+' medios · '+largos.length+' largos</span>':'')
         +'</div>';
       })()
     +(function(){

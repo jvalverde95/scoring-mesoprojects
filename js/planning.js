@@ -46,9 +46,12 @@ function loadLocked() {
 // porque los locks viejos congelaban fechas (p. ej. de 2028) y rompían el orden.
 function clearPlanningLocks() {
   if (typeof invalidatePlanCache === 'function') invalidatePlanCache();
-  lockedAssignments = [];
+  // Conservar los proyectos FIJADOS manualmente por el usuario (pinned);
+  // solo se limpian los locks de arrastre del Gantt y los activos.
+  var pins = (lockedAssignments || []).filter(function(l){ return l && l.pinned; });
+  lockedAssignments = pins;
   activeProjects = [];
-  try { localStorage.removeItem('nexus_lk'); } catch(e) {}
+  try { localStorage.setItem('nexus_lk', JSON.stringify(pins)); } catch(e) {}
   try { localStorage.removeItem('nexus_ap'); } catch(e) {}
 }
 
@@ -2880,4 +2883,53 @@ function planShowReplanToast(msg, t, enCurso) {
   box.innerHTML = html;
   document.body.appendChild(box);
   setTimeout(function(){ var e=document.getElementById('replan-popup'); if(e) e.remove(); }, 8000);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   FIJAR / LIBERAR FECHA ESTIMADA DE UN PROYECTO
+   Al fijar, el proyecto se convierte en un "ancla": conserva sus fechas
+   actuales y ocupa a su desarrollador en ese periodo, de modo que el
+   resto de la planificación se recalcula respetando ese hueco (opción A).
+   ══════════════════════════════════════════════════════════════════ */
+
+// ¿Está fijada la fecha de este proyecto?
+function isPlanPinned(nom) {
+  return (lockedAssignments || []).some(function(l){ return l.nom === nom; });
+}
+
+// Fija el proyecto con las fechas y el dev que tiene ahora mismo en el timeline
+function pinPlanDate(nom) {
+  var tl = (typeof planBuildTimeline === 'function') ? planBuildTimeline() : [];
+  var t = tl.find(function(x){ return x.proj && x.proj.nom === nom; });
+  if (!t) { if(typeof toast==='function') toast('No se encontró el proyecto en la planificación.'); return; }
+  // Quitar cualquier lock previo del mismo proyecto
+  lockedAssignments = (lockedAssignments || []).filter(function(l){ return l.nom !== nom; });
+  lockedAssignments.push({
+    nom: nom,
+    devName: t.devName,
+    startDate: (t.startDate instanceof Date ? t.startDate : new Date(t.startDate)).toISOString(),
+    endDate:   (t.endDate   instanceof Date ? t.endDate   : new Date(t.endDate)).toISOString(),
+    pinned: true
+  });
+  if (typeof saveLocked === 'function') saveLocked();
+  if (typeof invalidatePlanCache === 'function') invalidatePlanCache();
+  if (typeof toast === 'function') toast('📌 Fecha fijada · ' + nom.substring(0,40));
+  if (typeof _refreshAllViews === 'function') _refreshAllViews();
+  else { if(typeof renderPlanningSummary==='function') renderPlanningSummary(); if(typeof renderSprintScreen==='function') renderSprintScreen(); }
+}
+
+// Libera la fecha fijada de un proyecto (vuelve a recalcularse)
+function unpinPlanDate(nom) {
+  lockedAssignments = (lockedAssignments || []).filter(function(l){ return l.nom !== nom; });
+  if (typeof saveLocked === 'function') saveLocked();
+  if (typeof invalidatePlanCache === 'function') invalidatePlanCache();
+  if (typeof toast === 'function') toast('🔓 Fecha liberada · ' + nom.substring(0,40));
+  if (typeof _refreshAllViews === 'function') _refreshAllViews();
+  else { if(typeof renderPlanningSummary==='function') renderPlanningSummary(); if(typeof renderSprintScreen==='function') renderSprintScreen(); }
+}
+
+// Alterna fijar/liberar
+function togglePlanPin(nom) {
+  if (isPlanPinned(nom)) unpinPlanDate(nom); else pinPlanDate(nom);
 }
