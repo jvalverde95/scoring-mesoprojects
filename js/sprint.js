@@ -446,18 +446,38 @@ function renderSprintScreen() {
             background:${cl.bg||'var(--surf)'};color:${cl.c||'var(--ink3)'}">${cl.et||'—'}</span>
           <span style="font-size:9px;color:var(--ink3)">${p.horas}h</span>
         </div>
-        <div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">
-          <span style="font-size:8px;color:var(--ink4)">${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? '🟢 En curso desde:' : (isActive?'🟢 Inicio:':'📅 Inicio est.:')}</span>
-          <span style="font-size:9px;font-weight:700;color:${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? 'var(--d3)' : (isActive?'var(--d3)':'var(--ink3)')}">
-            ${(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? pFmt(new Date(p.adoStartDate)) : (_startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—')}
-          </span>
-        </div>
-        <div style="display:flex;align-items:center;gap:5px;padding-top:3px">
-          <span style="font-size:8px;color:var(--ink4)">📦 Entrega est.:${isPlanPinned(p.nom)?' <span style="color:#C4974A">🔒 fijada</span>':''}</span>
-          <span style="font-size:9px;font-weight:800;color:var(--ink)">
-            ${_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—'}
-          </span>
-        </div>
+        ${(function(){
+          // Fecha de inicio: MPG Start Date de ADO manda, pero puede ser a FUTURO.
+          // Si ya ha empezado (fecha <= hoy) → "En curso desde"; si es a futuro → "Inicio est."
+          var hoy = new Date(); hoy.setHours(0,0,0,0);
+          var adoStart = (p.adoStartDate && String(p.adoStartDate).trim()!=='') ? new Date(p.adoStartDate) : null;
+          if (adoStart && isNaN(+adoStart)) adoStart = null;
+          var yaEmpezado = adoStart && adoStart <= hoy;
+          var iniLabel, iniColor, iniFecha;
+          if (adoStart) {
+            iniLabel = yaEmpezado ? '🟢 En curso desde:' : '📅 Inicio est.:';
+            iniColor = yaEmpezado ? 'var(--d3)' : 'var(--ink3)';
+            iniFecha = pFmt(adoStart);
+          } else {
+            iniLabel = isActive ? '🟢 Inicio:' : '📅 Inicio est.:';
+            iniColor = isActive ? 'var(--d3)' : 'var(--ink3)';
+            iniFecha = _startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—';
+          }
+          // Entrega: si ADO tiene Target Date, esa manda; si no, la estimada del planificador.
+          var adoTarget = (p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? new Date(p.adoTargetDate) : null;
+          if (adoTarget && isNaN(+adoTarget)) adoTarget = null;
+          var entLabel = adoTarget ? '🎯 Target ADO:' : ('📦 Entrega est.:' + (isPlanPinned(p.nom)?' <span style="color:#C4974A">🔒 fijada</span>':''));
+          var entColor = adoTarget ? '#B03A2E' : 'var(--ink)';
+          var entFecha = adoTarget ? pFmt(adoTarget) : (_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—');
+          return '<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
+              +'<span style="font-size:8px;color:var(--ink4)">'+iniLabel+'</span>'
+              +'<span style="font-size:9px;font-weight:700;color:'+iniColor+'">'+iniFecha+'</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:5px;padding-top:3px">'
+              +'<span style="font-size:8px;color:var(--ink4)">'+entLabel+'</span>'
+              +'<span style="font-size:9px;font-weight:800;color:'+entColor+'">'+entFecha+'</span>'
+            +'</div>';
+        })()}
         ${_devByProj[p.nom] && _devByProj[p.nom].name ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
           <span style="font-size:8px;color:var(--ink4)">${_devByProj[p.nom].manual?'📌 Dev fijado:':'👤 Dev asignado:'}</span>
           <span style="font-size:9px;font-weight:700;color:#2E5B9A">${_devByProj[p.nom].name}</span>
@@ -953,22 +973,23 @@ function _buildSprintSnapshot() {
   // Captura mínima necesaria para reconstruir la vista En Marcha
   const cap = getDevCapacity();
   const thr = getThr();
-  const startDates = {};
+  const startDates = {}, endDatesSnap = {};
   try {
     if (typeof planBuildTimeline === 'function') {
-      planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom) startDates[t.proj.nom]=+t.startDate; });
+      planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom){ startDates[t.proj.nom]=+t.startDate; endDatesSnap[t.proj.nom]=+t.endDate; } });
     }
   } catch(e){}
   const projects = portfolioData.filter(p=>p.horas!=null && !isProjClosed(p)).map(function(p){
     return { nom:p.nom, sf:+(p.sf||0).toFixed(2), horas:p.horas, area:p.area||'',
-      adoPriority:p.adoPriority||3, start:startDates[p.nom]||null,
+      adoPriority:p.adoPriority||3, start:startDates[p.nom]||null, end:endDatesSnap[p.nom]||null,
       desc:(p.descripcion||p.adoDesc||'').toString().replace(/\s+/g,' ').trim().substring(0,400),
       dims:(p.dimScores||[]).map(function(d){return +(+d).toFixed(1);}),
       reqDate:p.reqDate||null,
       proxPro:(typeof isProxPro==='function' && isProxPro(p)),   // Próximamente en PRO
       adoState:p.adoState||'', adoAssigned:p.adoAssigned||'',    // estado y responsable
       adoAcceptedBy:p.adoAcceptedBy||'',                          // Aceptado por (CodeReview.AcceptedBy)
-      adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null };
+      adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null,
+      adoTarget:(p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? p.adoTargetDate : null };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre
   var freeSlots = {};
@@ -1128,10 +1149,28 @@ function renderSprintSnapshotView() {
         +'<span style="font-size:9px;color:var(--ink3)">'+(p.area||'—')+'</span>'
         +'<span style="font-size:11px;font-weight:700;color:var(--ink3)">'+p.horas+'h</span>'
       +'</div>'
-      +'<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
-        +'<span style="font-size:8px;color:var(--ink4)">'+(p.adoStart?'🟢 En curso desde:':(active?'🟢 Inicio:':'📅 Inicio est.:'))+'</span>'
-        +'<span style="font-size:11px;font-weight:800;color:'+((p.adoStart||active)?'#8A6D3B':'#1A1A1A')+'">'+(p.adoStart?pf(+new Date(p.adoStart)):pf(p.start))+'</span>'
-      +'</div>'
+      +(function(){
+          var hoy=new Date();hoy.setHours(0,0,0,0);
+          var st = p.adoStart ? new Date(p.adoStart) : null;
+          if (st && isNaN(+st)) st = null;
+          var yaEmp = st && st <= hoy;
+          var iniLbl, iniCol, iniF;
+          if (st) { iniLbl = yaEmp?'🟢 En curso desde:':'📅 Inicio est.:'; iniCol = yaEmp?'#8A6D3B':'#1A1A1A'; iniF = pf(+st); }
+          else { iniLbl = active?'🟢 Inicio:':'📅 Inicio est.:'; iniCol = active?'#8A6D3B':'#1A1A1A'; iniF = pf(p.start); }
+          var tg = p.adoTarget ? new Date(p.adoTarget) : null;
+          if (tg && isNaN(+tg)) tg = null;
+          var entLbl = tg?'🎯 Target ADO:':'📦 Entrega est.:';
+          var entCol = tg?'#B03A2E':'#1A1A1A';
+          var entF = tg ? pf(+tg) : (p.end ? pf(+new Date(p.end)) : '—');
+          return '<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
+              +'<span style="font-size:8px;color:var(--ink4)">'+iniLbl+'</span>'
+              +'<span style="font-size:11px;font-weight:800;color:'+iniCol+'">'+iniF+'</span>'
+            +'</div>'
+            +'<div style="display:flex;align-items:center;gap:5px;padding-top:3px">'
+              +'<span style="font-size:8px;color:var(--ink4)">'+entLbl+'</span>'
+              +'<span style="font-size:10px;font-weight:800;color:'+entCol+'">'+entF+'</span>'
+            +'</div>';
+        })()
       +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
         +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
         +'<span style="font-size:9px;font-weight:700;color:#087B50">'+p.adoAcceptedBy+'</span>'
