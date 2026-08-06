@@ -1,0 +1,221 @@
+<div class="step" id="step-dashboard">
+
+  <!-- Header row -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="s-title" style="margin:0;font-size:20px">Nexus · Dashboard</div>
+      <div class="s-sub" style="margin:3px 0 0" id="dash-last-sync">Portfolio · actualizado ahora</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('projects')">+ Cargar proyectos</button>
+      <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 12px" onclick="goStep('eval')">⚡ Evaluar</button>
+      <button class="cfg-apply" style="font-size:9px;padding:5px 12px;background:var(--d3)" onclick="goStep('sprint')">🚀 Ver en marcha</button>
+    </div>
+  </div>
+
+  <!-- KPI grid 3x3 -->
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px">
+
+    <!-- Total -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📂</div>
+      <div>
+        <div id="kpi-total" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Proyectos totales</div>
+      </div>
+    </div>
+
+    <!-- Puntuados -->
+    <div style="background:var(--d3t);border:1px solid rgba(8,123,80,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(8,123,80,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✓</div>
+      <div>
+        <div id="kpi-scored" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d3);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Puntuados</div>
+      </div>
+      <div id="kpi-scored-pct" style="margin-left:auto;font-size:11px;color:var(--d3);font-weight:700">0%</div>
+    </div>
+
+    <!-- Sin estimar -->
+    <div style="background:var(--d4t);border:1px solid rgba(192,120,0,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(192,120,0,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⏱</div>
+      <div>
+        <div id="kpi-unestimated" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d4);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d4);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Sin estimar</div>
+      </div>
+    </div>
+
+    <!-- Prioritarios -->
+    <div style="background:var(--d1t);border:1px solid rgba(204,31,38,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(204,31,38,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">⚑</div>
+      <div>
+        <div id="kpi-priority" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--d1);line-height:1">0</div>
+        <div style="font-size:9px;color:var(--d1);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Prioritarios</div>
+      </div>
+    </div>
+
+    <!-- Score medio -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">◎</div>
+      <div style="flex:1">
+        <div id="kpi-avg-score" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink);line-height:1">—</div>
+        <div style="font-size:9px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase;margin-top:2px">Score medio</div>
+      </div>
+      <div style="width:32px;height:32px;position:relative;flex-shrink:0">
+        <svg viewBox="0 0 36 36" style="width:32px;height:32px;transform:rotate(-90deg)">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="var(--b)" stroke-width="3"/>
+          <circle id="kpi-score-ring" cx="18" cy="18" r="14" fill="none" stroke="var(--d3)" stroke-width="3" stroke-dasharray="0 88" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- En marcha -->
+    <div style="background:#EEF3FC;border:1px solid rgba(26,58,95,.15);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(26,58,95,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</div>
+      <div>
+        <div id="kpi-sprint" style="font-size:26px;font-weight:900;font-family:'Playfair Display',serif;color:#1848A0;line-height:1">0</div>
+        <div style="font-size:9px;color:#1848A0;letter-spacing:.1em;text-transform:uppercase;margin-top:2px">En marcha</div>
+      </div>
+      <div id="kpi-sprint-cap" style="margin-left:auto;font-size:9px;color:#1848A0;font-weight:600;text-align:right">cap: 0</div>
+    </div>
+  </div>
+
+  <!-- ── Analytics row: KPIs avanzados ── -->
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px">
+    <div class="dash-mini">
+      <div class="dm-lbl">Horas cartera</div>
+      <div class="dm-val" id="kpi2-hours">0h</div>
+      <div class="dm-sub" id="kpi2-hours-sub">—</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Mediana score</div>
+      <div class="dm-val" id="kpi2-median">—</div>
+      <div class="dm-sub" id="kpi2-median-sub">p50 de la cartera</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Sync ADO</div>
+      <div class="dm-val" id="kpi2-synced">0%</div>
+      <div class="dm-sub" id="kpi2-synced-sub">scores guardados</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Aging activo</div>
+      <div class="dm-val" id="kpi2-aging">0</div>
+      <div class="dm-sub">proyectos con boost &gt;1×</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Áreas</div>
+      <div class="dm-val" id="kpi2-areas">0</div>
+      <div class="dm-sub" id="kpi2-areas-sub">—</div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl">Fin de cola</div>
+      <div class="dm-val" id="kpi2-queue" style="font-size:15px">—</div>
+      <div class="dm-sub">próx. fecha libre global</div>
+    </div>
+  </div>
+
+  <!-- ── Mini-charts analíticos ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+    <div class="dash-mini">
+      <div class="dm-lbl" style="margin-bottom:8px">Distribución de scores</div>
+      <div style="position:relative;height:130px">
+        <canvas id="dash-hist"></canvas>
+      </div>
+    </div>
+    <div class="dash-mini">
+      <div class="dm-lbl" style="margin-bottom:8px">Horas por área (top 6)</div>
+      <div style="position:relative;height:130px">
+        <canvas id="dash-area-hours"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle: Pool bars + Top5 + Horas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+
+    <!-- Pool breakdown -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Pools</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d4);flex-shrink:0"></div>
+          <div style="font-size:10px;color:var(--ink3);flex:1">Sin estimar</div>
+          <div id="pool-bar-none" style="height:5px;border-radius:3px;background:var(--d4);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-none" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d3);flex-shrink:0"></div>
+          <div style="font-size:10px;color:var(--ink3);flex:1">Corto</div>
+          <div id="pool-bar-s" style="height:5px;border-radius:3px;background:var(--d3);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-s" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#C07800;flex-shrink:0"></div>
+          <div style="font-size:10px;color:var(--ink3);flex:1">Medio</div>
+          <div id="pool-bar-m" style="height:5px;border-radius:3px;background:#C07800;transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-m" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--d1);flex-shrink:0"></div>
+          <div style="font-size:10px;color:var(--ink3);flex:1">Largo</div>
+          <div id="pool-bar-l" style="height:5px;border-radius:3px;background:var(--d1);transition:width .3s;min-width:2px"></div>
+          <div id="pool-n-l" style="font-size:11px;font-weight:700;color:var(--ink);min-width:22px;text-align:right">0</div>
+        </div>
+      </div>
+      <!-- Mini bar chart of classifications -->
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--b)">
+        <div style="font-size:9px;color:var(--ink3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em">Clasificación</div>
+        <div id="dash-cls-breakdown" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+
+    <!-- Top 5 projects -->
+    <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Top 5 proyectos</div>
+      <div id="dash-top5" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>
+      </div>
+    </div>
+
+    <!-- System status + horas -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+
+      <!-- Horas totales -->
+      <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;flex:1">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Estimación total</div>
+        <div id="kpi-total-hours" style="font-size:22px;font-weight:900;font-family:'Playfair Display',serif;color:var(--ink)">—</div>
+        <div style="font-size:9px;color:var(--ink3);margin-top:2px">horas en cartera</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d3t);color:var(--d3)" id="dash-h-corto">—h cortos</span>
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d4t);color:var(--d4)" id="dash-h-medio">—h medios</span>
+          <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:var(--d1t);color:var(--d1)" id="dash-h-largo">—h largos</span>
+        </div>
+      </div>
+
+      <!-- System status -->
+      <div style="background:var(--surf);border:1px solid var(--b);border-radius:10px;padding:14px 16px;flex:1">
+        <div style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Sistema</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Azure DevOps</span>
+            <span id="dash-ado-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Dataverse</span>
+            <span id="dash-dv-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--ink3)">Equipo</span>
+            <span id="dash-team-status" style="font-size:9px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--b);color:var(--ink4)">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts / Action needed row -->
+  <div id="dash-alerts" style="display:none;background:#FEF9EC;border:1px solid rgba(192,120,0,.2);border-radius:10px;padding:12px 16px">
+    <div style="font-size:10px;font-weight:700;color:#C07800;margin-bottom:6px">⚠ Acciones recomendadas</div>
+    <div id="dash-alerts-list" style="display:flex;flex-direction:column;gap:5px"></div>
+  </div>
+
+</div>

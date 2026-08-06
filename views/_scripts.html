@@ -1,0 +1,67 @@
+<!-- ── JS modules (load order matters) ── -->
+<script src="js/scoring.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/ado.js"></script>
+<script src="js/config.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/persistence.js"></script>
+<script src="js/dataverse.js"></script>
+<script src="js/evaluator.js"></script>
+<script src="js/sprint.js"></script>
+<script src="js/projectedit.js"></script>
+<script src="js/planning.js"></script>
+
+<!-- Active project modal (used by openAddActiveProject) -->
+<div id="active-proj-modal" style="
+  display:none;position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.5);align-items:center;justify-content:center;
+  backdrop-filter:blur(2px)">
+  <div style="background:#fff;border-radius:12px;width:480px;max-width:95vw;
+    padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:16px">
+      ✚ Añadir proyecto en curso
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;
+          letter-spacing:.1em;display:block;margin-bottom:4px">Proyecto</label>
+        <select id="ap-project-sel" class="cfg-inp" style="font-size:11px">
+          <option value="">— Selecciona proyecto —</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;
+            letter-spacing:.1em;display:block;margin-bottom:4px">Desarrollador</label>
+          <select id="ap-dev-sel" class="cfg-inp" style="font-size:11px"></select>
+        </div>
+        <div>
+          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;
+            letter-spacing:.1em;display:block;margin-bottom:4px">Pool</label>
+          <select id="ap-pool-sel" class="cfg-inp" style="font-size:11px">
+            <option value="">Auto (por horas)</option>
+            <option value="corto">Corto (&lt;30h)</option>
+            <option value="medio">Medio (30-100h)</option>
+            <option value="largo">Largo (&gt;100h)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;
+          letter-spacing:.1em;display:block;margin-bottom:4px">Fecha fin estimada</label>
+        <input type="date" id="ap-end-date" class="cfg-inp" style="font-size:11px">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button onclick="closeActiveModal()"
+        style="padding:9px 20px;font-size:10px;border-radius:7px;border:1px solid #DEDEDE;
+               background:#fff;color:#666;cursor:pointer">Cancelar</button>
+      <button onclick="saveActiveProject()"
+        style="padding:9px 20px;font-size:10px;font-weight:700;border-radius:7px;
+               border:none;background:#1848A0;color:#fff;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+<script id="export-menu-closer">document.addEventListener('click',function(){const m=document.getElementById('export-menu');if(m)m.style.display='none';});</script>
+</body>
+</html>

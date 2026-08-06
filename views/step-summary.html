@@ -1,0 +1,397 @@
+<div class="step" id="step-summary">
+
+      <div class="ib">
+        <div style="flex:1">
+          <div class="ib-lbl">carga masiva de proyectos</div>
+          <div class="ib-info" id="ib-info">Importa el Excel para comparar y clasificar múltiples proyectos</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="loadExcel(this)">
+          <button class="btn-imp" onclick="document.getElementById('excel-input').click()" title="Carga puntual del Excel">↑ cargar excel</button>
+          <button class="btn-imp" id="btn-live" onclick="connectLiveExcel()" title="Conecta el fichero y se actualiza solo cada vez que guardas en Excel" style="background:#065438">⚡ live</button>
+          <button class="btn-imp ghost" onclick="manualRefresh()" id="btn-refresh" style="display:none" title="Forzar recarga ahora">↻</button>
+          <div style="width:1px;height:20px;background:var(--b);flex-shrink:0"></div>
+          <button class="ado-badge disconnected" id="ado-badge" onclick="openAdoModal()" title="Conectar con Azure DevOps">
+            <span class="ado-dot"></span>
+            <span id="ado-badge-lbl">Azure DevOps</span>
+          </button>
+          <button class="btn-imp ghost" id="btn-clear" onclick="clearPortfolio()" style="display:none">✕ limpiar</button>
+          <button class="btn-imp" onclick="openNewProjectModal()" style="background:var(--d3);color:#fff;border:none">+ Nuevo proyecto</button>
+          <button class="btn-imp ghost" id="btn-delete-selected" onclick="dvDeleteSelected()" disabled
+            style="display:none;color:var(--d1);border-color:rgba(204,31,38,.3)">🗑 Eliminar</button>
+        </div>
+      </div>
+
+      <!-- Dataverse loading banner -->
+      <div id="dv-loading-banner" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:10px;font-size:11px;font-weight:600;background:var(--d5t);color:var(--d5);align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
+        <span id="dv-loading-msg">Cargando proyectos de Dataverse…</span>
+      </div>
+
+      <!-- Bulk actions toolbar -->
+      <div id="bulk-toolbar" style="display:none;align-items:center;gap:8px;margin-bottom:10px;padding:8px 14px;background:var(--surf);border:1px solid var(--b);border-radius:8px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;color:var(--ink3)">
+          <input type="checkbox" id="chk-select-all" onchange="selectAllProjects(this.checked)"
+            style="width:14px;height:14px;accent-color:var(--d1);cursor:pointer">
+          Seleccionar todo
+        </label>
+        <span style="width:1px;height:16px;background:var(--b2);flex-shrink:0"></span>
+        <button id="btn-bulk-delete" class="cfg-apply" onclick="dvDeleteSelected()" disabled
+          style="background:var(--d1t);color:var(--d1);border:1px solid rgba(204,31,38,.25);font-size:9px;padding:5px 12px">
+          🗑 Eliminar selección (0)
+        </button>
+        <!-- Export menu (agrupado) -->
+        <div style="position:relative;display:inline-block">
+          <button onclick="const m=document.getElementById('export-menu');m.style.display=m.style.display==='none'?'block':'none';event.stopPropagation()"
+            class="export-excel-btn" style="display:inline-flex;align-items:center;gap:6px">
+            ↓ Exportar <span style="font-size:8px">▾</span>
+          </button>
+          <div id="export-menu" onclick="event.stopPropagation()"
+            style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+                   background:#fff;border:1px solid #E5E5E5;border-radius:12px;
+                   box-shadow:0 8px 32px rgba(0,0,0,.12);padding:6px;min-width:240px">
+            <button onclick="exportPortfolioExcel();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              📄 Excel simple <span style="display:block;font-size:9px;color:#999">Lista plana de la cartera</span>
+            </button>
+            <button onclick="exportCarteraConPlanning();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              📅 Cartera + Planning <span style="display:block;font-size:9px;color:#999">Formato importación + fechas planificadas</span>
+            </button>
+            <button onclick="exportCarteraPlantilla();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#333"
+              onmouseover="this.style.background='#F7F7F5'" onmouseout="this.style.background='none'">
+              🧮 Plantilla + Fórmulas <span style="display:block;font-size:9px;color:#999">Excel con fórmulas vivas del modelo</span>
+            </button>
+            <div style="height:1px;background:#EFEFEF;margin:4px 8px"></div>
+            <button onclick="adoSyncAllScores();document.getElementById('export-menu').style.display='none'"
+              style="display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:none;
+                     border-radius:8px;font-size:11px;cursor:pointer;color:#1848A0"
+              onmouseover="this.style.background='#EEF3FC'" onmouseout="this.style.background='none'">
+              ↑ Guardar todos en ADO <span style="display:block;font-size:9px;color:#999">Scores → MPGScore / MPGTaskScore</span>
+            </button>
+          </div>
+        </div>
+        <button onclick="exportPortfolioExcel()" class="export-excel-btn" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <path d="M14 10v2.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Exportar Excel
+        </button>
+        <span id="bulk-count" style="font-size:9px;color:var(--ink4);margin-left:auto"></span>
+      </div>
+
+      <div class="port-wrap" id="portfolio" style="display:none">
+        <!-- Search bar -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="flex:1;position:relative">
+            <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink4)" width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="text" id="port-search" placeholder="Buscar por nombre, área o sponsor…"
+              class="cfg-inp" oninput="filterPortfolio(this.value)"
+              style="padding-left:28px;font-size:10px;height:30px;width:100%">
+          </div>
+          <button class="cfg-apply cfg-reset" style="font-size:9px;padding:5px 10px;height:30px;flex-shrink:0"
+            onclick="filterPortfolio('');document.getElementById('port-search').value=''">
+            ✕ limpiar
+          </button>
+        </div>
+
+        <div class="port-head">
+          <div><div class="port-h1">cartera de proyectos</div><div class="port-h2" id="port-count"></div></div>
+          <div class="port-sorts">
+            <button class="psort-btn on" onclick="sortPort('score',this)">Score ↓</button>
+            <button class="psort-btn" onclick="sortPort('aging',this)">+Aging ↓</button>
+            <button class="psort-btn" onclick="sortPort('reg',this)">Reg. ↑</button>
+            <button class="psort-btn" onclick="sortPort('name',this)">Nombre ↑</button>
+          </div>
+        </div>
+        <div class="port-filters">
+          <button class="pf-btn on" onclick="filterPort('all',this)">todos</button>
+          <button class="pf-btn" onclick="filterPort('PRIORITARIO',this)">prioritario</button>
+          <button class="pf-btn" onclick="filterPort('ALTA',this)">alta</button>
+          <button class="pf-btn" onclick="filterPort('MEDIA',this)">media</button>
+          <button class="pf-btn" onclick="filterPort('BAJA',this)">baja</button>
+          <button class="pf-btn" onclick="filterPort('DESCARTAR',this)">descartar</button>
+          <button class="pf-btn" style="color:var(--d1)" onclick="filterPort('REG',this)">⚠ reg.</button>
+          <button class="pf-btn" style="color:#8A1A20" onclick="filterPort('LARGO',this)">largo</button>
+          <button class="pf-btn" style="color:#7A4A00" onclick="filterPort('MEDIO',this)">medio</button>
+          <button class="pf-btn" style="color:#065438" onclick="filterPort('CORTO',this)">corto</button>
+          <button class="pf-btn" onclick="filterPort('SINPOOL',this)">sin estimar</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="port-tbl" id="port-tbl">
+            <thead><tr>
+              <th style="width:32px;text-align:center">
+                <input type="checkbox" id="chk-select-all-tbl" style="width:13px;height:13px;accent-color:var(--d1)"
+                  onchange="selectAllProjects(this.checked)">
+              </th>
+              <th>#</th>
+              <th data-sort="name" data-label="proyecto" onclick="sortPort('name')" style="cursor:pointer;min-width:280px;text-align:left">proyecto</th>
+              <th data-sort="area" data-label="área" onclick="sortPort('area')" style="cursor:pointer">área</th>
+              <th data-sort="d1" data-label="D1" onclick="sortPort('d1')" style="cursor:pointer">D1</th>
+              <th data-sort="d2" data-label="D2" onclick="sortPort('d2')" style="cursor:pointer">D2</th>
+              <th data-sort="d3" data-label="D3" onclick="sortPort('d3')" style="cursor:pointer">D3</th>
+              <th data-sort="d4" data-label="D4" onclick="sortPort('d4')" style="cursor:pointer">D4</th>
+              <th data-sort="d5" data-label="D5" onclick="sortPort('d5')" style="cursor:pointer">D5</th>
+              <th data-sort="d6" data-label="D6" onclick="sortPort('d6')" style="cursor:pointer">D6</th>
+              <th data-sort="base" data-label="base" onclick="sortPort('base')" style="cursor:pointer">base</th>
+              <th data-sort="aging" data-label="aging" onclick="sortPort('aging')" style="cursor:pointer">aging</th>
+              <th data-sort="score" data-label="final" onclick="sortPort('score')" style="cursor:pointer">final</th>
+              <th data-sort="clas" data-label="clasificación" onclick="sortPort('clas')" style="cursor:pointer">clasificación</th>
+              <th data-sort="reg" data-label="reg." onclick="sortPort('reg')" style="cursor:pointer">reg.</th>
+              <th data-sort="horas" data-label="horas" onclick="sortPort('horas')" style="cursor:pointer">horas</th>
+              <th data-sort="inicio" data-label="inicio" onclick="sortPort('inicio')" style="cursor:pointer" title="Fecha de inicio (ADO). Con valor = en curso">inicio</th>
+              <th data-sort="pool" data-label="pool" onclick="sortPort('pool')" style="cursor:pointer">pool</th><th></th><th title="Sincronizar score → Azure DevOps" style="font-size:9px;white-space:nowrap">ADO ↑</th>
+            </tr></thead>
+            <tbody id="port-tbody"></tbody>
+          </table>
+        </div>
+        <div class="port-empty" id="port-empty" style="display:none">sin proyectos en este filtro</div>
+      </div>
+
+      <div class="pool-panel" id="pool-panel" style="display:none">
+        <div class="pool-hd">
+          <div class="pool-title">clasificación por nivel</div>
+          <div class="pool-thr">
+            <span class="pool-tag pool-S" style="font-size:8px">corto &lt;</span>
+            <input type="number" class="thr-inp" id="thr-s" value="10" min="1" oninput="updThresholds()">
+            <span style="font-size:8px;color:#555">h</span>
+            <span class="pool-tag pool-M" style="font-size:8px">medio &lt;</span>
+            <input type="number" class="thr-inp" id="thr-m" value="50" min="1" oninput="updThresholds()">
+            <span style="font-size:8px;color:#555">h · largo ≥ <span id="thr-l-lbl">100h</span></span>
+          </div>
+        </div>
+        <div class="pool-grid" id="pool-grid"></div>
+      </div>
+
+      <!-- ── Análisis de Prioridad ADO (Resumen) ── -->
+      <div class="cfg-section" id="priority-analysis-summary-wrap" style="margin:16px 0">
+        <div class="cfg-sec-title">Análisis de Prioridad (ADO)</div>
+        <div class="cfg-sec-sub">Compara la prioridad de Azure DevOps con lo que está realmente en marcha. En teoría, los proyectos en marcha deberían ser los de Prioridad 1.</div>
+        <div id="priority-analysis-summary" style="margin-top:14px"></div>
+      </div>
+
+      
+
+      <div class="bench-panel" id="bench-panel" style="display:none">
+        <div class="bench-hd">
+          <div><div class="bench-title">comparativa con la cartera</div><div class="bench-proj" id="bench-proj-name">—</div></div>
+          <div style="font-size:8px;color:#333;text-align:right;line-height:1.7"><span style="color:var(--g);font-weight:700">■</span> proyecto &nbsp;<span style="color:rgba(255,255,255,.28);font-weight:700">■</span> media<br><span style="color:rgba(255,255,255,.38)">|</span> media (línea)</div>
+        </div>
+        <div id="bench-rows"></div>
+        <div style="font-size:8px;color:#3A3A3A;margin-top:7px;padding-top:6px;border-top:1px solid #1A1A1A" id="bench-count"></div>
+      </div>
+
+    </div><!-- /step-summary -->
+  
+    
+    </div><!-- /steps-scroll -->
+</div>
+</div><!-- /main -->
+
+</div><!-- /flex-body -->
+</div><!-- /shell -->
+
+
+<!-- Azure DevOps Modal -->
+<div class="ado-overlay" id="ado-overlay">
+  <div class="ado-modal">
+    <div class="ado-modal-hd">
+      <div class="ado-modal-logo">
+        <div class="ado-modal-ado-icon">Az</div>
+        <div>
+          <div class="ado-modal-title">Azure DevOps</div>
+      <div id="ai-modal-sub" style="font-size:10px;color:#888;margin-top:4px"></div>
+          <div class="ado-modal-sub">mesoestetic · DYNAMICS 365 · selecciona la query en ⚙ Config</div>
+        </div>
+      </div>
+      <button class="ado-close" onclick="closeAdoModal()">✕</button>
+    </div>
+    <div class="ado-modal-body">
+      <div class="ado-field">
+        <label>Organización</label>
+        <input type="text" id="ado-org" value="mesoesteticAzureDevOps"
+          placeholder="mesoesteticAzureDevOps">
+        <div class="ado-hint">Nombre de la organización en dev.azure.com</div>
+      </div>
+      <div class="ado-field">
+        <label>Proyecto</label>
+        <input type="text" id="ado-project" placeholder="DYNAMICS 365"
+          value="DYNAMICS 365">
+        <div class="ado-hint">Nombre del proyecto dentro de la organización</div>
+      </div>
+      <div class="ado-field">
+        <label>Personal Access Token (PAT)</label>
+        <input type="password" id="ado-pat" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          autocomplete="off">
+        <div class="ado-hint">
+          Genera un PAT en
+          <a href="https://dev.azure.com/mesoesteticAzureDevOps/_usersSettings/tokens" target="_blank">
+            dev.azure.com → User Settings → Personal Access Tokens
+          </a>
+          con permiso <strong>Work Items (Read)</strong>.
+          El token no se guarda en ningún servidor — solo en memoria de esta sesión.
+        </div>
+      </div>
+
+      <div class="ado-status" id="ado-status">
+        <div class="ado-spinner"></div>
+        <span id="ado-status-msg">Conectando...</span>
+      </div>
+      <div class="ado-actions">
+        <button class="ado-btn primary" id="ado-connect-btn" onclick="adoConnect()">
+          <span>⚡ Guardar credenciales y elegir query</span>
+        </button>
+        <button class="ado-btn ghost" onclick="closeAdoModal()">Cancelar</button>
+      </div>
+      <div style="font-size:9px;color:var(--ink4);padding-top:8px;border-top:1px solid var(--b2);line-height:1.6">
+        🔒 Las credenciales se usan únicamente para llamadas directas a la API de Azure DevOps desde tu navegador. No pasan por ningún servidor intermedio.<br>
+        💡 Para seleccionar una query específica usa <strong>⚙ Config → Azure DevOps</strong>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Scoring Modal -->
+<div class="ai-overlay" id="ai-overlay">
+  <div class="ai-modal" style="width:960px;max-height:92vh">
+    <!-- Header -->
+    <div class="ai-modal-hd">
+      <div class="ai-modal-title">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#A78BFA" stroke-width="1.5"/><path d="M9 5v4l2.5 2.5" stroke="#A78BFA" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Evaluador de Proyectos</span>
+        <span class="ai-modal-badge" style="background:linear-gradient(135deg,#065438,#087B50)">scoring automático</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="ai-prog-lbl" style="font-size:10px;color:#888">0 de 0 evaluados</div>
+        <button class="ai-close" onclick="closeAiModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div style="padding:10px 20px;border-bottom:1px solid #F0F0F0;background:#FAFAFA;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="ai-btn purple" onclick="aiScoreAll()" id="ai-score-all-btn">
+        ✦ Evaluar todos automáticamente
+      </button>
+      <button class="ai-btn ghost" onclick="aiStopScoring()" id="ai-stop-btn" style="display:none">⏹ Parar</button>
+      <div style="flex:1;min-width:160px">
+        <div class="ai-prog-bar"><div class="ai-prog-fill" id="ai-prog-fill" style="width:0%"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;color:#999">horas masivo:</span>
+        <select id="ai-bulk-horas" style="padding:5px 8px;font-size:11px;border:1px solid #E5E5E5;border-radius:4px;background:#fff">
+          <option value="">— selecciona —</option>
+          <option value="8">8h</option><option value="16">16h</option>
+          <option value="24">24h</option><option value="40">40h</option>
+          <option value="80">80h</option><option value="120">120h</option>
+          <option value="200">200h</option><option value="400">400h</option>
+        </select>
+        <button class="ai-btn ghost" onclick="aiBulkHoras()" style="padding:5px 10px;font-size:8px">
+          Aplicar a selección
+        </button>
+      </div>
+      <button class="ai-btn gold" onclick="aiImportAll()">↓ Cargar en cartera</button>
+    </div>
+
+    <!-- 3-column status view -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;height:calc(100% - 110px);overflow:hidden;border-top:1px solid #F0F0F0">
+
+      <!-- Col 1: Sin puntuar -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid #F0F0F0;overflow:hidden">
+        <div style="padding:10px 14px;background:#FEF9F0;border-bottom:1px solid #F0E8D0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#F59E0B"></div>
+            <span style="font-size:11px;font-weight:600;color:#92400E">Sin puntuar</span>
+          </div>
+          <span id="ai-cnt-pending" style="font-size:10px;font-weight:700;color:#92400E;background:#FDE68A;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-pending" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+      <!-- Col 2: Puntuados sin horas -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid #F0F0F0;overflow:hidden">
+        <div style="padding:10px 14px;background:#F0F9FF;border-bottom:1px solid #BAE6FD;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#0EA5E9"></div>
+            <span style="font-size:11px;font-weight:600;color:#0C4A6E">Puntuados — sin horas</span>
+          </div>
+          <span id="ai-cnt-scored" style="font-size:10px;font-weight:700;color:#0C4A6E;background:#BAE6FD;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-scored" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+      <!-- Col 3: Completos (puntuados + horas) -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 14px;background:#F0FDF4;border-bottom:1px solid #BBF7D0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#16A34A"></div>
+            <span style="font-size:11px;font-weight:600;color:#14532D">Completos</span>
+          </div>
+          <span id="ai-cnt-complete" style="font-size:10px;font-weight:700;color:#14532D;background:#BBF7D0;padding:2px 8px;border-radius:20px">0</span>
+        </div>
+        <div id="ai-col-complete" style="overflow-y:auto;flex:1;padding:6px"></div>
+      </div>
+
+    </div><!-- /3-col -->
+  </div>
+</div>
+
+<!-- Project Edit Modal -->
+<div class="proj-edit-overlay" id="proj-edit-overlay">
+  <div class="proj-edit-modal">
+    <div class="pem-hd">
+      <div>
+        <div class="pem-title" id="pem-title">Editar proyecto</div>
+        <div style="font-size:9px;color:#555;margin-top:3px" id="pem-meta">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div>
+          <div style="font-size:8px;color:#555;text-align:right;margin-bottom:2px">SCORE FINAL</div>
+          <div class="pem-score" id="pem-score">—</div>
+        </div>
+        <button style="background:none;border:none;color:#555;font-size:18px;cursor:pointer" onclick="closeProjEdit()">✕</button>
+      </div>
+    </div>
+    <div class="pem-body" id="pem-body">
+      <!-- Filled by JS -->
+    </div>
+    <div class="pem-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="pemPrev()" style="padding:6px 12px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#666">← Anterior</button>
+        <span id="pem-counter" style="font-size:10px;color:#999">1 de 1</span>
+        <button onclick="pemNext()" style="padding:6px 12px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#666">Siguiente →</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveManualToPortfolio()" id="pem-dv-btn"
+          style="padding:8px 16px;background:var(--d3);color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:none">
+          ↑ Guardar en Dataverse
+        </button>
+        <button onclick="pemSave()"
+          style="padding:8px 20px;background:#111;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">
+          ✓ Guardar cambios
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="wdrawer" id="wd">
+  <div class="wd-hd">
+    <div class="wd-title">ajuste de pesos</div>
+    <div class="wd-sub">deben sumar 100%</div>
+    <button class="wd-close" onclick="document.getElementById('wd').classList.remove('open')">✕</button>
+  </div>
+  <div class="wd-body">
+    <div class="wd-lbl"><span>pesos por dimensión (%)</span><span class="w-sum ok" id="w-sum">100%</span></div>
+    <div id="w-rows"></div>
+    <button class="w-rst" onclick="resetPesos()">↺ restaurar por defecto</button>
+  </div>
+</div>

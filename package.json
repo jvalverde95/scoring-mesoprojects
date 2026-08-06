@@ -1,0 +1,23 @@
+{
+  "name": "nexus-project-intelligence",
+  "version": "1.0.0",
+  "description": "NEXUS · Project Intelligence Platform — scoring y priorización de la demanda tecnológica (mesoestetic)",
+  "main": "server.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "optionalDependencies": {
+    "mssql": "^11.0.1"
+  },
+  "keywords": ["scoring", "priorización", "azure-devops", "mesoestetic"],
+  "license": "UNLICENSED",
+  "private": true
+}

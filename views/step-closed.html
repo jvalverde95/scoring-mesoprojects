@@ -1,0 +1,70 @@
+<div class="step" id="step-closed">
+  <div class="s-title">Proyectos cerrados</div>
+  <div class="s-sub">Iniciativas finalizadas (estado Closed en ADO) · fuera de la operativa activa · analítica histórica</div>
+
+  <!-- KPIs resumen -->
+  <div id="closed-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin:18px 0 22px"></div>
+
+  <!-- Gráficas fila 1 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Cerrados vs. abiertos por departamento</div>
+      <canvas id="closed-vs-open" height="210"></canvas>
+    </div>
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Tasa de cierre por departamento (%)</div>
+      <canvas id="closed-rate-dept" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 2 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Volumen de cerrados por departamento</div>
+      <canvas id="closed-by-dept" height="210"></canvas>
+    </div>
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Horas invertidas por departamento</div>
+      <canvas id="closed-hours-dept" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráficas fila 3 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px">
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Proyectos cerrados por mes</div>
+      <canvas id="closed-by-month" height="210"></canvas>
+    </div>
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:12px">Distribución por tramo de puntuación</div>
+      <canvas id="closed-score-dist" height="210"></canvas>
+    </div>
+  </div>
+
+  <!-- Filtro por departamento -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--ink3);font-weight:600">Filtrar:</span>
+    <select id="closed-dept-filter" onchange="renderClosedProjects()"
+      style="font-size:12px;padding:6px 10px;border:1px solid var(--b);border-radius:6px;background:var(--w)">
+      <option value="">Todos los departamentos</option>
+    </select>
+    <span id="closed-count" style="font-size:11px;color:var(--ink4);margin-left:auto"></span>
+  </div>
+
+  <!-- Tabla de proyectos cerrados -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#1A1A1A;color:#fff">
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Proyecto</th>
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Departamento</th>
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Responsable</th>
+          <th style="text-align:center;padding:10px 12px;font-weight:700">Score</th>
+          <th style="text-align:center;padding:10px 12px;font-weight:700">Horas</th>
+          <th style="text-align:center;padding:10px 12px;font-weight:700">Estado</th>
+        </tr>
+      </thead>
+      <tbody id="closed-tbody"></tbody>
+    </table>
+  </div>
+</div>

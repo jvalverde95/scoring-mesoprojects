@@ -1,0 +1,69 @@
+<div class="step" id="step-projects">
+  <div class="s-title">Proyectos</div>
+  <div class="s-sub">Carga proyectos desde distintas fuentes para evaluarlos y gestionarlos</div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:24px 0">
+
+    <!-- Card: Excel -->
+    <div class="cfg-section" style="cursor:pointer" onclick="document.getElementById('excel-file-input').click()">
+      <div style="font-size:28px;margin-bottom:10px">📊</div>
+      <div class="cfg-sec-title">Importar Excel</div>
+      <div class="cfg-sec-sub">Sube un fichero .xlsx con proyectos. Columnas: nombre, área, sponsor, fecha…</div>
+      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none"
+        onchange="loadExcel(this)">
+      <button class="cfg-apply" style="margin-top:12px;width:100%" onclick="event.stopPropagation();document.getElementById('excel-file-input').click()">
+        ↑ Subir Excel
+      </button>
+    </div>
+
+    <!-- Card: Azure DevOps -->
+    <div class="cfg-section" style="cursor:pointer" onclick="goStep('config')">
+      <div style="font-size:28px;margin-bottom:10px">☁</div>
+      <div class="cfg-sec-title">Azure DevOps</div>
+      <div class="cfg-sec-sub">Conecta con tu proyecto ADO y carga work items desde una query existente.</div>
+      <button class="cfg-apply" style="margin-top:12px;width:100%;background:#0078D4"
+        onclick="event.stopPropagation();goStep('config')">
+        Configurar ADO →
+      </button>
+    </div>
+
+    <!-- Card: Manual -->
+    <div class="cfg-section">
+      <div style="font-size:28px;margin-bottom:10px">✏️</div>
+      <div class="cfg-sec-title">Proyecto manual</div>
+      <div class="cfg-sec-sub">Crea un proyecto nuevo directamente con nombre, área y datos básicos.</div>
+      <button class="cfg-apply" style="margin-top:12px;width:100%;background:var(--d3)"
+        onclick="startManualEval()">
+        ✏ Crear y evaluar proyecto
+      </button>
+    </div>
+  </div>
+
+  <!-- Current portfolio summary -->
+  <div class="cfg-section">
+    <div class="cfg-sec-title">Proyectos cargados</div>
+    <div id="projects-screen-count" style="font-size:13px;color:var(--ink3);margin:8px 0">
+      Sin proyectos cargados
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="cfg-apply" onclick="goStep('eval')" style="background:var(--d5)">
+        → Ir a evaluar
+      </button>
+      <button class="cfg-apply" onclick="goStep('summary')" style="background:var(--ink3)">
+        Ver cartera
+      </button>
+      <button class="cfg-apply cfg-reset" id="btn-clear-projects" onclick="clearPortfolio()" style="display:none">
+        ✕ Limpiar todo
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading banner for DV -->
+  <div id="dv-loading-banner-proj" style="display:none;padding:10px 16px;border-radius:8px;margin-top:12px;font-size:11px;font-weight:600;background:var(--d5t);color:var(--d5);align-items:center;gap:8px">
+    <div style="width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
+    <span id="dv-loading-msg-proj">Cargando de Dataverse…</span>
+  </div>
+</div>
+
+
+<!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->

@@ -1,0 +1,105 @@
+<div class="step" id="step-pools">
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div class="s-title" style="margin-bottom:2px">Clasificación por nivel</div>
+          <div class="s-sub" style="margin:0">Proyectos agrupados por horas estimadas · haz clic en cualquier proyecto para editar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #EBEBEB;border-radius:8px;padding:8px 16px;flex-shrink:0">
+          <span style="font-size:9px;font-weight:700;color:#CC1F26;letter-spacing:.06em;text-transform:uppercase">Largo ≥</span>
+          <input type="number" id="thr-m2" value="50" min="1"
+            style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#CC1F26"
+            oninput="syncThresholds('m',this.value)">
+          <span style="font-size:9px;color:#CCC">h</span>
+          <span style="width:1px;height:16px;background:#EBEBEB;flex-shrink:0"></span>
+          <span style="font-size:9px;font-weight:700;color:#C07800;letter-spacing:.06em;text-transform:uppercase">Medio ≥</span>
+          <input type="number" id="thr-s2" value="10" min="1"
+            style="width:52px;padding:4px 6px;font-size:12px;font-weight:700;border:1.5px solid #EBEBEB;border-radius:5px;text-align:center;color:#C07800"
+            oninput="syncThresholds('s',this.value)">
+          <span style="font-size:9px;color:#CCC">h</span>
+          <span style="width:1px;height:16px;background:#EBEBEB;flex-shrink:0"></span>
+          <span style="font-size:9px;font-weight:700;color:#087B50;letter-spacing:.06em;text-transform:uppercase">Corto &lt; <span id="thr-l-lbl2">30</span>h</span>
+        </div>
+      </div>
+
+      <!-- Summary cards: LARGO | MEDIO | CORTO | SIN ESTIMAR -->
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px">
+
+        <!-- LARGO (izquierda) -->
+        <div style="background:#FEF0F1;border:1.5px solid rgba(204,31,38,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#CC1F26;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#CC1F26"></div>
+            <span style="font-size:9px;font-weight:700;color:#CC1F26;letter-spacing:.1em;text-transform:uppercase">Largo</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#CC1F26;line-height:1;margin-bottom:4px" id="pcv-l-count">—</div>
+          <div style="font-size:9px;color:#CC1F26;opacity:.7">≥ <span id="pcv-l-range">100</span>h · Alta complejidad</div>
+          <div style="height:3px;background:rgba(204,31,38,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-l-bar" style="height:3px;background:#CC1F26;border-radius:2px;width:0%;transition:width .4s"></div>
+          </div>
+        </div>
+
+        <!-- MEDIO -->
+        <div style="background:#FAF5E6;border:1.5px solid rgba(192,120,0,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#C07800;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#C07800"></div>
+            <span style="font-size:9px;font-weight:700;color:#C07800;letter-spacing:.1em;text-transform:uppercase">Medio</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#C07800;line-height:1;margin-bottom:4px" id="pcv-m-count">—</div>
+          <div style="font-size:9px;color:#C07800;opacity:.7"><span id="pcv-m-range">30–100</span>h · Complejidad media</div>
+          <div style="height:3px;background:rgba(192,120,0,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-m-bar" style="height:3px;background:#C07800;border-radius:2px;width:0%;transition:width .4s"></div>
+          </div>
+        </div>
+
+        <!-- CORTO -->
+        <div style="background:#ECF8F3;border:1.5px solid rgba(8,123,80,.2);border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#087B50;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#087B50"></div>
+            <span style="font-size:9px;font-weight:700;color:#087B50;letter-spacing:.1em;text-transform:uppercase">Corto</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#087B50;line-height:1;margin-bottom:4px" id="pcv-s-count">—</div>
+          <div style="font-size:9px;color:#087B50;opacity:.7">&lt; <span id="pcv-s-range">30</span>h · Quick wins</div>
+          <div style="height:3px;background:rgba(8,123,80,.1);border-radius:2px;margin-top:12px">
+            <div id="pcv-s-bar" style="height:3px;background:#087B50;border-radius:2px;width:0%;transition:width .4s"></div>
+          </div>
+        </div>
+
+        <!-- SIN ESTIMAR (derecha) -->
+        <div style="background:#F8F8F8;border:1.5px solid #E5E5E5;border-radius:10px;padding:16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#CCC;border-radius:10px 10px 0 0"></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#CCC"></div>
+            <span style="font-size:9px;font-weight:700;color:#AAA;letter-spacing:.1em;text-transform:uppercase">Sin estimar</span>
+          </div>
+          <div style="font-size:40px;font-weight:800;color:#BBBBBB;line-height:1;margin-bottom:4px" id="pcv-n-count">—</div>
+          <div style="font-size:9px;color:#BBB">horas no definidas</div>
+          <div style="height:3px;background:#EBEBEB;border-radius:2px;margin-top:12px">
+            <div id="pcv-n-bar" style="height:3px;background:#CCC;border-radius:2px;width:0%;transition:width .4s"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="pool-step-empty" style="padding:48px;text-align:center;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px">
+        <div style="font-size:36px;margin-bottom:12px">🗂</div>
+        <div style="font-size:14px;font-weight:600;color:#111;margin-bottom:6px">Sin proyectos en la cartera</div>
+        <div style="font-size:11px;color:#999">Carga un Excel o importa desde Azure DevOps</div>
+        <button class="cfg-apply" style="margin-top:16px" onclick="goStep('summary')">→ Cargar proyectos</button>
+      </div>
+
+      <!-- Pool grid: LARGO | MEDIO | CORTO | SIN ESTIMAR (rendered by renderPoolsStep) -->
+      <div id="pool-step-grid" style="display:none;background:#fff;border:1.5px solid #EBEBEB;border-radius:10px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div id="pool-col-L" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-M" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-S" style="border-right:1px solid #F0F0F0;display:flex;flex-direction:column;min-height:200px"></div>
+          <div id="pool-col-N" style="display:flex;flex-direction:column;min-height:200px"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STEP: CONFIG -->

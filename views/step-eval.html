@@ -1,0 +1,75 @@
+<div class="step" id="step-eval">
+
+  <!-- ── Sticky toolbar ── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:30;
+    background:#fff;padding:10px 0 8px;border-bottom:1px solid #EBEBEB;margin-bottom:14px">
+    <div>
+      <div class="s-title" style="margin:0">Evaluación de Proyectos</div>
+      <div class="s-sub" style="margin:0">Puntúa criterio a criterio · guarda en cartera · sincroniza con ADO</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button onclick="openNewProjectModal()" class="cfg-apply"
+        style="background:#087B50;font-size:10px;padding:7px 14px;border-radius:7px">
+        + Nuevo proyecto
+      </button>
+      <button onclick="aiReevaluateAll()" class="cfg-apply"
+        style="background:#742774;font-size:10px;padding:7px 14px;border-radius:7px"
+        title="Re-evalúa toda la cartera con el motor de reglas IA (respeta los editados manualmente)">
+        ⚡ Re-evaluar cartera con IA
+      </button>
+      <button onclick="aiReevaluateAllForce()" class="cfg-apply cfg-reset"
+        style="font-size:10px;padding:7px 12px;border-radius:7px"
+        title="Re-evalúa TODO incluyendo los proyectos editados manualmente">
+        ↻ Forzar todo
+      </button>
+      <button onclick="adoSyncAllScores()" id="ado-sync-all-btn"
+        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
+               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer"
+        onmouseover="this.style.background='#1848A0';this.style.color='#fff'"
+        onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'">
+        ↑ Guardar todos en ADO
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Active project banner (shown when a project is loaded) ── -->
+  <div id="eval-project-banner" style="display:none;
+    background:linear-gradient(135deg,#F7F7F5,#fff);
+    border:1.5px solid #EBEBEB;border-radius:10px;
+    padding:12px 16px;margin-bottom:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04)">
+  </div>
+
+  <!-- ── Project selector: pick from portfolio ── -->
+  <div class="cfg-section" style="margin-bottom:14px">
+    <div class="cfg-sec-title">① Seleccionar proyecto para evaluar</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <select id="eval-project-select"
+        style="flex:1;min-width:280px;padding:9px 12px;font-size:11px;
+               border:1.5px solid #DEDEDE;border-radius:7px;background:#fff;
+               font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='#C4974A'" onblur="this.style.borderColor='#DEDEDE'"
+        onchange="evalSelectProject(this.value)">
+        <option value="">— Selecciona un proyecto de la cartera —</option>
+      </select>
+      <button onclick="evalSelectProject(document.getElementById('eval-project-select').value)"
+        style="padding:9px 18px;font-size:10px;font-weight:700;border-radius:7px;
+               border:none;background:#111;color:#fff;cursor:pointer">
+        Cargar →
+      </button>
+      <button onclick="startManualEval()"
+        style="padding:9px 14px;font-size:10px;font-weight:600;border-radius:7px;
+               border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
+        ✏ Proyecto nuevo
+      </button>
+    </div>
+    <!-- Quick stats -->
+    <div id="eval-pending-list" style="margin-top:10px;font-size:10px;color:#888"></div>
+  </div>
+
+  <!-- ── The manual evaluation wizard (existing) ── -->
+  <div id="eval-wizard-wrap">
+    <!-- The wizard content is rendered by the existing scoring engine below -->
+  </div>
+</div>
