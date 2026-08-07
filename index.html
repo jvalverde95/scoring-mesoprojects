@@ -243,68 +243,20 @@
           background:rgba(204,31,38,.15);border:1px solid rgba(204,31,38,.3);border-radius:8px;
           font-size:11px;color:#FF6B6B;text-align:center"></div>
 
-        <!-- Username -->
-        <div style="margin-bottom:14px">
-          <label style="display:block;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);
-            text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Usuario</label>
-          <input id="login-user" type="text" value="" placeholder="usuario"
-            autocomplete="username"
-            style="width:100%;box-sizing:border-box;padding:11px 14px;
-              background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-              border-radius:8px;color:#fff;font-size:13px;font-family:inherit;outline:none;
-              transition:border-color .2s"
-            onfocus="this.style.borderColor='rgba(196,151,74,.5)'"
-            onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-            onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+        <div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:20px;line-height:1.6">
+          Accede con tu cuenta corporativa de mesoestetic
         </div>
 
-        <!-- Password -->
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);
-            text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Contraseña</label>
-          <input id="login-pass" type="password" placeholder="••••••••"
-            autocomplete="current-password"
-            style="width:100%;box-sizing:border-box;padding:11px 14px;
-              background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-              border-radius:8px;color:#fff;font-size:13px;font-family:inherit;outline:none;
-              transition:border-color .2s"
-            onfocus="this.style.borderColor='rgba(196,151,74,.5)'"
-            onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-            onkeydown="if(event.key==='Enter')doLogin()">
-        </div>
-
-        <!-- Login button -->
-        <button onclick="doLogin()" style="width:100%;padding:13px;
-          background:linear-gradient(135deg,#C4974A,#A07832);color:#fff;
-          border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
-          letter-spacing:.03em;transition:all .2s;
-          box-shadow:0 4px 20px rgba(196,151,74,.3)"
-          onmouseover="this.style.boxShadow='0 6px 28px rgba(196,151,74,.5)';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.boxShadow='0 4px 20px rgba(196,151,74,.3)';this.style.transform=''">
-          Entrar →
-        </button>
-
-        <!-- Botón de SSO Microsoft (visible solo si el SSO está configurado) -->
-        <a id="ms-login-btn" href="/api/auth/login" style="display:none;width:100%;box-sizing:border-box;
-          margin-top:12px;padding:12px;background:#fff;color:#1A1A1A;border:1px solid #ddd;border-radius:8px;
+        <!-- Login con Microsoft (único método de acceso) -->
+        <a id="ms-login-btn" href="/api/auth/login" style="display:flex;width:100%;box-sizing:border-box;
+          padding:14px;background:#fff;color:#1A1A1A;border:1px solid #ddd;border-radius:8px;
           font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;
-          align-items:center;justify-content:center;gap:8px">
-          <svg width="16" height="16" viewBox="0 0 21 21" style="vertical-align:middle;margin-right:8px"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          align-items:center;justify-content:center;gap:8px;transition:all .2s"
+          onmouseover="this.style.boxShadow='0 6px 24px rgba(0,0,0,.3)';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.boxShadow='';this.style.transform=''">
+          <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
           Iniciar sesión con Microsoft
         </a>
-
-        <!-- Quick access (no login) -->
-        <div style="text-align:center;margin-top:20px;padding-top:20px;
-          border-top:1px solid rgba(255,255,255,.06)">
-          <button onclick="enterApp()"
-            style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;
-              cursor:pointer;text-decoration:underline;font-family:inherit;
-              transition:color .2s"
-            onmouseover="this.style.color='rgba(255,255,255,.6)'"
-            onmouseout="this.style.color='rgba(255,255,255,.3)'">
-            Acceso sin autenticación →
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -1762,43 +1714,81 @@
     Comprobando estado de sesión…
   </div>
 
-  <!-- Acciones -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-    <button id="admin-import-btn" onclick="adminImportUsers()"
-      style="font-size:12px;font-weight:700;padding:9px 16px;border:none;border-radius:8px;background:#1A1A1A;color:#fff;cursor:pointer">
-      ↓ Importar usuarios de Entra ID
-    </button>
-    <button onclick="adminLoadUsers()"
-      style="font-size:12px;font-weight:700;padding:9px 16px;border:1px solid var(--b2);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer">
-      ⟳ Actualizar lista
-    </button>
-    <input id="admin-search" oninput="adminRenderUsers()" placeholder="Buscar por nombre o email…"
-      style="font-size:12px;padding:9px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;flex:1;min-width:200px">
+  <!-- KPIs -->
+  <div id="admin-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px"></div>
+
+  <!-- ── Bloque 1: Directorio de Entra ID (ver y seleccionar) ── -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px;margin-bottom:22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink)">Directorio de Microsoft Entra ID</div>
+        <div style="font-size:10px;color:var(--ink4)">Selecciona los usuarios que quieres dar de alta en la app</div>
+      </div>
+      <button id="dir-load-btn" onclick="adminLoadDirectory()"
+        style="font-size:12px;font-weight:700;padding:9px 16px;border:1px solid var(--b2);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer">
+        ⟳ Cargar directorio
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="dir-search" oninput="adminRenderDirectory()" placeholder="Buscar por nombre, email o departamento…"
+        style="font-size:12px;padding:8px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;flex:1;min-width:200px">
+      <button onclick="adminSelectAllDir(true)" style="font-size:11px;padding:8px 12px;border:1px solid var(--b2);border-radius:6px;background:#fff;cursor:pointer">Seleccionar todos</button>
+      <button onclick="adminSelectAllDir(false)" style="font-size:11px;padding:8px 12px;border:1px solid var(--b2);border-radius:6px;background:#fff;cursor:pointer">Ninguno</button>
+      <button id="dir-import-btn" onclick="adminImportSelected()"
+        style="font-size:12px;font-weight:700;padding:8px 16px;border:none;border-radius:8px;background:#1A1A1A;color:#fff;cursor:pointer">
+        ↓ Importar seleccionados
+      </button>
+    </div>
+
+    <div style="max-height:340px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#F4F3EF;position:sticky;top:0">
+            <th style="width:36px;padding:9px 10px"><input type="checkbox" id="dir-check-all" onchange="adminSelectAllDir(this.checked)"></th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Nombre</th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Email</th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Departamento</th>
+            <th style="text-align:center;padding:9px 10px;font-weight:700;color:var(--ink)">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="dir-tbody">
+          <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--ink4)">Pulsa "Cargar directorio" para ver los usuarios de Entra ID.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- KPIs -->
-  <div id="admin-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px"></div>
-
-  <!-- Tabla de usuarios -->
-  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead>
-        <tr style="background:#1A1A1A;color:#fff">
-          <th style="text-align:left;padding:10px 12px;font-weight:700">Nombre</th>
-          <th style="text-align:left;padding:10px 12px;font-weight:700">Email</th>
-          <th style="text-align:center;padding:10px 12px;font-weight:700">Rol</th>
-          <th style="text-align:center;padding:10px 12px;font-weight:700">Acceso</th>
-        </tr>
-      </thead>
-      <tbody id="admin-tbody">
-        <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--ink4)">Sin usuarios cargados. Pulsa "Importar usuarios de Entra ID".</td></tr>
-      </tbody>
-    </table>
+  <!-- ── Bloque 2: Usuarios de la app (control de acceso) ── -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink)">Usuarios de la app</div>
+        <div style="font-size:10px;color:var(--ink4)">Activa o desactiva el acceso a NEXUS</div>
+      </div>
+      <input id="admin-search" oninput="adminRenderUsers()" placeholder="Buscar…"
+        style="font-size:12px;padding:8px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;min-width:180px">
+    </div>
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1A1A1A;color:#fff">
+            <th style="text-align:left;padding:10px 12px;font-weight:700">Nombre</th>
+            <th style="text-align:left;padding:10px 12px;font-weight:700">Email</th>
+            <th style="text-align:center;padding:10px 12px;font-weight:700">Rol</th>
+            <th style="text-align:center;padding:10px 12px;font-weight:700">Acceso</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--ink4)">Aún no hay usuarios dados de alta. Impórtalos desde el directorio.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div style="margin-top:14px;font-size:10px;color:var(--ink4);line-height:1.6">
-    El acceso concede o revoca la entrada a NEXUS. Un usuario sin acceso puede autenticarse con su cuenta corporativa
-    pero no verá la aplicación. El rol <b>admin</b> permite gestionar usuarios desde esta pantalla.
+    Los usuarios importados entran <b>sin acceso</b>. Actívalo con el interruptor para que puedan entrar en NEXUS.
+    El administrador siempre tiene acceso.
   </div>
 </div>
 

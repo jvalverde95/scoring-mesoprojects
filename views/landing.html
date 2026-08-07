@@ -186,68 +186,20 @@
           background:rgba(204,31,38,.15);border:1px solid rgba(204,31,38,.3);border-radius:8px;
           font-size:11px;color:#FF6B6B;text-align:center"></div>
 
-        <!-- Username -->
-        <div style="margin-bottom:14px">
-          <label style="display:block;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);
-            text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Usuario</label>
-          <input id="login-user" type="text" value="" placeholder="usuario"
-            autocomplete="username"
-            style="width:100%;box-sizing:border-box;padding:11px 14px;
-              background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-              border-radius:8px;color:#fff;font-size:13px;font-family:inherit;outline:none;
-              transition:border-color .2s"
-            onfocus="this.style.borderColor='rgba(196,151,74,.5)'"
-            onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-            onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+        <div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:20px;line-height:1.6">
+          Accede con tu cuenta corporativa de mesoestetic
         </div>
 
-        <!-- Password -->
-        <div style="margin-bottom:20px">
-          <label style="display:block;font-size:9px;font-weight:700;color:rgba(255,255,255,.4);
-            text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Contraseña</label>
-          <input id="login-pass" type="password" placeholder="••••••••"
-            autocomplete="current-password"
-            style="width:100%;box-sizing:border-box;padding:11px 14px;
-              background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-              border-radius:8px;color:#fff;font-size:13px;font-family:inherit;outline:none;
-              transition:border-color .2s"
-            onfocus="this.style.borderColor='rgba(196,151,74,.5)'"
-            onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-            onkeydown="if(event.key==='Enter')doLogin()">
-        </div>
-
-        <!-- Login button -->
-        <button onclick="doLogin()" style="width:100%;padding:13px;
-          background:linear-gradient(135deg,#C4974A,#A07832);color:#fff;
-          border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;
-          letter-spacing:.03em;transition:all .2s;
-          box-shadow:0 4px 20px rgba(196,151,74,.3)"
-          onmouseover="this.style.boxShadow='0 6px 28px rgba(196,151,74,.5)';this.style.transform='translateY(-1px)'"
-          onmouseout="this.style.boxShadow='0 4px 20px rgba(196,151,74,.3)';this.style.transform=''">
-          Entrar →
-        </button>
-
-        <!-- Botón de SSO Microsoft (visible solo si el SSO está configurado) -->
-        <a id="ms-login-btn" href="/api/auth/login" style="display:none;width:100%;box-sizing:border-box;
-          margin-top:12px;padding:12px;background:#fff;color:#1A1A1A;border:1px solid #ddd;border-radius:8px;
+        <!-- Login con Microsoft (único método de acceso) -->
+        <a id="ms-login-btn" href="/api/auth/login" style="display:flex;width:100%;box-sizing:border-box;
+          padding:14px;background:#fff;color:#1A1A1A;border:1px solid #ddd;border-radius:8px;
           font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;text-align:center;
-          align-items:center;justify-content:center;gap:8px">
-          <svg width="16" height="16" viewBox="0 0 21 21" style="vertical-align:middle;margin-right:8px"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          align-items:center;justify-content:center;gap:8px;transition:all .2s"
+          onmouseover="this.style.boxShadow='0 6px 24px rgba(0,0,0,.3)';this.style.transform='translateY(-1px)'"
+          onmouseout="this.style.boxShadow='';this.style.transform=''">
+          <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
           Iniciar sesión con Microsoft
         </a>
-
-        <!-- Quick access (no login) -->
-        <div style="text-align:center;margin-top:20px;padding-top:20px;
-          border-top:1px solid rgba(255,255,255,.06)">
-          <button onclick="enterApp()"
-            style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;
-              cursor:pointer;text-decoration:underline;font-family:inherit;
-              transition:color .2s"
-            onmouseover="this.style.color='rgba(255,255,255,.6)'"
-            onmouseout="this.style.color='rgba(255,255,255,.3)'">
-            Acceso sin autenticación →
-          </button>
-        </div>
       </div>
     </div>
   </div>

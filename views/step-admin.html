@@ -7,42 +7,80 @@
     Comprobando estado de sesión…
   </div>
 
-  <!-- Acciones -->
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-    <button id="admin-import-btn" onclick="adminImportUsers()"
-      style="font-size:12px;font-weight:700;padding:9px 16px;border:none;border-radius:8px;background:#1A1A1A;color:#fff;cursor:pointer">
-      ↓ Importar usuarios de Entra ID
-    </button>
-    <button onclick="adminLoadUsers()"
-      style="font-size:12px;font-weight:700;padding:9px 16px;border:1px solid var(--b2);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer">
-      ⟳ Actualizar lista
-    </button>
-    <input id="admin-search" oninput="adminRenderUsers()" placeholder="Buscar por nombre o email…"
-      style="font-size:12px;padding:9px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;flex:1;min-width:200px">
+  <!-- KPIs -->
+  <div id="admin-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px"></div>
+
+  <!-- ── Bloque 1: Directorio de Entra ID (ver y seleccionar) ── -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px;margin-bottom:22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink)">Directorio de Microsoft Entra ID</div>
+        <div style="font-size:10px;color:var(--ink4)">Selecciona los usuarios que quieres dar de alta en la app</div>
+      </div>
+      <button id="dir-load-btn" onclick="adminLoadDirectory()"
+        style="font-size:12px;font-weight:700;padding:9px 16px;border:1px solid var(--b2);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer">
+        ⟳ Cargar directorio
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="dir-search" oninput="adminRenderDirectory()" placeholder="Buscar por nombre, email o departamento…"
+        style="font-size:12px;padding:8px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;flex:1;min-width:200px">
+      <button onclick="adminSelectAllDir(true)" style="font-size:11px;padding:8px 12px;border:1px solid var(--b2);border-radius:6px;background:#fff;cursor:pointer">Seleccionar todos</button>
+      <button onclick="adminSelectAllDir(false)" style="font-size:11px;padding:8px 12px;border:1px solid var(--b2);border-radius:6px;background:#fff;cursor:pointer">Ninguno</button>
+      <button id="dir-import-btn" onclick="adminImportSelected()"
+        style="font-size:12px;font-weight:700;padding:8px 16px;border:none;border-radius:8px;background:#1A1A1A;color:#fff;cursor:pointer">
+        ↓ Importar seleccionados
+      </button>
+    </div>
+
+    <div style="max-height:340px;overflow-y:auto;border:1px solid var(--b);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#F4F3EF;position:sticky;top:0">
+            <th style="width:36px;padding:9px 10px"><input type="checkbox" id="dir-check-all" onchange="adminSelectAllDir(this.checked)"></th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Nombre</th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Email</th>
+            <th style="text-align:left;padding:9px 10px;font-weight:700;color:var(--ink)">Departamento</th>
+            <th style="text-align:center;padding:9px 10px;font-weight:700;color:var(--ink)">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="dir-tbody">
+          <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--ink4)">Pulsa "Cargar directorio" para ver los usuarios de Entra ID.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- KPIs -->
-  <div id="admin-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px"></div>
-
-  <!-- Tabla de usuarios -->
-  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead>
-        <tr style="background:#1A1A1A;color:#fff">
-          <th style="text-align:left;padding:10px 12px;font-weight:700">Nombre</th>
-          <th style="text-align:left;padding:10px 12px;font-weight:700">Email</th>
-          <th style="text-align:center;padding:10px 12px;font-weight:700">Rol</th>
-          <th style="text-align:center;padding:10px 12px;font-weight:700">Acceso</th>
-        </tr>
-      </thead>
-      <tbody id="admin-tbody">
-        <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--ink4)">Sin usuarios cargados. Pulsa "Importar usuarios de Entra ID".</td></tr>
-      </tbody>
-    </table>
+  <!-- ── Bloque 2: Usuarios de la app (control de acceso) ── -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--ink)">Usuarios de la app</div>
+        <div style="font-size:10px;color:var(--ink4)">Activa o desactiva el acceso a NEXUS</div>
+      </div>
+      <input id="admin-search" oninput="adminRenderUsers()" placeholder="Buscar…"
+        style="font-size:12px;padding:8px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;min-width:180px">
+    </div>
+    <div style="border:1px solid var(--b);border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1A1A1A;color:#fff">
+            <th style="text-align:left;padding:10px 12px;font-weight:700">Nombre</th>
+            <th style="text-align:left;padding:10px 12px;font-weight:700">Email</th>
+            <th style="text-align:center;padding:10px 12px;font-weight:700">Rol</th>
+            <th style="text-align:center;padding:10px 12px;font-weight:700">Acceso</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--ink4)">Aún no hay usuarios dados de alta. Impórtalos desde el directorio.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div style="margin-top:14px;font-size:10px;color:var(--ink4);line-height:1.6">
-    El acceso concede o revoca la entrada a NEXUS. Un usuario sin acceso puede autenticarse con su cuenta corporativa
-    pero no verá la aplicación. El rol <b>admin</b> permite gestionar usuarios desde esta pantalla.
+    Los usuarios importados entran <b>sin acceso</b>. Actívalo con el interruptor para que puedan entrar en NEXUS.
+    El administrador siempre tiene acceso.
   </div>
 </div>
