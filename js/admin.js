@@ -17,11 +17,7 @@ async function adminCheckSession() {
     var r = await fetch('/api/auth/me', { credentials: 'include' });
     var s = await r.json();
     if (navAdmin) navAdmin.style.display = (s.user && s.user.role === 'admin') ? '' : 'none';
-    // El botón de Microsoft es el único acceso, siempre visible
-    if (s.ssoConfigured && s.authenticated && typeof enterApp === 'function') {
-      var landing = document.getElementById('landing');
-      if (landing && landing.style.display !== 'none') enterApp();
-    }
+    // No entramos automáticamente: el acceso siempre es pulsando el botón de Microsoft.
     return s;
   } catch (e) {
     if (navAdmin) navAdmin.style.display = 'none';
