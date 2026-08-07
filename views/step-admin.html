@@ -1,0 +1,48 @@
+<div class="step" id="step-admin">
+  <div class="s-title">Administración de usuarios</div>
+  <div class="s-sub">Gestión de acceso a NEXUS · usuarios del tenant mesoestetic.com (Microsoft Entra ID)</div>
+
+  <!-- Estado del SSO / sesión -->
+  <div id="admin-status" style="margin:18px 0;padding:14px 16px;border-radius:10px;background:var(--surf);border:1px solid var(--b);font-size:12px;color:var(--ink3)">
+    Comprobando estado de sesión…
+  </div>
+
+  <!-- Acciones -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+    <button id="admin-import-btn" onclick="adminImportUsers()"
+      style="font-size:12px;font-weight:700;padding:9px 16px;border:none;border-radius:8px;background:#1A1A1A;color:#fff;cursor:pointer">
+      ↓ Importar usuarios de Entra ID
+    </button>
+    <button onclick="adminLoadUsers()"
+      style="font-size:12px;font-weight:700;padding:9px 16px;border:1px solid var(--b2);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer">
+      ⟳ Actualizar lista
+    </button>
+    <input id="admin-search" oninput="adminRenderUsers()" placeholder="Buscar por nombre o email…"
+      style="font-size:12px;padding:9px 12px;border:1px solid var(--b2);border-radius:8px;background:#fff;flex:1;min-width:200px">
+  </div>
+
+  <!-- KPIs -->
+  <div id="admin-kpis" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px"></div>
+
+  <!-- Tabla de usuarios -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="background:#1A1A1A;color:#fff">
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Nombre</th>
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Email</th>
+          <th style="text-align:center;padding:10px 12px;font-weight:700">Rol</th>
+          <th style="text-align:center;padding:10px 12px;font-weight:700">Acceso</th>
+        </tr>
+      </thead>
+      <tbody id="admin-tbody">
+        <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--ink4)">Sin usuarios cargados. Pulsa "Importar usuarios de Entra ID".</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:14px;font-size:10px;color:var(--ink4);line-height:1.6">
+    El acceso concede o revoca la entrada a NEXUS. Un usuario sin acceso puede autenticarse con su cuenta corporativa
+    pero no verá la aplicación. El rol <b>admin</b> permite gestionar usuarios desde esta pantalla.
+  </div>
+</div>

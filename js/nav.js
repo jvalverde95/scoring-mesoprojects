@@ -1,7 +1,7 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary','closed'];
+const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary','closed','admin'];
 
 function goStep(t) {
   if (window._sharedViewLocked) return;  // vista compartida: navegación bloqueada
@@ -18,7 +18,7 @@ function goStep(t) {
     if (!area) { toast('⚠ Selecciona un área antes de continuar'); document.getElementById('f-area')?.focus(); return; }
   }
 
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','closed'];
+  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','closed','admin'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -80,6 +80,7 @@ function goStep(t) {
     if(typeof renderDevAssignPanel==='function') renderDevAssignPanel();}
     if (t === 'dashboard')  { if(typeof renderDashboard==='function') renderDashboard(); }
     if (t === 'closed')     { if(typeof renderClosedScreen==='function') renderClosedScreen(); }
+    if (t === 'admin')      { if(typeof renderAdminScreen==='function') renderAdminScreen(); }
     if (t === 'wiki')      { if(typeof renderWikiThresholds==='function') renderWikiThresholds(); }
     if (t === 'config') {
       if(typeof loadAllCreds==='function') loadAllCreds();

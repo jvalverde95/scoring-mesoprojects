@@ -71,7 +71,13 @@ router.post('/import', requireAdmin, async (req, res) => {
     for (const u of j.value) {
       const email = (u.mail || u.userPrincipalName || '').toLowerCase();
       if (!email) continue;
-      await db.upsertUser({ email, name: u.displayName || '', allowed: false, role: 'user' });
+      const adminEmail = (process.env.ADMIN_EMAIL || 'jvalverde@mesoestetic.com').toLowerCase();
+      const isAdmin = email === adminEmail;
+      await db.upsertUser({
+        email, name: u.displayName || '',
+        allowed: isAdmin ? true : false,     // el admin siempre con acceso
+        role: isAdmin ? 'admin' : 'user',
+      });
       imported++;
     }
     res.json({ ok: true, imported });
