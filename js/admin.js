@@ -32,7 +32,7 @@ async function adminRenderStatus() {
   var s = await adminCheckSession();
   if (!s.ssoConfigured) {
     el.innerHTML = '⚠ <b>SSO de Entra ID no configurado.</b> Define las variables AZURE_* en Vercel.';
-    el.style.background = '#FDF6E3'; el.style.borderColor = '#E8D9A0'; el.style.color = '#8A6D3B';
+    el.style.background = '#FDF6E3'; el.style.borderColor = '#E8D9A0'; el.style.color = '#0E7C86';
   } else if (!s.authenticated) {
     el.innerHTML = 'No has iniciado sesión. <a href="/api/auth/login" style="color:#2E5B9A;font-weight:700">Entrar con Microsoft</a>';
   } else {
@@ -98,7 +98,7 @@ function adminRenderDirectory() {
     var bg = i % 2 ? '#FAFAF8' : '#fff';
     var estado = u.imported
       ? (u.allowed ? '<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:#EAF6F0;color:#087B50">con acceso</span>'
-                   : '<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:#FDF3E3;color:#8A6D3B">importado</span>')
+                   : '<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:#FDF3E3;color:#0E7C86">importado</span>')
       : '<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:#EEE;color:#777">nuevo</span>';
     var chk = u.imported
       ? '<span style="color:#ccc">✓</span>'

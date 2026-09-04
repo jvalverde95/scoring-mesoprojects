@@ -25,7 +25,7 @@ function updateWizHeader(step) {
 
   // ── Always update dimension dots row ──────────────────────
   if (dimRow && typeof DIMS !== 'undefined') {
-    const COLORS = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+    const COLORS = ['#CC1F26','#0E9CA8','#087B50','#C07800','#1848A0','#5C6570'];
     const BGS    = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
     const isNum  = typeof step === 'number' && step >= 1 && step <= 6;
     dimRow.innerHTML = DIMS.map((d, di) => {

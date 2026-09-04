@@ -594,8 +594,8 @@ function renderMonthV4(el, timeline) {
     }).join('');
     var more=active.length-3;
     return '<div style="background:'+(isWk?'#FAFAFA':'#fff')+';'
-      +'border:'+(isToday?'2px solid #C4974A':'1px solid #EBEBEB')+';border-radius:6px;min-height:80px;padding:5px;overflow:hidden">'
-      +'<div style="font-size:9px;font-weight:'+(isToday?700:400)+';color:'+(isToday?'#C4974A':'#999')+';margin-bottom:3px">'+day.getDate()+'</div>'
+      +'border:'+(isToday?'2px solid #0E9CA8':'1px solid #EBEBEB')+';border-radius:6px;min-height:80px;padding:5px;overflow:hidden">'
+      +'<div style="font-size:9px;font-weight:'+(isToday?700:400)+';color:'+(isToday?'#0E9CA8':'#999')+';margin-bottom:3px">'+day.getDate()+'</div>'
       +tags+(more>0?'<div style="font-size:8px;color:#AAA">+'+more+'</div>':'')
       +'</div>';
   }).join('');
@@ -626,9 +626,9 @@ function renderWeekV4(el, timeline) {
   var hdr=days.map(function(d){
     var isT=d.toDateString()===new Date().toDateString();
     return '<div style="text-align:center;padding:8px 4px;border-left:1px solid #EBEBEB;background:'+(isT?'#FEF9EC':'#FAFAF8')+'">'
-      +'<div style="font-size:9px;font-weight:700;color:'+(isT?'#C4974A':'#888')+';text-transform:uppercase">'
+      +'<div style="font-size:9px;font-weight:700;color:'+(isT?'#0E9CA8':'#888')+';text-transform:uppercase">'
         +d.toLocaleDateString('es-ES',{weekday:'short'})+'</div>'
-      +'<div style="font-size:12px;font-weight:'+(isT?700:400)+';color:'+(isT?'#C4974A':'#111')+'">'+d.getDate()+'</div>'
+      +'<div style="font-size:12px;font-weight:'+(isT?700:400)+';color:'+(isT?'#0E9CA8':'#111')+'">'+d.getDate()+'</div>'
     +'</div>';
   }).join('');
 
@@ -809,7 +809,7 @@ function renderScheduleEditor() {
         +'style="padding:2px 7px;font-size:8px;border:1px solid #DEDEDE;border-radius:4px;'
           +'background:#fff;color:#888;cursor:pointer;white-space:nowrap;'
           +(hasSlotsInDay?'':'opacity:.4;')+'transition:all .15s" '
-        +'onmouseover="this.style.borderColor=\'#C4974A\';this.style.color=\'#C4974A\'"'
+        +'onmouseover="this.style.borderColor=\'#0E9CA8\';this.style.color=\'#0E9CA8\'"'
         +'onmouseout="this.style.borderColor=\'#DEDEDE\';this.style.color=\'#888\'">'
         +'⎘ Copiar</button>';
 
@@ -833,7 +833,7 @@ function renderScheduleEditor() {
           +'<button onclick="planAddSlot('+di+',\''+day+'\')" '
             +'style="font-size:9px;padding:3px 8px;border:1px dashed #CCC;background:#fff;border-radius:5px;'
               +'cursor:pointer;color:#888;white-space:nowrap" '
-            +'onmouseover="this.style.borderColor=\'#C4974A\'" '
+            +'onmouseover="this.style.borderColor=\'#0E9CA8\'" '
             +'onmouseout="this.style.borderColor=\'#CCC\'">+ franja</button>'
         +'</div>'
       +'</div>';
@@ -1831,7 +1831,7 @@ var GANTT = (function() {
         +'<span>Fin est.</span><span>'+pFmt(t.endDate)+'</span>'
         +'<span>Score</span><span style="font-weight:700">'+(t.proj.sf||0).toFixed(2)+'</span>'
         +(elapsed>0&&elapsed<1?'<span>Progreso</span><span>'+Math.round(elapsed*100)+'%</span>':'')
-        +(t.locked?'<span>Estado</span><span style="color:#C4974A">🔒 Bloqueado</span>':
+        +(t.locked?'<span>Estado</span><span style="color:#0E9CA8">🔒 Bloqueado</span>':
           '<span>Estado</span><span style="color:#087B50">↺ Auto-planificado</span>')
       +'</div>'
       +'<div style="margin-top:6px;font-size:9px;opacity:.5">Dbl-clic para liberar · Arrastra para mover</div>';
@@ -2468,7 +2468,7 @@ function renderHourlyView(el, timeline) {
     // Use div instead for simplicity
     var dayLabel2 = document.createElement('div');
     dayLabel2.style.cssText = 'position:absolute;left:'+dayX+'px;top:3px;width:'+DAY_W+'px;'
-      +'text-align:center;font-size:9px;font-weight:700;color:'+(isToday?'#C4974A':'#555');
+      +'text-align:center;font-size:9px;font-weight:700;color:'+(isToday?'#0E9CA8':'#555');
     dayLabel2.textContent = day.toLocaleDateString('es-ES',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
     timeHeader.appendChild(dayLabel2);
 

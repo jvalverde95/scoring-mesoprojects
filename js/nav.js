@@ -140,7 +140,7 @@ const CLS_BG2 = {
 
 function sn(nom){ const m=nom.match(/^(\d+)\s*[-–]\s*(.{0,26})/); return m?m[1]+' '+m[2].trim():nom.substring(0,26); }
 
-const DIM_COLORS = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+const DIM_COLORS = ['#CC1F26','#0E9CA8','#087B50','#C07800','#1848A0','#5C6570'];
 const DIM_NAMES  = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
 
 function _chartInsight(id, text) {
@@ -313,7 +313,7 @@ function _ch_matrix(p) {
   const zones = [
     {key:'hh', label:'D1 alto + D2 alto', sub:'Proyectos clave', color:'#1848A0', bg:'#EEF3FC', fn:x=>((x.dimScores||[])[0]||0)>=5.5&&((x.dimScores||[])[1]||0)>=5.5},
     {key:'hl', label:'D1 alto + D2 bajo', sub:'Urgentes no estratégicos', color:'#CC1F26', bg:'#FEF0F1', fn:x=>((x.dimScores||[])[0]||0)>=5.5&&((x.dimScores||[])[1]||0)<5.5},
-    {key:'lh', label:'D1 bajo + D2 alto', sub:'Inversión estratégica', color:'#C4974A', bg:'#FEF9EC', fn:x=>((x.dimScores||[])[0]||0)<5.5&&((x.dimScores||[])[1]||0)>=5.5},
+    {key:'lh', label:'D1 bajo + D2 alto', sub:'Inversión estratégica', color:'#0E9CA8', bg:'#FEF9EC', fn:x=>((x.dimScores||[])[0]||0)<5.5&&((x.dimScores||[])[1]||0)>=5.5},
     {key:'ll', label:'D1 bajo + D2 bajo', sub:'Baja prioridad', color:'#5C6570', bg:'#F4F4F4', fn:x=>((x.dimScores||[])[0]||0)<5.5&&((x.dimScores||[])[1]||0)<5.5},
   ];
   el.innerHTML = zones.map(z=>{
@@ -612,14 +612,14 @@ function showMandatoryExcelUpload() {
       +'<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px">No hay ninguna cartera guardada todavía. Carga el Excel con los proyectos y sus puntuaciones para empezar; a partir de ahí se guardará automáticamente y no tendrás que volver a cargarlo.</div>'
       +'<div style="font-size:10px;color:#B08D57;background:#FDFAF3;border:1px solid #E8DCC8;border-radius:6px;padding:8px 10px;margin-bottom:16px">Diagnóstico: '+(window._restoreDiag||'—')+'</div>'
       +'<div id="mandatory-excel-drop" onclick="document.getElementById(\'mandatory-excel-input\').click()" '
-        +'style="border:2px dashed #C4974A;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#FDFAF3;transition:.2s">'
+        +'style="border:2px dashed #0E9CA8;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;background:#FDFAF3;transition:.2s">'
         +'<div style="font-size:34px;margin-bottom:8px">📊</div>'
         +'<div style="font-size:14px;font-weight:700;color:#1C2B4A;margin-bottom:4px">Selecciona el archivo Excel</div>'
         +'<div style="font-size:11px;color:#999">Formato .xlsx o .xls</div>'
       +'</div>'
       +'<input type="file" id="mandatory-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleMandatoryExcel(this)">'
       +'<div style="text-align:center;margin-top:14px">'
-        +'<button onclick="btnLoadData()" style="font-size:11px;padding:8px 16px;border:1.5px solid #C4974A;background:#FDFAF3;color:#8A6D3B;border-radius:8px;cursor:pointer;font-weight:700">☁ Cargar cartera guardada (web)</button>'
+        +'<button onclick="btnLoadData()" style="font-size:11px;padding:8px 16px;border:1.5px solid #0E9CA8;background:#FDFAF3;color:#0E7C86;border-radius:8px;cursor:pointer;font-weight:700">☁ Cargar cartera guardada (web)</button>'
         +'<div style="font-size:9px;color:#AAA;margin-top:6px">Si abres la app en otro navegador o en incógnito, usa este botón: te pedirá la clave de publicación y descargará la última cartera guardada.</div>'
       +'</div>'
       +'<div id="mandatory-excel-status" style="font-size:11px;color:#087B50;margin-top:14px;text-align:center;display:none"></div>'
@@ -801,7 +801,7 @@ function initLandingCanvas() {
 function updateLandingAdoStatus(state, msg) {
   var el = document.getElementById('landing-ado-status');
   if (!el) return;
-  var colors = { ok:'#4CAF50', error:'#FF6B6B', syncing:'#C4974A', idle:'rgba(255,255,255,.3)' };
+  var colors = { ok:'#4CAF50', error:'#FF6B6B', syncing:'#0E9CA8', idle:'rgba(255,255,255,.3)' };
   var col = colors[state] || colors.idle;
   el.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:'+col+';'
     +(state==='syncing'?'animation:pulseGlow 1s infinite':'')+'"></div>'

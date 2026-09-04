@@ -1361,7 +1361,7 @@ function renderBars(){
         label:'Score final',
         data:top.map(p=>+((p.sf)||0).toFixed(2)),
         backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
-        borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
+        borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#0E9CA8'),
         borderWidth:1,borderRadius:3,
       }]
     },
@@ -1393,7 +1393,7 @@ function renderDept(){
   chartInst.dept=new Chart(document.getElementById('c-dept'),{
     type:'bar',
     data:{labels,datasets:[
-      {label:'Score medio',data:avgs,backgroundColor:'rgba(196,151,74,.75)',borderColor:'#C4974A',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {label:'Score medio',data:avgs,backgroundColor:'rgba(196,151,74,.75)',borderColor:'#0E9CA8',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
       {label:'Nº proyectos',data:counts,type:'line',borderColor:'rgba(30,58,95,.7)',backgroundColor:'rgba(30,58,95,.1)',borderWidth:2,pointRadius:4,yAxisID:'y2'},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
@@ -1722,7 +1722,7 @@ function renderDimSteps() {
 }
 
 function updateDimOverview() {
-  const COLORS = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+  const COLORS = ['#CC1F26','#0E9CA8','#087B50','#C07800','#1848A0','#5C6570'];
   const BGS    = ['#FEF0F1','#FAF6EC','#ECF8F3','#FAF5E6','#EEF3FC','#F4F5F6'];
   DIMS.forEach((d, di) => {
     const el = document.getElementById('dim-ov-' + (di+1));
@@ -1806,7 +1806,7 @@ function renderChartsStep() {
       data:{labels:top.map(p=>sn(p)),
         datasets:[{label:'Score',data:top.map(p=>+((p.sf)||0).toFixed(2)),
           backgroundColor:top.map(p=>CLS_BG[clsf(p.sf).et]||'rgba(196,151,74,.7)'),
-          borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#C4974A'),
+          borderColor:top.map(p=>CLS_BORDER[clsf(p.sf).et]||'#0E9CA8'),
           borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>top[items[0].dataIndex].nom,label:d=>`Score: ${d.raw} — ${clsf(d.raw).et}`}}},
@@ -1818,7 +1818,7 @@ function renderChartsStep() {
     const sorted=Object.entries(byArea).sort((a,b)=>b[1].sum/b[1].n-a[1].sum/a[1].n);
     chart2Inst.dept = new Chart(canvas, {type:'bar',
       data:{labels:sorted.map(([a])=>a),datasets:[
-        {label:'Score medio',data:sorted.map(([,v])=>+(v.sum/v.n).toFixed(2)),backgroundColor:'rgba(196,151,74,.75)',borderColor:'#C4974A',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+        {label:'Score medio',data:sorted.map(([,v])=>+(v.sum/v.n).toFixed(2)),backgroundColor:'rgba(196,151,74,.75)',borderColor:'#0E9CA8',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
         {label:'Nº proyectos',data:sorted.map(([,v])=>v.n),type:'line',borderColor:'rgba(26,58,110,.7)',backgroundColor:'rgba(26,58,110,.1)',borderWidth:2,pointRadius:4,yAxisID:'y2'}]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,position:'bottom',labels:{font:FONT,boxWidth:10}}},
@@ -2641,7 +2641,7 @@ function _anaTooltip(extraLines){
 function renderAnalyticsCharts() {
   if (typeof Chart === 'undefined' || !portfolioData || !portfolioData.length) return;
   const DNAMES = ['D1 Compliance','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implant.','D6 Personas'];
-  const DCOLS  = ['#CC1F26','#C4974A','#087B50','#C07800','#1848A0','#5C6570'];
+  const DCOLS  = ['#CC1F26','#0E9CA8','#087B50','#C07800','#1848A0','#5C6570'];
 
   // ── 1. RADAR dimensional: media cartera vs top-5 vs bottom-5 ──
   const radarEl = document.getElementById('cv-dims-radar');
@@ -2818,7 +2818,7 @@ const DEF_DEFAULTS = {
 };
 const ALGO_DIM_LABELS = { d1:'D1 Compliance', d2:'D2 Estrategia', d3:'D3 ROI',
   d4:'D4 Técnica', d5:'D5 Implantación', d6:'D6 Personas' };
-const ALGO_DIM_COLORS = { d1:'#CC1F26', d2:'#C4974A', d3:'#087B50', d4:'#C07800', d5:'#1848A0', d6:'#5C6570' };
+const ALGO_DIM_COLORS = { d1:'#CC1F26', d2:'#0E9CA8', d3:'#087B50', d4:'#C07800', d5:'#1848A0', d6:'#5C6570' };
 
 function loadAlgoParams() {
   try {

@@ -147,7 +147,7 @@ function renderDevRows() {
             style="width:100%;border:none;border-bottom:2px solid #F0F0F0;background:transparent;
                    font-size:13px;font-weight:700;color:#111;outline:none;padding:2px 0;
                    transition:border-color .15s"
-            onfocus="this.style.borderColor='#C4974A'"
+            onfocus="this.style.borderColor='#0E9CA8'"
             onblur="this.style.borderColor='#F0F0F0'"
             onchange="devTeam[${i}].name=this.value;saveDevTeam();updateDevCapSummary();
               // Update avatar initial
@@ -466,7 +466,7 @@ function renderSprintScreen() {
           // Entrega: si ADO tiene Target Date, esa manda; si no, la estimada del planificador.
           var adoTarget = (p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? new Date(p.adoTargetDate) : null;
           if (adoTarget && isNaN(+adoTarget)) adoTarget = null;
-          var entLabel = adoTarget ? '🎯 Target ADO:' : ('📦 Entrega est.:' + (isPlanPinned(p.nom)?' <span style="color:#C4974A">🔒 fijada</span>':''));
+          var entLabel = adoTarget ? '🎯 Target ADO:' : ('📦 Entrega est.:' + (isPlanPinned(p.nom)?' <span style="color:#0E7C86">🔒 fijada</span>':''));
           var entColor = adoTarget ? '#B03A2E' : 'var(--ink)';
           var entFecha = adoTarget ? pFmt(adoTarget) : (_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—');
           return '<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
@@ -845,7 +845,7 @@ function renderDashboardAnalytics() {
         type:'bar',
         data:{ labels: top.map(t=>t[0].substring(0,16)),
           datasets:[{ data: top.map(t=>Math.round(t[1])),
-            backgroundColor:'#C4974A', borderRadius:4, barPercentage:.7 }]},
+            backgroundColor:'#0E9CA8', borderRadius:4, barPercentage:.7 }]},
         options:{ indexAxis:'y', plugins:{legend:{display:false}},
           scales:{ x:{grid:{color:'#F3F3F1'},ticks:{font:{size:8}}},
                    y:{grid:{display:false},ticks:{font:{size:9}}} },
@@ -1155,8 +1155,8 @@ function renderSprintSnapshotView() {
           if (st && isNaN(+st)) st = null;
           var yaEmp = st && st <= hoy;
           var iniLbl, iniCol, iniF;
-          if (st) { iniLbl = yaEmp?'🟢 En curso desde:':'📅 Inicio est.:'; iniCol = yaEmp?'#8A6D3B':'#1A1A1A'; iniF = pf(+st); }
-          else { iniLbl = active?'🟢 Inicio:':'📅 Inicio est.:'; iniCol = active?'#8A6D3B':'#1A1A1A'; iniF = pf(p.start); }
+          if (st) { iniLbl = yaEmp?'🟢 En curso desde:':'📅 Inicio est.:'; iniCol = yaEmp?'#0E7C86':'#0B1F3A'; iniF = pf(+st); }
+          else { iniLbl = active?'🟢 Inicio:':'📅 Inicio est.:'; iniCol = active?'#0E7C86':'#0B1F3A'; iniF = pf(p.start); }
           var tg = p.adoTarget ? new Date(p.adoTarget) : null;
           if (tg && isNaN(+tg)) tg = null;
           var entLbl = tg?'🎯 Target ADO:':'📦 Entrega est.:';
@@ -1191,13 +1191,13 @@ function renderSprintSnapshotView() {
 
   const fecha = new Date(snap.ts).toLocaleString('es-ES',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   cont.innerHTML =
-    '<div style="background:#fff;color:#1A1A1A;padding:20px 22px;border:1px solid #E5E5E3;border-bottom:3px solid #C4974A;border-radius:10px;margin-bottom:16px">'
+    '<div style="background:#fff;color:#1A1A1A;padding:20px 22px;border:1px solid #E5E5E3;border-bottom:3px solid #0E9CA8;border-radius:10px;margin-bottom:16px">'
       +'<div style="font-size:15px;font-weight:800;letter-spacing:.01em;color:#1A1A1A;margin-bottom:8px">mesoestetic<span style="font-size:9px;vertical-align:super">®</span></div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
         +'<div><div style="font-size:20px;font-weight:300;letter-spacing:-.01em;color:#1A1A1A">Proyectos digitales de eficiencia y optimización de operativa</div>'
         +'<div style="font-size:11px;color:#8A8A86;margin-top:2px">Vista compartida · snapshot del '+fecha+'</div>'
         +'<div style="font-size:10px;color:#A0A09C;margin-top:4px;font-style:italic">Los proyectos en <b style="color:#1A1A1A">negrita</b> son los que están actualmente en marcha</div></div>'
-        +'<div style="font-size:11px;background:rgba(196,151,74,.2);color:#E8B96A;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
+        +'<div style="font-size:11px;background:rgba(14,124,134,.16);color:#0E7C86;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
     +(function(){
         var ge = snap.globalEnd;
@@ -1209,9 +1209,9 @@ function renderSprintSnapshotView() {
         if (!ge) return '';
         const d=new Date(ge);
         const weeks=Math.max(0,Math.ceil((ge-Date.now())/(7*86400000)));
-        return '<div style="padding:10px 14px;background:#FAF7F2;border:1px solid #E8DCC8;border-radius:8px;margin-bottom:14px;font-size:11px;color:#1A1A1A">'
+        return '<div style="padding:10px 14px;background:#E7F6F8;border:1px solid #B7E3E7;border-radius:8px;margin-bottom:14px;font-size:11px;color:#1A1A1A">'
           +'📅 Próximo día libre del equipo: <b style="font-size:13px">'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
-          +' <span style="color:#A8873C;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
+          +' <span style="color:#0B7C86;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
         +'</div>';
       })()
     +(function(){
@@ -1254,20 +1254,20 @@ function renderSprintSnapshotView() {
         prox.forEach(function(p){ var h=p.horas||0; byPool[h<thrS?'corto':(h<thrM?'medio':'largo')].push(p); });
         var proxCard = function(p){
           var pend = (p.adoAssigned && String(p.adoAssigned).trim()!=='') ? p.adoAssigned : 'Sin asignar';
-          return '<div style="padding:9px 11px;background:#FAF7F2;border:2px solid #C4974A;border-radius:8px;margin-bottom:6px">'
+          return '<div style="padding:9px 11px;background:#FAF7F2;border:2px solid #0E9CA8;border-radius:8px;margin-bottom:6px">'
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
-              +'<span style="font-size:8px;background:#C4974A;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
+              +'<span style="font-size:8px;background:#0E9CA8;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
               +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+((p.sf)||0).toFixed(1)+'</span>'
             +'</div>'
             +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">'+p.nom+'</div>'
             +'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">'
-              +'<span style="font-size:8px;background:#F3EAD9;color:#8A6D3B;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>'
-              +(p.adoState?'<span style="font-size:8px;background:#F3EAD9;color:#8A6D3B;padding:2px 6px;border-radius:4px;font-weight:600">'+p.adoState+'</span>':'')
+              +'<span style="font-size:8px;background:#F3EAD9;color:#0E7C86;padding:2px 6px;border-radius:4px;font-weight:600">P1</span>'
+              +(p.adoState?'<span style="font-size:8px;background:#F3EAD9;color:#0E7C86;padding:2px 6px;border-radius:4px;font-weight:600">'+p.adoState+'</span>':'')
               +'<span style="font-size:8px;background:#F0F0F0;color:#777;padding:2px 6px;border-radius:4px">'+(p.horas!=null?p.horas+'h':'—')+'</span>'
             +'</div>'
             +'<div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E8DCC8">'
               +'<span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>'
-              +'<span style="font-size:9px;font-weight:800;color:#8A6D3B">'+pend+'</span>'
+              +'<span style="font-size:9px;font-weight:800;color:#0E7C86">'+pend+'</span>'
             +'</div>'
             +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
               +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
@@ -1281,23 +1281,23 @@ function renderSprintSnapshotView() {
         };
         return '<div style="margin-bottom:20px">'
           +'<div onclick="window._snapProxHidden=!window._snapProxHidden;renderSprintSnapshotView()" '
-            +'onmouseover="this.style.background=\'#F3EAD9\';this.style.borderColor=\'#C4974A\'" '
+            +'onmouseover="this.style.background=\'#F3EAD9\';this.style.borderColor=\'#0E9CA8\'" '
             +'onmouseout="this.style.background=\'#FAF7F2\';this.style.borderColor=\'#E8DCC8\'" '
             +'style="display:flex;align-items:center;gap:10px;margin-bottom:'+(window._snapProxHidden?'0':'14px')+';cursor:pointer;user-select:none;'
-              +'background:#FAF7F2;border:1.5px solid #E8DCC8;border-left:4px solid #C4974A;border-radius:10px;padding:13px 16px;transition:all .18s">'
-            +'<div style="width:12px;height:12px;border-radius:50%;background:#C4974A;flex-shrink:0"></div>'
-            +'<div style="font-weight:800;font-size:18px;color:#8A6D3B;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
-            +'<div style="font-size:11px;font-weight:700;color:#fff;background:#C4974A;border-radius:20px;padding:2px 9px;flex-shrink:0">'+prox.length+'</div>'
+              +'background:#FAF7F2;border:1.5px solid #E8DCC8;border-left:4px solid #0E9CA8;border-radius:10px;padding:13px 16px;transition:all .18s">'
+            +'<div style="width:12px;height:12px;border-radius:50%;background:#0E9CA8;flex-shrink:0"></div>'
+            +'<div style="font-weight:800;font-size:18px;color:#0E7C86;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="font-size:11px;font-weight:700;color:#fff;background:#0E9CA8;border-radius:20px;padding:2px 9px;flex-shrink:0">'+prox.length+'</div>'
             +'<div style="font-size:10px;color:#A8905C;display:none" class="_pxsub">— Prioridad 1 en fase avanzada</div>'
             +'<div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">'
-              +'<span style="font-size:10px;font-weight:700;color:#8A6D3B">'+(window._snapProxHidden?'Ver proyectos':'Ocultar')+'</span>'
-              +'<span style="font-size:13px;color:#8A6D3B;display:inline-block;transition:transform .2s;transform:rotate('+(window._snapProxHidden?'0':'180')+'deg)">▾</span>'
+              +'<span style="font-size:10px;font-weight:700;color:#0E7C86">'+(window._snapProxHidden?'Ver proyectos':'Ocultar')+'</span>'
+              +'<span style="font-size:13px;color:#0E7C86;display:inline-block;transition:transform .2s;transform:rotate('+(window._snapProxHidden?'0':'180')+'deg)">▾</span>'
             +'</div>'
           +'</div>'
           +(window._snapProxHidden ? '' :
             (prox.length
               ? '<div style="display:flex;gap:14px;align-items:flex-start;background:#FCFAF5;border:1px solid #F0E7D6;border-radius:10px;padding:14px">'
-                +proxCol('⚡ Cortos', byPool.corto, '#8A6D3B')
+                +proxCol('⚡ Cortos', byPool.corto, '#0E7C86')
                 +proxCol('◉ Medios', byPool.medio, '#4A5568')
                 +proxCol('▣ Largos', byPool.largo, '#1A1A1A')
               +'</div>'
@@ -1307,7 +1307,7 @@ function renderSprintSnapshotView() {
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'
-      +col('⚡ Cortos', cortos, '#8A6D3B','corto')
+      +col('⚡ Cortos', cortos, '#0E7C86','corto')
       +col('◉ Medios', medios, '#4A5568','medio')
       +col('▣ Largos', largos, '#1A1A1A','largo')
     +'</div>';
@@ -1381,10 +1381,10 @@ function renderClosedScreen() {
         + '<div style="font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:.04em;margin-top:4px">'+lbl+'</div></div>';
     };
     kp.innerHTML = kpi(closed.length, 'Cerrados', '#1A1A1A')
-      + kpi(open.length, 'Abiertos', '#C4974A')
+      + kpi(open.length, 'Abiertos', '#0E9CA8')
       + kpi(closeRate.toFixed(0)+'%', 'Tasa de cierre', '#1A1A1A')
       + kpi(nDepts, 'Departamentos', '#1A1A1A')
-      + kpi(Math.round(totalH).toLocaleString('es-ES'), 'Horas invertidas', '#C4974A')
+      + kpi(Math.round(totalH).toLocaleString('es-ES'), 'Horas invertidas', '#0E9CA8')
       + kpi((avgScore||0).toFixed(1), 'Score medio', '#1A1A1A')
       + kpi(avgCycle!=null ? Math.round(avgCycle)+'d' : '—', 'Ciclo medio', '#1A1A1A')
       + kpi(medCycle!=null ? Math.round(medCycle)+'d' : '—', 'Ciclo mediano', '#1A1A1A');
@@ -1411,7 +1411,7 @@ function renderClosedScreen() {
   // 1) Cerrados vs abiertos (barras apiladas)
   mkBar('closed-vs-open', deptSet,
     [ { label:'Cerrados', data: deptSet.map(function(d){return closedByD[d]||0;}), backgroundColor:'#1A1A1A', borderRadius:3, maxBarThickness:34 },
-      { label:'Abiertos', data: deptSet.map(function(d){return openByD[d]||0;}), backgroundColor:'#C4974A', borderRadius:3, maxBarThickness:34 } ],
+      { label:'Abiertos', data: deptSet.map(function(d){return openByD[d]||0;}), backgroundColor:'#0E9CA8', borderRadius:3, maxBarThickness:34 } ],
     { legend:true, stacked:true });
 
   // 2) Tasa de cierre por departamento
@@ -1426,7 +1426,7 @@ function renderClosedScreen() {
 
   // 4) Horas por departamento
   mkBar('closed-hours-dept', byDeptSorted,
-    [ { data: byDeptSorted.map(function(d){return Math.round(hoursByD[d]||0);}), backgroundColor:'#C4974A', borderRadius:4, maxBarThickness:38 } ]);
+    [ { data: byDeptSorted.map(function(d){return Math.round(hoursByD[d]||0);}), backgroundColor:'#0E9CA8', borderRadius:4, maxBarThickness:38 } ]);
 
   // 5) Cerrados por mes
   var byMonth = {};
@@ -1442,7 +1442,7 @@ function renderClosedScreen() {
   var tramos = { 'Alta (≥7,5)':0, 'Media (5–7,5)':0, 'Baja (<5)':0 };
   closed.forEach(function(p){ var s=p.sf||0; if(s>=7.5) tramos['Alta (≥7,5)']++; else if(s>=5) tramos['Media (5–7,5)']++; else tramos['Baja (<5)']++; });
   mkBar('closed-score-dist', Object.keys(tramos),
-    [ { data: Object.values(tramos), backgroundColor:['#0E7C5A','#C4974A','#B03A2E'], borderRadius:4, maxBarThickness:60 } ]);
+    [ { data: Object.values(tramos), backgroundColor:['#0E7C5A','#0E9CA8','#B03A2E'], borderRadius:4, maxBarThickness:60 } ]);
 
   renderClosedProjects();
 }
