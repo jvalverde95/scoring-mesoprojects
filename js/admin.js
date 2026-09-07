@@ -17,7 +17,15 @@ async function adminCheckSession() {
     var r = await fetch('/api/auth/me', { credentials: 'include' });
     var s = await r.json();
     if (navAdmin) navAdmin.style.display = (s.user && s.user.role === 'admin') ? '' : 'none';
-    // No entramos automáticamente: el acceso siempre es pulsando el botón de Microsoft.
+    // Si Microsoft ya validó la sesión y el usuario tiene acceso concedido,
+    // entramos automáticamente (la landing solo se muestra si NO hay sesión).
+    if (s.authenticated) {
+      var landing = document.getElementById('landing');
+      var visible = landing && landing.style.display !== 'none' && getComputedStyle(landing).display !== 'none';
+      if (visible && typeof enterApp === 'function') {
+        try { enterApp(); } catch (err) { console.error('enterApp tras login:', err); }
+      }
+    }
     return s;
   } catch (e) {
     if (navAdmin) navAdmin.style.display = 'none';
@@ -214,5 +222,7 @@ function renderAdminScreen() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  setTimeout(adminCheckSession, 500);
+  // Comprobar la sesión pronto: si venimos de Microsoft con sesión válida,
+  // entramos directos sin quedarnos en la pantalla de acceso.
+  setTimeout(adminCheckSession, 150);
 });
