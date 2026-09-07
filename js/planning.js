@@ -222,7 +222,7 @@ function _planBuildTimelineUncached() {
       timeline.push({
         proj:p, pool:pool, devName:l.devName, startDate:sL, endDate:eL,
         hoursPerWeek:whL, totalHours:p.horas, weeks:+(((p.horas||0)/(whL||1))||0).toFixed(1),
-        locked:true, enCurso:enCursoOf(p), manualDev:true
+        locked:true, pinned:!!l.pinned, enCurso:enCursoOf(p), manualDev:true
       });
       if (avail[l.devName] && eL > avail[l.devName][pool]) avail[l.devName][pool] = new Date(eL);
       if (!enCursoOf(p) && sL > prevStartPool[pool]) prevStartPool[pool] = new Date(sL);
@@ -367,6 +367,12 @@ function _planBuildTimelineUncached() {
   // Ninguna fecha inválida puede llegar a las vistas: si algo salió mal (dato corrupto
   // en ADO, cálculo imposible), se sustituye por una estimación segura desde hoy.
   timeline.forEach(function(t){
+    // Un item con fecha FIJADA no se toca aquí; sus fechas mandan tal cual,
+    // salvo que sean literalmente inválidas (dato corrupto).
+    var hard = t.pinned || isPlanPinnedLock(t.proj && t.proj.nom);
+    if (hard && t.startDate && !isNaN(+t.startDate) && t.endDate && !isNaN(+t.endDate) && +t.endDate >= +t.startDate) {
+      return;
+    }
     if (!t.startDate || isNaN(+t.startDate)) t.startDate = new Date(today);
     if (!t.endDate || isNaN(+t.endDate)) {
       var _d = Math.max(1, Math.ceil(((t.totalHours || 8) / (t.hoursPerWeek || 8)) * 5));
@@ -389,12 +395,22 @@ function planCascade(timeline, movedNom, newEnd, devName, pool) {
     .slice().sort(function(a,b){ return a.startDate-b.startDate; });
 
   chain.forEach(function(t) {
+    // ── Una fecha FIJADA es intocable ──────────────────────────────
+    // Si el seguidor tiene su fecha fijada por el usuario (pinned), NO se
+    // mueve bajo ningún concepto: se respeta su hueco cerrado y el cursor
+    // avanza hasta su fin, de modo que los siguientes se colocan detrás.
+    if (t.pinned || (isPlanPinnedLock(t.proj.nom))) {
+      cursor = new Date(Math.max(+cursor, +t.endDate));
+      return;
+    }
     if (t.startDate < cursor) {
       var dur = Math.max(1, Math.ceil((t.endDate-t.startDate)/86400000));
       var ns  = pNextWork(new Date(cursor));
       var ne  = pAddDays(new Date(ns), dur);
-      // Update or add lock for this follower
+      // Update or add lock for this follower (conservando su flag pinned si lo tuviera)
       var idx2 = lockedAssignments.findIndex(function(l){ return l.nom===t.proj.nom; });
+      var prevPinned = idx2>=0 ? !!lockedAssignments[idx2].pinned : false;
+      if (prevPinned) { cursor = new Date(Math.max(+cursor, +t.endDate)); return; } // doble seguro
       var lock = {nom:t.proj.nom, devName:devName, startDate:ns.toISOString(), endDate:ne.toISOString()};
       if (idx2>=0) lockedAssignments[idx2]=lock;
       else lockedAssignments.push(lock);
@@ -514,6 +530,15 @@ function ganttDoMove(nom, targetDev, newStart) {
   var timeline = planBuildTimeline();
   var t = timeline.find(function(x){ return x.proj.nom===nom; });
   if (!t) { _dragNom=null; return; }
+
+  // ── No se puede mover un proyecto con la fecha FIJADA ──
+  // Debe desfijarse explícitamente (📌 → 🔓) antes de poder recolocarlo.
+  if (t.pinned || isPlanPinnedLock(nom)) {
+    _dragNom = null;
+    if (typeof toast === 'function') toast('🔒 Fecha fijada: desfíjala primero para poder moverla.');
+    if (typeof renderCalendar === 'function') renderCalendar();
+    return;
+  }
 
   var pool = t.pool;
 
@@ -2896,6 +2921,11 @@ function planShowReplanToast(msg, t, enCurso) {
 // ¿Está fijada la fecha de este proyecto?
 function isPlanPinned(nom) {
   return (lockedAssignments || []).some(function(l){ return l.nom === nom; });
+}
+
+// ¿Es un pin DURO (fecha cerrada por el usuario)? Distinto de un lock blando por arrastre.
+function isPlanPinnedLock(nom) {
+  return (lockedAssignments || []).some(function(l){ return l.nom === nom && l.pinned; });
 }
 
 // Fija el proyecto con las fechas y el dev que tiene ahora mismo en el timeline
