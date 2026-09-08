@@ -46,7 +46,7 @@
     <div id="nl-sub" style="margin-top:40px;opacity:0;transition:opacity .8s ease .4s">
       <div style="font-size:10px;letter-spacing:.28em;color:#6A6A70;text-transform:uppercase" id="nl-status">Iniciando</div>
       <div style="width:180px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;margin:14px auto 0;overflow:hidden">
-        <div id="nl-bar" style="height:100%;width:0;background:linear-gradient(90deg,#0E9CA8,#E8C888);border-radius:2px;transition:width .3s ease"></div>
+        <div id="nl-bar" style="height:100%;width:0;background:linear-gradient(90deg,#0E9CA8,#5FC5D1);border-radius:2px;transition:width .3s ease"></div>
       </div>
     </div>
   </div>
@@ -173,7 +173,7 @@
         <h1 style="font-size:clamp(40px,5vw,68px);font-weight:200;color:#fff;line-height:1.08;
           letter-spacing:.02em;margin:0 0 20px">
           Enfoca. Prioriza.<br>
-          <span style="font-weight:300;background:linear-gradient(135deg,#5FC5D1,#E8C888,#5FC5D1);
+          <span style="font-weight:300;background:linear-gradient(135deg,#5FC5D1,#0E9CA8,#5FC5D1);
             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
             background-size:200%;animation:shimmer 3s linear infinite">
             Avanza.
@@ -305,7 +305,7 @@
     </div>
     <div onclick="adoSyncEstimatedDates()"
       style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;
-             border-radius:20px;cursor:pointer;background:#3A3520;color:#E8C888;
+             border-radius:20px;cursor:pointer;background:#0E2647;color:#5FC5D1;
              font-size:9px;font-weight:700;letter-spacing:.04em;user-select:none"
       title="Enviar a ADO la fecha estimada de inicio (campo MPG Estimated Start Date) de los proyectos sin fecha propia">
       <span style="font-size:10px">📅</span>
@@ -315,7 +315,7 @@
     <button class="bar-pesos" onclick="btnSaveData()" title="Guardar la cartera actual (puntuaciones y horas) en este navegador"
       style="background:#2E4A3A;border-color:#3E6A50;color:#9FE0BC">💾 guardar</button>
     <button class="bar-pesos" onclick="btnLoadData()" title="Cargar la última cartera guardada"
-      style="background:#3A3520;border-color:#5C5230;color:#E8C888">📂 cargar</button>
+      style="background:#0E2647;border-color:#24467A;color:#5FC5D1">📂 cargar</button>
     <button class="bar-pesos" onclick="document.getElementById('wd').classList.toggle('open')">⚖ pesos</button>
   </div>
 </div>
@@ -2821,7 +2821,7 @@
         <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Con MPG Start Date</div>
         <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)"><b>Real de ADO</b></div>
         <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Por horas restantes</div>
-        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:#8A6D3B;font-weight:700">Sí, informativa</div>
+        <div style="text-align:center;padding:5px 0;border-top:1px solid var(--b);color:#0B7C86;font-weight:700">Sí, informativa</div>
 
         <div style="color:var(--ink);padding:5px 0;border-top:1px solid var(--b)">Con Target Date</div>
         <div style="color:var(--ink3);padding:5px 0;border-top:1px solid var(--b)">Deducido hacia atrás</div>
@@ -2858,7 +2858,7 @@
     </div>
 
     <!-- Requisitos -->
-    <div style="margin-top:12px;padding:10px 12px;background:#FDFAF3;border:1px solid #E8DCC8;border-radius:6px;font-size:9px;color:#8A6D3B;line-height:1.7">
+    <div style="margin-top:12px;padding:10px 12px;background:#F4F6F9;border:1px solid #DDE3EC;border-radius:6px;font-size:9px;color:#0B7C86;line-height:1.7">
       <b>Requisitos para la escritura:</b> el PAT configurado debe tener permisos <b>Work Items: Read &amp; Write</b>.
       Los campos personalizados (MPG Start Date, MPG Estimated Start Date) deben existir en el tipo de work item correspondiente;
       si no, ADO devuelve un error 400 que la app muestra con el detalle.
