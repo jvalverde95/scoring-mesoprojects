@@ -110,7 +110,83 @@ function refreshChartsStep() {
   }
   if(empty) empty.style.display='none';
   if(content) content.style.display='block';
+  renderAnalyticsKPIs();
   renderCharts2();
+}
+
+// ══════════ KPIs del sistema de validación (dashboard analítico) ══════════
+function renderAnalyticsKPIs() {
+  const grid = document.getElementById('an-kpi-grid');
+  if (!grid) return;
+  const P = portfolioData || [];
+  const n = P.length;
+  const closed = (typeof isProjClosed === 'function') ? P.filter(p => isProjClosed(p)) : [];
+  const open = P.filter(p => !(typeof isProjClosed === 'function' && isProjClosed(p)));
+
+  // Score medio (cartera abierta)
+  const avg = open.length ? (open.reduce((s,x)=>s+(x.sf||0),0)/open.length) : 0;
+
+  // Prioritarios estratégicos
+  const prio = P.filter(x=>{ const c=clsf(x.sf||0); return (c.et&&c.et.indexOf('PRIORITARIO')>=0)||x.autoP; }).length;
+
+  // Trazabilidad: % con dimScores completos (evaluados de verdad)
+  const withScores = P.filter(x => Array.isArray(x.dimScores) && x.dimScores.length===6 && x.dimScores.some(d=>d>0)).length;
+  const traz = n ? Math.round(withScores/n*100) : 0;
+
+  // Con estimación de horas
+  const withH = P.filter(x => x.horas!=null && x.horas>0).length;
+  const estPct = n ? Math.round(withH/n*100) : 0;
+
+  // Tasa de cierre (KPI5): cerrados / total
+  const closeRate = n ? Math.round(closed.length/n*100) : 0;
+
+  // Ciclo medio de cierre en días (created -> closed)
+  let cycleDays = null;
+  const cycles = closed.map(p=>{
+    const c=p.adoCreatedDate, e=p.adoClosedDate;
+    if(!c||!e) return null;
+    const d=(new Date(e)-new Date(c))/86400000;
+    return (isFinite(d)&&d>=0)?d:null;
+  }).filter(x=>x!=null);
+  if (cycles.length) cycleDays = Math.round(cycles.reduce((a,b)=>a+b,0)/cycles.length);
+
+  // Alineamiento estratégico (proxy KPI1): % de horas en iniciativas con D2>=6
+  let alignPct = null;
+  const hProjects = open.filter(p=>p.horas>0 && Array.isArray(p.dimScores));
+  if (hProjects.length) {
+    const totalH = hProjects.reduce((s,p)=>s+p.horas,0);
+    const alignH = hProjects.filter(p=>(p.dimScores[1]||0)>=6).reduce((s,p)=>s+p.horas,0);
+    if (totalH>0) alignPct = Math.round(alignH/totalH*100);
+  }
+
+  // Horas totales estimadas (cartera abierta)
+  const totalHoras = open.reduce((s,p)=>s+(p.horas||0),0);
+
+  const cards = [
+    { k:'Proyectos en cartera', v:n, sub:open.length+' abiertos · '+closed.length+' cerrados', tone:'navy' },
+    { k:'Score medio', v:avg? avg.toFixed(1):'—', sub:'cartera abierta (0–10)', tone:'cyan' },
+    { k:'Prioritarios estratégicos', v:prio, sub:'clasificación alta o auto-D1', tone:'red' },
+    { k:'Trazabilidad', v:traz+'%', sub:withScores+'/'+n+' con scoring completo', tone:'cyan', bar:traz },
+    { k:'Alineamiento estratégico', v:alignPct!=null? alignPct+'%':'—', sub:'horas en iniciativas D2 ≥ 6', tone:'green', bar:alignPct },
+    { k:'Con estimación', v:estPct+'%', sub:withH+'/'+n+' proyectos con horas', tone:'amber', bar:estPct },
+    { k:'Tasa de cierre', v:closeRate+'%', sub:closed.length+' cerrados de '+n, tone:'green', bar:closeRate },
+    { k:'Ciclo medio de cierre', v:cycleDays!=null? cycleDays+'d':'—', sub:cycles.length+' con fechas', tone:'navy' },
+    { k:'Horas estimadas', v:totalHoras? totalHoras.toLocaleString('es-ES'):'—', sub:'esfuerzo total en cola', tone:'navy' },
+  ];
+
+  grid.innerHTML = cards.map(c=>{
+    const barHtml = (c.bar!=null && !isNaN(c.bar)) ?
+      `<div class="an-kpi-bar"><span style="width:${Math.max(0,Math.min(100,c.bar))}%"></span></div>` : '';
+    return `<div class="an-kpi an-kpi--${c.tone}">
+      <div class="an-kpi-k">${c.k}</div>
+      <div class="an-kpi-v">${c.v}</div>
+      <div class="an-kpi-sub">${c.sub}</div>
+      ${barHtml}
+    </div>`;
+  }).join('');
+
+  const sub = document.getElementById('charts-subtitle');
+  if (sub) sub.textContent = n+' proyectos · '+open.length+' en cola · actualizado ahora';
 }
 
 function switchChart(name, btn) {
