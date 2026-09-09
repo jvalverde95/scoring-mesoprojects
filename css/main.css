@@ -2064,3 +2064,8 @@ input:focus,select:focus,textarea:focus,.ado-field:focus,.cfg-field:focus{
   background:var(--rf-soft)!important;border-left:3px solid var(--rf-cyan)!important;
   border-radius:0 8px 8px 0!important;color:var(--rf-ink)!important;
 }
+
+/* ── Ritmo de cierre por pool ── */
+.pool-rhythm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.pool-rhythm-card{transition:transform .15s ease, box-shadow .15s ease}
+.pool-rhythm-card:hover{transform:translateY(-2px)}

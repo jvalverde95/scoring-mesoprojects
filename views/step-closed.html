@@ -51,14 +51,67 @@
     <span id="closed-count" style="font-size:11px;color:var(--ink4);margin-left:auto"></span>
   </div>
 
+  <!-- Orden -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <span style="font-size:11px;color:var(--ink3)">Ordenar por:</span>
+    <select id="closed-sort" onchange="renderClosedProjects()"
+      style="padding:5px 10px;border:1px solid var(--b);border-radius:6px;font-size:12px;color:var(--ink)">
+      <option value="date">Fecha de cierre (más recientes primero)</option>
+      <option value="date-asc">Fecha de cierre (más antiguos primero)</option>
+      <option value="score">Score (mayor primero)</option>
+    </select>
+    <span style="font-size:10px;color:var(--ink4)">Haz clic en un proyecto para ver su ficha completa</span>
+  </div>
+
+  <!-- ══════════ RITMO DE CIERRE POR POOL ══════════ -->
+  <div style="margin:26px 0 8px">
+    <div class="s-title" style="font-size:18px;margin:0">Ritmo de cierre por pool</div>
+    <div class="s-sub" style="margin:3px 0 0">Tasa de cierre y proyectos cerrados en los últimos 30 días · haz clic en una tarjeta o semana para ver el detalle</div>
+  </div>
+
+  <!-- KPIs por pool (clicables) -->
+  <div class="pool-rhythm-grid" id="pool-rhythm-kpis"></div>
+
+  <!-- Gráfica semanal -->
+  <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:var(--sh)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:700;color:#0B1F3A">Proyectos cerrados <span id="closed-chart-unit">por semana</span></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <select id="closed-range" onchange="renderClosedWeeklyFromState()"
+          style="padding:4px 10px;border:1px solid var(--b);border-radius:6px;font-size:11px;color:var(--ink)">
+          <option value="12w">Últimas 12 semanas</option>
+          <option value="6m">Últimos 6 meses (por mes)</option>
+        </select>
+        <span style="font-size:10px;color:var(--ink4)">clic en una barra para filtrar</span>
+      </div>
+    </div>
+    <div id="closed-weekly-chart"></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--b)">
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#0E9C6A"></span>Corto</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#0E9CA8"></span>Medio</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#1E4E8C"></span>Largo</span>
+    </div>
+  </div>
+
+  <!-- Lista dinámica filtrada -->
+  <div id="closed-filtered-panel" style="display:none;background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:var(--sh)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div id="closed-filtered-title" style="font-size:13px;font-weight:700;color:#0B1F3A"></div>
+      <button onclick="clearClosedFilter()" class="sa" style="font-size:11px;padding:5px 12px">✕ Quitar filtro</button>
+    </div>
+    <input id="closed-filtered-search" oninput="renderFilteredClosed()" placeholder="Buscar por nombre, descripción, departamento…"
+      style="width:100%;padding:9px 12px;border:1px solid var(--b);border-radius:8px;font-size:12px;margin-bottom:12px" />
+    <div id="closed-filtered-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+
   <!-- Tabla de proyectos cerrados -->
   <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden">
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead>
-        <tr style="background:#1A1A1A;color:#fff">
+        <tr style="background:#0B1F3A;color:#fff">
+          <th style="text-align:left;padding:10px 12px;font-weight:700">Cerrado</th>
           <th style="text-align:left;padding:10px 12px;font-weight:700">Proyecto</th>
           <th style="text-align:left;padding:10px 12px;font-weight:700">Departamento</th>
-          <th style="text-align:left;padding:10px 12px;font-weight:700">Responsable</th>
           <th style="text-align:center;padding:10px 12px;font-weight:700">Score</th>
           <th style="text-align:center;padding:10px 12px;font-weight:700">Horas</th>
           <th style="text-align:center;padding:10px 12px;font-weight:700">Estado</th>
@@ -66,5 +119,15 @@
       </thead>
       <tbody id="closed-tbody"></tbody>
     </table>
+  </div>
+
+  <!-- Panel de detalle (ficha del proyecto cerrado) -->
+  <div id="closed-detail-overlay" onclick="closeClosedDetail(event)"
+    style="display:none;position:fixed;inset:0;background:rgba(8,22,41,.55);z-index:9000;
+    align-items:center;justify-content:center;padding:20px">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:14px;max-width:640px;width:100%;
+      max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div id="closed-detail-body"></div>
+    </div>
   </div>
 </div>

@@ -1335,6 +1335,244 @@ function getClosedProjects() {
   return portfolioData.filter(function(p){ return isProjClosed(p); });
 }
 
+// ══════════ RITMO DE CIERRE POR POOL ══════════
+var _poolNames = {S:'Corto', M:'Medio', L:'Largo'};
+var _poolColors = {S:'#0E9C6A', M:'#0E9CA8', L:'#1E4E8C'};
+var _closedFilter = null;        // {type:'pool'|'week', pool:'S', weekStart:ts, label:'…'}
+var _filteredCache = [];
+
+function _validClosedDate(p){
+  var d = p.adoClosedDate || p.adoCreatedDate;
+  if(!d) return null;
+  var t = new Date(d); return isNaN(t.getTime()) ? null : t;
+}
+function _startOfWeek(d){ // lunes
+  var x=new Date(d); var day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x;
+}
+
+function renderPoolRhythm() {
+  var all = Array.isArray(portfolioData) ? portfolioData : [];
+  var closed = getClosedProjects();
+  var now = new Date();
+  var d30 = new Date(now.getTime() - 30*86400000);
+  var d60 = new Date(now.getTime() - 60*86400000);
+
+  // agrupar por pool
+  var stats = {};
+  ['S','M','L'].forEach(function(k){ stats[k]={total:0, closed:0, last30:0, prev30:0, closedList:[]}; });
+  all.forEach(function(p){
+    var pool = getPool(p); if(!pool || !stats[pool]) return;
+    stats[pool].total++;
+    if(isProjClosed(p)){
+      stats[pool].closed++;
+      stats[pool].closedList.push(p);
+      var cd=_validClosedDate(p);
+      if(cd){
+        if(cd>=d30) stats[pool].last30++;
+        else if(cd>=d60) stats[pool].prev30++;
+      }
+    }
+  });
+
+  // KPIs clicables
+  var grid = document.getElementById('pool-rhythm-kpis');
+  if(grid){
+    // Tarjeta TOTAL (suma de los tres pools)
+    var T={total:0,closed:0,last30:0,prev30:0};
+    ['S','M','L'].forEach(function(k){ T.total+=stats[k].total; T.closed+=stats[k].closed; T.last30+=stats[k].last30; T.prev30+=stats[k].prev30; });
+    var poolCards = ['S','M','L'].map(function(k){
+      var s=stats[k];
+      var rate = s.total ? Math.round(s.closed/s.total*100) : 0;
+      var trend = s.last30 - s.prev30;
+      var arrow = trend>0 ? '▲ +'+trend : (trend<0 ? '▼ '+trend : '= igual');
+      var arrowCol = trend>0 ? '#0A7A50' : (trend<0 ? '#C0392B' : 'var(--ink4)');
+      var perWeek = (s.last30/ (30/7)).toFixed(1);
+      var active = (_closedFilter && _closedFilter.type==='pool' && _closedFilter.pool===k) ? 'box-shadow:0 0 0 2px '+_poolColors[k]+';' : '';
+      return '<div onclick="filterClosedByPool(\''+k+'\')" class="pool-rhythm-card" '
+        + 'style="cursor:pointer;background:var(--w);border:1px solid var(--b);border-top:3px solid '+_poolColors[k]+';border-radius:12px;padding:16px 18px;box-shadow:var(--sh);'+active+'">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between">'
+        +   '<div style="font-size:12px;font-weight:700;color:#0B1F3A">'+_poolNames[k]+'</div>'
+        +   '<div style="width:9px;height:9px;border-radius:50%;background:'+_poolColors[k]+'"></div>'
+        + '</div>'
+        + '<div style="font-size:32px;font-weight:300;color:#0B1F3A;line-height:1.1;margin-top:8px">'+rate+'%</div>'
+        + '<div style="font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:.05em">tasa de cierre · '+s.closed+'/'+s.total+'</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:10px;border-top:1px solid var(--b)">'
+        +   '<div><span style="font-size:20px;font-weight:700;color:'+_poolColors[k]+'">'+s.last30+'</span><span style="font-size:10px;color:var(--ink4)"> cerrados / 30d</span></div>'
+        +   '<div style="font-size:10px;color:'+arrowCol+';font-weight:600">'+arrow+'</div>'
+        + '</div>'
+        + '<div style="font-size:9px;color:var(--ink4);margin-top:4px">ritmo ≈ '+perWeek+'/semana · vs 30d previos</div>'
+        + '</div>';
+    });
+    // Tarjeta TOTAL (destacada, fondo navy)
+    var Trate=T.total?Math.round(T.closed/T.total*100):0;
+    var Ttrend=T.last30-T.prev30;
+    var Tarrow=Ttrend>0?'▲ +'+Ttrend:(Ttrend<0?'▼ '+Ttrend:'= igual');
+    var TarrowCol=Ttrend>0?'#5FD1A0':(Ttrend<0?'#E88A8A':'#8FB4D8');
+    var TperWeek=(T.last30/(30/7)).toFixed(1);
+    var Tactive=(_closedFilter && _closedFilter.type==='total')?'box-shadow:0 0 0 2px #5FC5D1;':'';
+    var totalCard='<div onclick="filterClosedTotal()" class="pool-rhythm-card" '
+      + 'style="cursor:pointer;background:linear-gradient(135deg,#0C2247,#0B1F3A);border:1px solid #1E4E8C;border-top:3px solid #5FC5D1;border-radius:12px;padding:16px 18px;box-shadow:var(--sh);'+Tactive+'">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      +   '<div style="font-size:12px;font-weight:700;color:#fff">Total cartera</div>'
+      +   '<div style="width:9px;height:9px;border-radius:50%;background:#5FC5D1"></div>'
+      + '</div>'
+      + '<div style="font-size:32px;font-weight:300;color:#fff;line-height:1.1;margin-top:8px">'+Trate+'%</div>'
+      + '<div style="font-size:10px;color:#8FB4D8;text-transform:uppercase;letter-spacing:.05em">tasa de cierre · '+T.closed+'/'+T.total+'</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15)">'
+      +   '<div><span style="font-size:20px;font-weight:700;color:#5FC5D1">'+T.last30+'</span><span style="font-size:10px;color:#8FB4D8"> cerrados / 30d</span></div>'
+      +   '<div style="font-size:10px;color:'+TarrowCol+';font-weight:600">'+Tarrow+'</div>'
+      + '</div>'
+      + '<div style="font-size:9px;color:#8FB4D8;margin-top:4px">ritmo ≈ '+TperWeek+'/semana · vs 30d previos</div>'
+      + '</div>';
+    grid.innerHTML = totalCard + poolCards.join('');
+  }
+  renderClosedWeeklyFromState();
+}
+
+// ── Gráfica semanal (SVG, barras apiladas por pool, clicable) ──
+function _startOfMonth(d){ var x=new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; }
+function _monthLabel(d){ var m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return m[d.getMonth()]+' '+String(d.getFullYear()).slice(2); }
+
+function renderClosedWeeklyFromState(){
+  var sel=document.getElementById('closed-range');
+  var mode=sel?sel.value:'12w';
+  var unit=document.getElementById('closed-chart-unit');
+  if(unit) unit.textContent = (mode==='6m') ? 'por mes' : 'por semana';
+  renderClosedBuckets(getClosedProjects(), mode);
+}
+
+function renderClosedBuckets(closed, mode){
+  var host=document.getElementById('closed-weekly-chart'); if(!host) return;
+  mode=mode||'12w';
+  var buckets=[]; // {start(ts), label, granularity}
+  if(mode==='6m'){
+    var m0=_startOfMonth(new Date());
+    for(var i=5;i>=0;i--){ var d=new Date(m0.getFullYear(),m0.getMonth()-i,1); buckets.push({start:d.getTime(),label:_monthLabel(d),gran:'month'}); }
+  } else {
+    var w0=_startOfWeek(new Date());
+    for(var j=11;j>=0;j--){ var wd=new Date(w0.getTime()-j*7*86400000); buckets.push({start:wd.getTime(),label:wd.getDate()+'/'+(wd.getMonth()+1),gran:'week'}); }
+  }
+  function bucketOf(cd){
+    if(mode==='6m') return _startOfMonth(cd).getTime();
+    return _startOfWeek(cd).getTime();
+  }
+  var counts=buckets.map(function(){ return {S:0,M:0,L:0}; });
+  closed.forEach(function(p){
+    var cd=_validClosedDate(p); if(!cd) return;
+    var b=bucketOf(cd);
+    for(var k=0;k<buckets.length;k++){ if(b===buckets[k].start){ var pool=getPool(p)||'M'; if(counts[k][pool]!==undefined) counts[k][pool]++; break; } }
+  });
+  var N=buckets.length;
+  var maxV=Math.max(1,Math.max.apply(null,counts.map(function(c){return c.S+c.M+c.L;})));
+  var W=760,H=210,pad=28,gap=(W-pad*2)/N,bw=gap*0.62;
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible">';
+  svg+='<line x1="'+pad+'" y1="'+(H-24)+'" x2="'+(W-pad)+'" y2="'+(H-24)+'" stroke="#D8DCE3" stroke-width="1"/>';
+  var order=['L','M','S'];
+  for(var w=0;w<N;w++){
+    var c=counts[w], x=pad+gap*w+(gap-bw)/2, y=H-24, tot=c.S+c.M+c.L;
+    var fn = buckets[w].gran==='month' ? 'filterClosedByMonth' : 'filterClosedByWeek';
+    order.forEach(function(k){
+      if(c[k]<=0) return;
+      var h=(c[k]/maxV)*(H-58); y-=h;
+      svg+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+_poolColors[k]+'" rx="1" '
+        + 'style="cursor:pointer" onclick="'+fn+'('+buckets[w].start+')"><title>'+_poolNames[k]+': '+c[k]+'</title></rect>';
+    });
+    if(tot>0) svg+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-4).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#0B1F3A">'+tot+'</text>';
+    svg+='<text x="'+(pad+gap*w+gap/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="8.5" fill="#6A6A70">'+buckets[w].label+'</text>';
+    svg+='<rect x="'+(pad+gap*w).toFixed(1)+'" y="0" width="'+gap.toFixed(1)+'" height="'+(H-24)+'" fill="transparent" style="cursor:pointer" onclick="'+fn+'('+buckets[w].start+')"/>';
+  }
+  svg+='</svg>';
+  host.innerHTML=svg;
+}
+
+// ── Filtros que alimentan la lista dinámica ──
+function filterClosedByPool(k){
+  var closed=getClosedProjects().filter(function(p){ return getPool(p)===k; });
+  _closedFilter={type:'pool', pool:k, label:'Pool '+_poolNames[k]+' · '+closed.length+' proyectos cerrados'};
+  _filteredCache=closed;
+  renderPoolRhythm(); // refresca el resaltado
+  openFilteredPanel();
+}
+function filterClosedTotal(){
+  var closed=getClosedProjects();
+  _closedFilter={type:'total', label:'Toda la cartera · '+closed.length+' proyectos cerrados'};
+  _filteredCache=closed;
+  renderPoolRhythm();
+  openFilteredPanel();
+}
+function filterClosedByMonth(ts){
+  var ms=_startOfMonth(new Date(ts)).getTime();
+  var closed=getClosedProjects().filter(function(p){
+    var cd=_validClosedDate(p); if(!cd) return false;
+    return _startOfMonth(cd).getTime()===ms;
+  });
+  var d=new Date(ms);
+  _closedFilter={type:'month', monthStart:ms, label:'Mes de '+_monthLabel(d)+' · '+closed.length+' proyectos cerrados'};
+  _filteredCache=closed;
+  openFilteredPanel();
+}
+function filterClosedByWeek(ts){
+  var ws=_startOfWeek(new Date(ts)).getTime();
+  var we=ws+7*86400000;
+  var closed=getClosedProjects().filter(function(p){
+    var cd=_validClosedDate(p); if(!cd) return false;
+    var t=_startOfWeek(cd).getTime(); return t===ws;
+  });
+  var d=new Date(ws);
+  _closedFilter={type:'week', weekStart:ws, label:'Semana del '+d.getDate()+'/'+(d.getMonth()+1)+' · '+closed.length+' proyectos cerrados'};
+  _filteredCache=closed;
+  openFilteredPanel();
+}
+function openFilteredPanel(){
+  var panel=document.getElementById('closed-filtered-panel');
+  var srch=document.getElementById('closed-filtered-search');
+  if(srch) srch.value='';
+  if(panel){ panel.style.display='block'; panel.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  renderFilteredClosed();
+}
+function clearClosedFilter(){
+  _closedFilter=null; _filteredCache=[];
+  var panel=document.getElementById('closed-filtered-panel');
+  if(panel) panel.style.display='none';
+  renderPoolRhythm();
+}
+function renderFilteredClosed(){
+  var title=document.getElementById('closed-filtered-title');
+  var list=document.getElementById('closed-filtered-list');
+  var q=(document.getElementById('closed-filtered-search')||{}).value||'';
+  q=q.toLowerCase().trim();
+  if(title) title.textContent=(_closedFilter?_closedFilter.label:'');
+  var rows=_filteredCache.filter(function(p){
+    if(!q) return true;
+    var hay=((p.nom||'')+' '+(p.adoDesc||'')+' '+_closedDept(p)+' '+(p.adoAssigned||'')).toLowerCase();
+    return hay.indexOf(q)>=0;
+  });
+  if(!list) return;
+  if(!rows.length){ list.innerHTML='<div style="padding:16px;text-align:center;color:var(--ink4);font-size:12px">Sin resultados'+(q?' para “'+q+'”':'')+'.</div>'; return; }
+  list.innerHTML=rows.map(function(p,i){
+    var key='f'+i; _closedCache[key]=p;
+    var pool=getPool(p);
+    var poolTag = pool ? '<span style="font-size:9px;font-weight:700;color:#fff;background:'+_poolColors[pool]+';padding:2px 8px;border-radius:20px">'+_poolNames[pool]+'</span>' : '';
+    var sc=(p.sf!=null?(p.sf||0).toFixed(1):'—');
+    var scColor=p.sf>=7?'#0A7A50':(p.sf>=5?'#0B7C86':'#C0392B');
+    var desc=(p.adoDesc||'').replace(/</g,'&lt;');
+    if(desc.length>140) desc=desc.substring(0,140)+'…';
+    var nm=String(p.nom||'').replace(/</g,'&lt;');
+    return '<div onclick="openClosedDetail(\''+key+'\')" style="cursor:pointer;border:1px solid var(--b);border-radius:10px;padding:12px 14px;transition:background .15s" '
+      + 'onmouseover="this.style.background=\'#F4F6F9\'" onmouseout="this.style.background=\'#fff\'">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">'
+      +   poolTag
+      +   '<span style="font-size:13px;font-weight:600;color:#0B1F3A;flex:1">'+nm+'</span>'
+      +   '<span style="font-size:15px;font-weight:700;color:'+scColor+'">'+sc+'</span>'
+      + '</div>'
+      + '<div style="font-size:10px;color:var(--ink4);margin-bottom:'+(desc?'6px':'0')+'">'
+      +   _closedDept(p)+' · '+(p.horas!=null?p.horas+'h':'—')+' · cerrado '+_fmtDate(p.adoClosedDate)+'</div>'
+      + (desc?'<div style="font-size:11px;color:var(--ink3);line-height:1.5">'+desc+'</div>':'')
+      + '</div>';
+  }).join('');
+}
+
+
 function renderClosedScreen() {
   var closed = getClosedProjects();
   var open = (Array.isArray(portfolioData) ? portfolioData : []).filter(function(p){ return !isProjClosed(p); });
@@ -1445,16 +1683,38 @@ function renderClosedScreen() {
     [ { data: Object.values(tramos), backgroundColor:['#0E7C5A','#0E9CA8','#B03A2E'], borderRadius:4, maxBarThickness:60 } ]);
 
   renderClosedProjects();
+  renderPoolRhythm();
+}
+// Cache para el panel de detalle (evita pasar objetos por HTML)
+var _closedCache = {};
+
+function _closedDateVal(p) {
+  var d = p.adoClosedDate || p.adoCreatedDate;
+  var t = d ? new Date(d).getTime() : NaN;
+  return isNaN(t) ? -Infinity : t;
+}
+function _fmtDate(d) {
+  if (!d) return '—';
+  var dt = new Date(d);
+  if (isNaN(dt.getTime())) return '—';
+  return dt.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
 }
 
-// Tabla filtrable
 function renderClosedProjects() {
   var closed = getClosedProjects();
   var sel = document.getElementById('closed-dept-filter');
   var filter = sel ? sel.value : '';
-  var rows = closed.filter(function(p){ return !filter || _closedDept(p) === filter; });
-  rows.sort(function(a,b){ return (b.sf || 0) - (a.sf || 0); });
+  var sortSel = document.getElementById('closed-sort');
+  var sortMode = sortSel ? sortSel.value : 'date';
 
+  var rows = closed.filter(function(p){ return !filter || _closedDept(p) === filter; });
+  rows.sort(function(a,b){
+    if (sortMode === 'score') return (b.sf || 0) - (a.sf || 0);
+    if (sortMode === 'date-asc') return _closedDateVal(a) - _closedDateVal(b);
+    return _closedDateVal(b) - _closedDateVal(a); // date (recientes primero) por defecto
+  });
+
+  _closedCache = {};
   var tb = document.getElementById('closed-tbody');
   if (tb) {
     if (!rows.length) {
@@ -1462,19 +1722,105 @@ function renderClosedProjects() {
         + (filter ? ' en este departamento.' : ' todavía.') + '</td></tr>';
     } else {
       tb.innerHTML = rows.map(function(p, i){
-        var bg = i % 2 ? '#FAFAF8' : '#fff';
+        var key = 'c'+i; _closedCache[key] = p;
+        var bg = i % 2 ? '#F4F6F9' : '#fff';
         var nm = String(p.nom || '').replace(/</g,'&lt;');
-        return '<tr style="background:'+bg+';border-top:1px solid #EEE">'
-          + '<td style="padding:9px 12px;color:#1A1A1A;font-weight:600">'+nm+'</td>'
+        var sc = (p.sf!=null?(p.sf||0).toFixed(1):'—');
+        var scColor = p.sf>=7 ? '#0A7A50' : (p.sf>=5 ? '#0B7C86' : '#C0392B');
+        return '<tr onclick="openClosedDetail(\''+key+'\')" '
+          + 'style="background:'+bg+';border-top:1px solid #EEF1F6;cursor:pointer" '
+          + 'onmouseover="this.style.background=\'#E7F6F8\'" '
+          + 'onmouseout="this.style.background=\''+bg+'\'">'
+          + '<td style="padding:9px 12px;color:var(--ink3);white-space:nowrap">'+_fmtDate(p.adoClosedDate)+'</td>'
+          + '<td style="padding:9px 12px;color:#0B1F3A;font-weight:600">'+nm+'</td>'
           + '<td style="padding:9px 12px;color:var(--ink3)">'+_closedDept(p)+'</td>'
-          + '<td style="padding:9px 12px;color:var(--ink3)">'+(p.adoAssigned || '—')+'</td>'
-          + '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#1A1A1A">'+(p.sf!=null?(p.sf||0).toFixed(1):'—')+'</td>'
+          + '<td style="padding:9px 12px;text-align:center;font-weight:700;color:'+scColor+'">'+sc+'</td>'
           + '<td style="padding:9px 12px;text-align:center;color:var(--ink3)">'+(p.horas!=null?p.horas:'—')+'</td>'
-          + '<td style="padding:9px 12px;text-align:center"><span style="font-size:10px;background:#EEE;color:#555;padding:2px 8px;border-radius:20px">'+(p.adoState||'Closed')+'</span></td>'
+          + '<td style="padding:9px 12px;text-align:center"><span style="font-size:10px;background:#E7F6F8;color:#0B7C86;padding:2px 8px;border-radius:20px">'+(p.adoState||'Closed')+'</span></td>'
           + '</tr>';
       }).join('');
     }
   }
   var cnt = document.getElementById('closed-count');
   if (cnt) cnt.textContent = rows.length + (rows.length === 1 ? ' proyecto' : ' proyectos');
+}
+
+// ── Ficha de detalle de un proyecto cerrado ──
+function openClosedDetail(key) {
+  var p = _closedCache[key];
+  if (!p) return;
+  var body = document.getElementById('closed-detail-body');
+  if (!body) return;
+
+  var DIMN = ['D1 Compliance/Seguridad','D2 Estrategia','D3 ROI','D4 Técnica','D5 Implantación','D6 Personas'];
+  var dims = Array.isArray(p.dimScores) ? p.dimScores : [];
+  var dimHtml = '';
+  if (dims.length === 6) {
+    dimHtml = '<div style="margin-top:18px"><div style="font-size:11px;font-weight:700;color:#0B1F3A;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">Puntuación por dimensión</div>';
+    for (var j=0;j<6;j++){
+      var v = (dims[j]||0), pct = Math.max(0,Math.min(100, v*10));
+      var col = v>=7?'#0A7A50':(v>=5?'#0E9CA8':'#C0392B');
+      dimHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">'
+        + '<div style="width:150px;font-size:11px;color:var(--ink3)">'+DIMN[j]+'</div>'
+        + '<div style="flex:1;height:8px;background:#EEF1F6;border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:'+pct+'%;background:'+col+'"></span></div>'
+        + '<div style="width:34px;text-align:right;font-size:12px;font-weight:700;color:'+col+'">'+v.toFixed(1)+'</div>'
+        + '</div>';
+    }
+    dimHtml += '</div>';
+  }
+
+  var sf = (p.sf!=null?(p.sf||0).toFixed(2):'—');
+  var sfColor = p.sf>=7 ? '#0A7A50' : (p.sf>=5 ? '#0B7C86' : '#C0392B');
+  var clasTxt = (typeof clsf==='function' && p.sf!=null) ? (clsf(p.sf).et||'') : '';
+  var nm = String(p.nom||'').replace(/</g,'&lt;');
+  var desc = (p.adoDesc || '').replace(/</g,'&lt;');
+
+  // ciclo de vida
+  var cycle = '';
+  if (p.adoCreatedDate && p.adoClosedDate) {
+    var d = Math.round((new Date(p.adoClosedDate)-new Date(p.adoCreatedDate))/86400000);
+    if (isFinite(d) && d>=0) cycle = d + ' días';
+  }
+
+  function meta(label,val){
+    return '<div style="flex:1;min-width:130px"><div style="font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">'+label+'</div>'
+      + '<div style="font-size:13px;color:#0B1F3A;font-weight:600">'+(val||'—')+'</div></div>';
+  }
+
+  body.innerHTML =
+    '<div style="background:linear-gradient(135deg,#0C2247,#0B1F3A);padding:22px 24px;border-radius:14px 14px 0 0;position:relative">'
+    + '<button onclick="closeClosedDetail()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">✕</button>'
+    + '<div style="font-size:10px;color:#5FC5D1;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">Proyecto cerrado · '+_fmtDate(p.adoClosedDate)+'</div>'
+    + '<div style="font-size:19px;font-weight:700;color:#fff;line-height:1.3">'+nm+'</div>'
+    + '<div style="display:flex;align-items:center;gap:14px;margin-top:14px">'
+    +   '<div style="background:rgba(95,197,209,.18);border:1px solid #5FC5D1;border-radius:10px;padding:8px 16px;text-align:center">'
+    +     '<div style="font-size:26px;font-weight:300;color:#fff;line-height:1">'+sf+'</div>'
+    +     '<div style="font-size:9px;color:#9FE0E6;letter-spacing:.05em">SCORE FINAL</div></div>'
+    +   (clasTxt?'<div style="font-size:12px;color:#B9C7DC">'+clasTxt+'</div>':'')
+    + '</div>'
+    + '</div>'
+    + '<div style="padding:22px 24px">'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:6px">'
+    +     meta('Departamento', _closedDept(p))
+    +     meta('Responsable', p.adoAssigned)
+    +     meta('Horas', p.horas!=null?p.horas+' h':'—')
+    +   '</div>'
+    +   '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid #EEF1F6">'
+    +     meta('Fecha de alta', _fmtDate(p.adoCreatedDate))
+    +     meta('Fecha de cierre', _fmtDate(p.adoClosedDate))
+    +     meta('Ciclo de vida', cycle)
+    +   '</div>'
+    +   (desc ? '<div style="margin-top:18px"><div style="font-size:11px;font-weight:700;color:#0B1F3A;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">Descripción</div>'
+    +     '<div style="font-size:13px;color:var(--ink2);line-height:1.65;background:#F4F6F9;border-left:3px solid #0E9CA8;border-radius:0 8px 8px 0;padding:12px 16px">'+desc+'</div></div>' : '')
+    +   dimHtml
+    + '</div>';
+
+  document.getElementById('closed-detail-overlay').style.display = 'flex';
+}
+function closeClosedDetail(e) {
+  if (e && e.target && e.target.id !== 'closed-detail-overlay' && e.type==='click') {
+    // clic dentro del panel: no cerrar (ya gestionado por stopPropagation), salvo botón
+  }
+  var ov = document.getElementById('closed-detail-overlay');
+  if (ov) ov.style.display = 'none';
 }
