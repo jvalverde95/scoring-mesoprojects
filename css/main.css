@@ -2069,3 +2069,6 @@ input:focus,select:focus,textarea:focus,.ado-field:focus,.cfg-field:focus{
 .pool-rhythm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 .pool-rhythm-card{transition:transform .15s ease, box-shadow .15s ease}
 .pool-rhythm-card:hover{transform:translateY(-2px)}
+
+/* ── Medias de cierre (semana/mes) ── */
+.avg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:8px}

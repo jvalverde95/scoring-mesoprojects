@@ -1330,6 +1330,68 @@ function _closedDept(p) {
   return (p.area && String(p.area).trim()) || (p.adoIteration && String(p.adoIteration).trim()) || 'Sin departamento';
 }
 
+// ══════════ MEDIA DE CIERRE POR SEMANA / MES ══════════
+function renderClosedAverages(){
+  var host=document.getElementById('closed-averages'); if(!host) return;
+  var all=Array.isArray(portfolioData)?portfolioData:[];
+  var closed=getClosedProjects();
+
+  // Poblar selector de departamentos (una sola vez / refrescar opciones)
+  var sel=document.getElementById('avg-dept-filter');
+  if(sel){
+    var cur=sel.value;
+    var depts={};
+    closed.forEach(function(p){ var d=_closedDept(p); depts[d]=(depts[d]||0)+1; });
+    var names=Object.keys(depts).sort();
+    if(sel.options.length !== names.length+1){
+      sel.innerHTML='<option value="">Todos</option>'+names.map(function(d){ return '<option value="'+d.replace(/"/g,'&quot;')+'">'+d+' ('+depts[d]+')</option>'; }).join('');
+      if(cur) sel.value=cur;
+    }
+  }
+  var deptFilter = sel ? sel.value : '';
+  var rows = closed.filter(function(p){ return !deptFilter || _closedDept(p)===deptFilter; });
+
+  // Ventanas: cerrados con fecha válida en últimas 12 semanas y últimos 6 meses
+  var now=new Date();
+  var w12=new Date(now.getTime()-12*7*86400000);
+  var m6=new Date(now.getFullYear(),now.getMonth()-6,now.getDate());
+  function countWindow(list, since){
+    return list.filter(function(p){ var cd=_validClosedDate(p); return cd && cd>=since; }).length;
+  }
+  function avgs(list){
+    var per_w = countWindow(list,w12)/12;
+    var per_m = countWindow(list,m6)/6;
+    return {w:per_w, m:per_m};
+  }
+
+  // Global + por pool
+  var poolLists={ALL:rows, S:[], M:[], L:[]};
+  rows.forEach(function(p){ var k=getPool(p); if(k&&poolLists[k]) poolLists[k].push(p); });
+
+  var cards=[
+    {key:'ALL', name:deptFilter?('Total · '+deptFilter):'Total (todos los pools)', color:'#0B1F3A', navy:true},
+    {key:'S', name:'Pool Corto', color:'#0E9C6A'},
+    {key:'M', name:'Pool Medio', color:'#0E9CA8'},
+    {key:'L', name:'Pool Largo', color:'#1E4E8C'},
+  ];
+  host.innerHTML=cards.map(function(cd){
+    var a=avgs(poolLists[cd.key]);
+    var bg = cd.navy ? 'background:linear-gradient(135deg,#0C2247,#0B1F3A);' : 'background:var(--w);';
+    var titleCol = cd.navy ? '#fff' : '#0B1F3A';
+    var subCol = cd.navy ? '#8FB4D8' : 'var(--ink4)';
+    var bigCol = cd.navy ? '#5FC5D1' : cd.color;
+    return '<div class="avg-card" style="'+bg+'border:1px solid var(--b);border-top:3px solid '+cd.color+';border-radius:12px;padding:16px 18px;box-shadow:var(--sh)">'
+      + '<div style="font-size:12px;font-weight:700;color:'+titleCol+';margin-bottom:12px">'+cd.name+'</div>'
+      + '<div style="display:flex;gap:18px">'
+      +   '<div style="flex:1"><div style="font-size:30px;font-weight:300;line-height:1;color:'+bigCol+'">'+a.w.toFixed(1)+'</div>'
+      +     '<div style="font-size:9px;color:'+subCol+';text-transform:uppercase;letter-spacing:.05em;margin-top:3px">por semana</div></div>'
+      +   '<div style="flex:1;border-left:1px solid '+(cd.navy?'rgba(255,255,255,.15)':'var(--b)')+';padding-left:18px"><div style="font-size:30px;font-weight:300;line-height:1;color:'+bigCol+'">'+a.m.toFixed(1)+'</div>'
+      +     '<div style="font-size:9px;color:'+subCol+';text-transform:uppercase;letter-spacing:.05em;margin-top:3px">por mes</div></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
 function getClosedProjects() {
   if (!Array.isArray(portfolioData)) return [];
   return portfolioData.filter(function(p){ return isProjClosed(p); });
@@ -1684,6 +1746,7 @@ function renderClosedScreen() {
 
   renderClosedProjects();
   renderPoolRhythm();
+  renderClosedAverages();
 }
 // Cache para el panel de detalle (evita pasar objetos por HTML)
 var _closedCache = {};
