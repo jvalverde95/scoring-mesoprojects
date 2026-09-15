@@ -1,10 +1,13 @@
 let previousStep = null;
 
 /* ═══ EXTENDED NAVIGATION ══════════════════════════════ */
-const NAV_PAGES = ['charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','summary','closed','admin'];
+const NAV_PAGES = ['charts','pools','config','sprint','dashboard','wiki','planning','summary','closed','admin'];
 
 function goStep(t) {
   if (window._sharedViewLocked) return;  // vista compartida: navegación bloqueada
+
+  // Pantallas fusionadas/retiradas → redirigen a Cartera (summary)
+  if (t === 'projects' || t === 'eval') t = 'summary';
 
   // Track where we're coming FROM (needed to detect manual eval → summary)
   previousStep = currentStep;
@@ -18,7 +21,7 @@ function goStep(t) {
     if (!area) { toast('⚠ Selecciona un área antes de continuar'); document.getElementById('f-area')?.focus(); return; }
   }
 
-  const SPECIAL = ['summary','charts','pools','config','projects','eval','sprint','dashboard','wiki','planning','closed','admin'];
+  const SPECIAL = ['summary','charts','pools','config','sprint','dashboard','wiki','planning','closed','admin'];
   const isSpecial = SPECIAL.includes(t);
   const idx = isSpecial ? null : parseInt(t);
 
@@ -111,7 +114,74 @@ function refreshChartsStep() {
   if(empty) empty.style.display='none';
   if(content) content.style.display='block';
   renderAnalyticsKPIs();
+  renderStrategicValue();
   renderCharts2();
+}
+
+// ══════════ VALOR ESTRATÉGICO EN ESPERA ══════════
+function renderStrategicValue(){
+  const grid=document.getElementById('an-strategic-grid');
+  const note=document.getElementById('an-strategic-note');
+  if(!grid) return;
+  const P=(Array.isArray(portfolioData)?portfolioData:[])
+    .filter(p=> !(typeof isProjClosed==='function'&&isProjClosed(p)));
+
+  // Capacidad por pool (slots de proyectos). Si no hay equipo configurado, cap=0.
+  let cap={corto:0,medio:0,largo:0};
+  if(typeof getDevCapacity==='function'){ try{ cap=getDevCapacity(); }catch(e){} }
+  const thr=(typeof getThr==='function')?getThr():{s:10,m:50};
+
+  // Proyectos con horas, ordenados por score dentro de cada pool
+  const withH=P.filter(p=>p.horas!=null&&p.horas>0);
+  const pools={ S:{cap:cap.corto, list:[]}, M:{cap:cap.medio, list:[]}, L:{cap:cap.largo, list:[]} };
+  withH.forEach(p=>{ const k=getPool(p); if(pools[k]) pools[k].list.push(p); });
+  Object.keys(pools).forEach(k=>pools[k].list.sort((a,b)=>(b.sf||0)-(a.sf||0)));
+
+  // "En espera" = los que quedan por debajo del corte de capacidad en su pool
+  let waiting=[];
+  Object.keys(pools).forEach(k=>{ const {cap:c,list}=pools[k]; waiting=waiting.concat(list.slice(c)); });
+
+  // Métricas de valor (no de tiempo)
+  const isHighValue=p=>{ const c=(typeof clsf==='function')?clsf(p.sf||0):{}; return (p.sf||0)>=6 || (c.et&&/ALTA|PRIORITARIO/.test(c.et)); };
+  const highWaiting=waiting.filter(isHighValue);
+  // valor estratégico congelado: suma de score de lo que espera (proxy de valor)
+  const frozenScore=waiting.reduce((s,p)=>s+(p.sf||0),0);
+  const frozenHighScore=highWaiting.reduce((s,p)=>s+(p.sf||0),0);
+  // D2 (estrategia) medio de lo que espera vs lo que entra
+  const entering=[]; Object.keys(pools).forEach(k=>{ entering.push(...pools[k].list.slice(0,pools[k].cap)); });
+  const avgD2=(arr)=>{ const v=arr.filter(p=>Array.isArray(p.dimScores)).map(p=>p.dimScores[1]||0); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  const d2Wait=avgD2(waiting), d2In=avgD2(entering);
+  // horas de valor congeladas
+  const frozenHours=waiting.reduce((s,p)=>s+(p.horas||0),0);
+
+  const totalCapSlots=cap.corto+cap.medio+cap.largo;
+
+  const cards=[
+    { k:'Iniciativas de alto valor bloqueadas', v:highWaiting.length, sub:'score ≥ 6 o alta prioridad, sin arrancar', tone:'red' },
+    { k:'Valor estratégico congelado', v:frozenHighScore.toFixed(0), sub:'suma de score de lo bloqueado de alto valor', tone:'red' },
+    { k:'Total iniciativas en espera', v:waiting.length, sub:'por debajo del corte de capacidad', tone:'amber' },
+    { k:'Horas de valor congeladas', v:frozenHours?frozenHours.toLocaleString('es-ES'):'—', sub:'esfuerzo de lo que no puede empezar', tone:'amber' },
+    { k:'Estrategia media · espera', v:d2Wait!=null?d2Wait.toFixed(1):'—', sub:'D2 de lo bloqueado (vs '+(d2In!=null?d2In.toFixed(1):'—')+' de lo que entra)', tone:'navy' },
+    { k:'Capacidad actual', v:totalCapSlots||'—', sub:'slots de proyecto del equipo', tone:'cyan' },
+  ];
+  grid.innerHTML=cards.map(c=>
+    '<div class="an-kpi an-kpi--'+c.tone+'">'
+    +'<div class="an-kpi-k">'+c.k+'</div>'
+    +'<div class="an-kpi-v">'+c.v+'</div>'
+    +'<div class="an-kpi-sub">'+c.sub+'</div></div>'
+  ).join('');
+
+  if(note){
+    if(totalCapSlots===0){
+      note.innerHTML='⚠ No hay capacidad de equipo configurada (Config → equipo). Sin ella, "en espera" asume que no cabe nada. Configúrala para que estas cifras reflejen el déficit real.';
+    } else if(highWaiting.length>0){
+      note.innerHTML='<b>Lectura para dirección:</b> hay <b>'+highWaiting.length+' iniciativas de alto valor estratégico</b> que no pueden arrancar con la capacidad actual'
+        + (d2Wait!=null&&d2In!=null&&d2Wait>=d2In? ', y de hecho lo que espera tiene una prioridad estratégica media ('+d2Wait.toFixed(1)+') igual o superior a lo que sí se ejecuta ('+d2In.toFixed(1)+'). ':'. ')
+        + 'Ese valor permanece congelado hasta que se amplíe el equipo.';
+    } else {
+      note.innerHTML='La capacidad actual absorbe las iniciativas de alto valor. El valor en espera corresponde a prioridad media o baja.';
+    }
+  }
 }
 
 // ══════════ KPIs del sistema de validación (dashboard analítico) ══════════

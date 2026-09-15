@@ -307,6 +307,10 @@ function renderSprintScreen() {
   const fMedios = fullSorted.filter(p => p.horas >= thrS && p.horas < thrM);
   const fLargos = fullSorted.filter(p => p.horas >= thrM);
 
+  // Barra de totales por pool (arriba, como en Pools)
+  var _ptb = document.getElementById('sprint-pool-totals');
+  if (_ptb && typeof poolTotalsBarHTML === 'function') _ptb.innerHTML = poolTotalsBarHTML(fullSorted);
+
   // Mapas absolutos: orden dentro del pool y estado en-marcha (independientes del filtro)
   const ordMap = {}, activeMap = {};
   [[fCortos, cap.corto], [fMedios, cap.medio], [fLargos, cap.largo]].forEach(function(t){
@@ -1199,6 +1203,7 @@ function renderSprintSnapshotView() {
         +'<div style="font-size:10px;color:#A0A09C;margin-top:4px;font-style:italic">Los proyectos en <b style="color:#1A1A1A">negrita</b> son los que están actualmente en marcha</div></div>'
         +'<div style="font-size:11px;background:rgba(14,124,134,.16);color:#0E7C86;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
       +'</div></div>'
+    +(typeof poolTotalsBarHTML==='function' ? poolTotalsBarHTML(fullSorted) : '')
     +(function(){
         var ge = snap.globalEnd;
         if (!ge) {
@@ -1328,6 +1333,36 @@ var _closedCharts = { dept: null, hours: null };
 // Departamento de un proyecto (área, con fallback)
 function _closedDept(p) {
   return (p.area && String(p.area).trim()) || (p.adoIteration && String(p.adoIteration).trim()) || 'Sin departamento';
+}
+
+// ══════════ Barra de totales por pool (reutilizable: En marcha + Directores) ══════════
+function poolTotalsBarHTML(projects){
+  var t={S:{n:0,h:0},M:{n:0,h:0},L:{n:0,h:0}};
+  (projects||[]).forEach(function(p){
+    var k=getPool(p); if(!k||!t[k]) return;
+    t[k].n++; t[k].h+=(parseFloat(p.horas)||0);
+  });
+  var defs=[
+    {k:'L',name:'Largo',color:'#1E4E8C',bg:'#EBF1F9'},
+    {k:'M',name:'Medio',color:'#0E9CA8',bg:'#E7F6F8'},
+    {k:'S',name:'Corto',color:'#0E9C6A',bg:'#E9F7F1'},
+  ];
+  var total=t.S.n+t.M.n+t.L.n;
+  var cards=defs.map(function(d){
+    var c=t[d.k];
+    return '<div style="flex:1;min-width:110px;background:'+d.bg+';border:1px solid '+d.color+'22;border-top:3px solid '+d.color+';border-radius:10px;padding:12px 14px">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="width:8px;height:8px;border-radius:50%;background:'+d.color+'"></span>'
+      + '<span style="font-size:9px;font-weight:700;color:'+d.color+';letter-spacing:.08em;text-transform:uppercase">'+d.name+'</span></div>'
+      + '<div style="font-size:28px;font-weight:300;color:'+d.color+';line-height:1">'+c.n+'</div>'
+      + '<div style="font-size:9px;color:var(--ink4);margin-top:2px">'+(c.h>0?c.h.toLocaleString('es-ES')+' h':'—')+'</div>'
+      + '</div>';
+  }).join('');
+  var totalCard='<div style="flex:1;min-width:110px;background:linear-gradient(135deg,#0C2247,#0B1F3A);border-top:3px solid #5FC5D1;border-radius:10px;padding:12px 14px">'
+    + '<div style="font-size:9px;font-weight:700;color:#8FB4D8;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Total</div>'
+    + '<div style="font-size:28px;font-weight:300;color:#fff;line-height:1">'+total+'</div>'
+    + '<div style="font-size:9px;color:#8FB4D8;margin-top:2px">'+(t.S.h+t.M.h+t.L.h).toLocaleString('es-ES')+' h totales</div>'
+    + '</div>';
+  return '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">'+totalCard+cards+'</div>';
 }
 
 // ══════════ MEDIA DE CIERRE POR SEMANA / MES ══════════

@@ -353,34 +353,11 @@
 
     <div class="lnav-divider"></div>
 
-    <div class="lnav-group-label">1 · Cartera</div>
+    <div class="lnav-group-label">Cartera</div>
     <div class="lnav-group">
-      <div class="lnav-item" id="nav-projects" onclick="goStep('projects')" title="Proyectos">
+      <div class="lnav-item" id="nav-sum" onclick="goStep('summary')" title="Cartera de proyectos">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="7" x2="14" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="10.5" x2="14" y2="10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="6" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-        <span class="lnav-label">Proyectos</span>
-      </div>
-      <div class="lnav-item" id="nav-eval" onclick="goStep('eval')" title="Evaluar">
-        <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <span class="lnav-label">Evaluar</span>
-      </div>
-    </div>
-
-    <div class="lnav-divider"></div>
-
-    <div class="lnav-group-label">2 · Priorización</div>
-    <div class="lnav-group">
-      <div class="lnav-item" id="nav-sum" onclick="goStep('summary')" title="Resumen">
-        <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-        <span class="lnav-label">Resumen</span>
-      </div>
-      <div class="lnav-item" id="nav-closed" onclick="goStep('closed')" title="Proyectos cerrados">
-        <div class="lnav-icon">
-          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
-            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M6.5 10l2.2 2.2L14 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <span class="lnav-label">Cerrados</span>
+        <span class="lnav-label">Cartera</span>
       </div>
       <div class="lnav-item" id="nav-charts" onclick="goStep('charts')" title="Análisis">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 14l4-5 4 3 4-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="14" r="1.5" fill="currentColor"/><circle cx="7" cy="9" r="1.5" fill="currentColor"/><circle cx="11" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/></svg></div>
@@ -394,13 +371,12 @@
 
     <div class="lnav-divider"></div>
 
-    <div class="lnav-group-label">3 · Ejecución</div>
+    <div class="lnav-group-label">Ejecución</div>
     <div class="lnav-group">
       <div class="lnav-item" id="nav-sprint" onclick="goStep('sprint')" title="En marcha">
         <div class="lnav-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M3 10l5 5 9-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <span class="lnav-label">En marcha</span>
       </div>
-
       <div class="lnav-item" id="nav-planning" onclick="goStep('planning')" title="Planificación">
         <div class="lnav-icon">
           <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
@@ -409,7 +385,16 @@
             <path d="M2 7h16" stroke="currentColor" stroke-width="1.2" opacity=".4"/>
           </svg>
         </div>
-        <span class="lnav-label">Plan.</span>
+        <span class="lnav-label">Planificación</span>
+      </div>
+      <div class="lnav-item" id="nav-closed" onclick="goStep('closed')" title="Proyectos cerrados">
+        <div class="lnav-icon">
+          <svg viewBox="0 0 20 20" fill="none" width="20" height="20">
+            <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6.5 10l2.2 2.2L14 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="lnav-label">Cerrados</span>
       </div>
     </div>
 
@@ -636,6 +621,14 @@
 
   <!-- ══════════ CONTENIDO ══════════ -->
   <div id="charts-step-content" style="display:none">
+
+    <!-- ── VALOR ESTRATÉGICO EN ESPERA (palanca para pedir recursos) ── -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:16px;font-weight:700;color:#0B1F3A">Valor estratégico en espera</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">Iniciativas valiosas que no pueden arrancar por falta de capacidad · argumento para dimensionar el equipo</div>
+    </div>
+    <div class="an-kpi-grid" id="an-strategic-grid" style="margin-bottom:14px"></div>
+    <div id="an-strategic-note" style="font-size:11px;color:var(--ink3);background:#F4F6F9;border-left:3px solid #0E9CA8;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:24px"></div>
 
     <!-- ── KPIs DEL SISTEMA DE VALIDACIÓN ── -->
     <div class="an-kpi-grid" id="an-kpi-grid"></div>
@@ -1847,151 +1840,6 @@
 
 </div>
 
-<div class="step" id="step-projects">
-  <div class="s-title">Proyectos</div>
-  <div class="s-sub">Carga proyectos desde distintas fuentes para evaluarlos y gestionarlos</div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:24px 0">
-
-    <!-- Card: Excel -->
-    <div class="cfg-section" style="cursor:pointer" onclick="document.getElementById('excel-file-input').click()">
-      <div style="font-size:28px;margin-bottom:10px">📊</div>
-      <div class="cfg-sec-title">Importar Excel</div>
-      <div class="cfg-sec-sub">Sube un fichero .xlsx con proyectos. Columnas: nombre, área, sponsor, fecha…</div>
-      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none"
-        onchange="loadExcel(this)">
-      <button class="cfg-apply" style="margin-top:12px;width:100%" onclick="event.stopPropagation();document.getElementById('excel-file-input').click()">
-        ↑ Subir Excel
-      </button>
-    </div>
-
-    <!-- Card: Azure DevOps -->
-    <div class="cfg-section" style="cursor:pointer" onclick="goStep('config')">
-      <div style="font-size:28px;margin-bottom:10px">☁</div>
-      <div class="cfg-sec-title">Azure DevOps</div>
-      <div class="cfg-sec-sub">Conecta con tu proyecto ADO y carga work items desde una query existente.</div>
-      <button class="cfg-apply" style="margin-top:12px;width:100%;background:#0078D4"
-        onclick="event.stopPropagation();goStep('config')">
-        Configurar ADO →
-      </button>
-    </div>
-
-    <!-- Card: Manual -->
-    <div class="cfg-section">
-      <div style="font-size:28px;margin-bottom:10px">✏️</div>
-      <div class="cfg-sec-title">Proyecto manual</div>
-      <div class="cfg-sec-sub">Crea un proyecto nuevo directamente con nombre, área y datos básicos.</div>
-      <button class="cfg-apply" style="margin-top:12px;width:100%;background:var(--d3)"
-        onclick="startManualEval()">
-        ✏ Crear y evaluar proyecto
-      </button>
-    </div>
-  </div>
-
-  <!-- Current portfolio summary -->
-  <div class="cfg-section">
-    <div class="cfg-sec-title">Proyectos cargados</div>
-    <div id="projects-screen-count" style="font-size:13px;color:var(--ink3);margin:8px 0">
-      Sin proyectos cargados
-    </div>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      <button class="cfg-apply" onclick="goStep('eval')" style="background:var(--d5)">
-        → Ir a evaluar
-      </button>
-      <button class="cfg-apply" onclick="goStep('summary')" style="background:var(--ink3)">
-        Ver cartera
-      </button>
-      <button class="cfg-apply cfg-reset" id="btn-clear-projects" onclick="clearPortfolio()" style="display:none">
-        ✕ Limpiar todo
-      </button>
-    </div>
-  </div>
-
-  <!-- Loading banner for DV -->
-  <div id="dv-loading-banner-proj" style="display:none;padding:10px 16px;border-radius:8px;margin-top:12px;font-size:11px;font-weight:600;background:var(--d5t);color:var(--d5);align-items:center;gap:8px">
-    <div style="width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:spin .6s linear infinite;flex-shrink:0"></div>
-    <span id="dv-loading-msg-proj">Cargando de Dataverse…</span>
-  </div>
-</div>
-
-
-<!-- ═══ EVAL SCREEN ════════════════════════════════════════════ -->
-<div class="step" id="step-eval">
-
-  <!-- ── Sticky toolbar ── -->
-  <div style="display:flex;align-items:center;justify-content:space-between;
-    flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:30;
-    background:#fff;padding:10px 0 8px;border-bottom:1px solid #EBEBEB;margin-bottom:14px">
-    <div>
-      <div class="s-title" style="margin:0">Evaluación de Proyectos</div>
-      <div class="s-sub" style="margin:0">Puntúa criterio a criterio · guarda en cartera · sincroniza con ADO</div>
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button onclick="openNewProjectModal()" class="cfg-apply"
-        style="background:#087B50;font-size:10px;padding:7px 14px;border-radius:7px">
-        + Nuevo proyecto
-      </button>
-      <button onclick="aiReevaluateAll()" class="cfg-apply"
-        style="background:#742774;font-size:10px;padding:7px 14px;border-radius:7px"
-        title="Re-evalúa toda la cartera con el motor de reglas IA (respeta los editados manualmente)">
-        ⚡ Re-evaluar cartera con IA
-      </button>
-      <button onclick="aiReevaluateAllForce()" class="cfg-apply cfg-reset"
-        style="font-size:10px;padding:7px 12px;border-radius:7px"
-        title="Re-evalúa TODO incluyendo los proyectos editados manualmente">
-        ↻ Forzar todo
-      </button>
-      <button onclick="adoSyncAllScores()" id="ado-sync-all-btn"
-        style="padding:7px 14px;font-size:10px;font-weight:700;border-radius:7px;
-               border:1.5px solid #1848A0;background:#EEF3FC;color:#1848A0;cursor:pointer"
-        onmouseover="this.style.background='#1848A0';this.style.color='#fff'"
-        onmouseout="this.style.background='#EEF3FC';this.style.color='#1848A0'">
-        ↑ Guardar todos en ADO
-      </button>
-    </div>
-  </div>
-
-  <!-- ── Active project banner (shown when a project is loaded) ── -->
-  <div id="eval-project-banner" style="display:none;
-    background:linear-gradient(135deg,#F7F7F5,#fff);
-    border:1.5px solid #EBEBEB;border-radius:10px;
-    padding:12px 16px;margin-bottom:14px;
-    box-shadow:0 2px 8px rgba(0,0,0,.04)">
-  </div>
-
-  <!-- ── Project selector: pick from portfolio ── -->
-  <div class="cfg-section" style="margin-bottom:14px">
-    <div class="cfg-sec-title">① Seleccionar proyecto para evaluar</div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-      <select id="eval-project-select"
-        style="flex:1;min-width:280px;padding:9px 12px;font-size:11px;
-               border:1.5px solid #DEDEDE;border-radius:7px;background:#fff;
-               font-family:inherit;outline:none"
-        onfocus="this.style.borderColor='#0E9CA8'" onblur="this.style.borderColor='#DEDEDE'"
-        onchange="evalSelectProject(this.value)">
-        <option value="">— Selecciona un proyecto de la cartera —</option>
-      </select>
-      <button onclick="evalSelectProject(document.getElementById('eval-project-select').value)"
-        style="padding:9px 18px;font-size:10px;font-weight:700;border-radius:7px;
-               border:none;background:#111;color:#fff;cursor:pointer">
-        Cargar →
-      </button>
-      <button onclick="startManualEval()"
-        style="padding:9px 14px;font-size:10px;font-weight:600;border-radius:7px;
-               border:1.5px solid #DEDEDE;background:#fff;color:#666;cursor:pointer">
-        ✏ Proyecto nuevo
-      </button>
-    </div>
-    <!-- Quick stats -->
-    <div id="eval-pending-list" style="margin-top:10px;font-size:10px;color:#888"></div>
-  </div>
-
-  <!-- ── The manual evaluation wizard (existing) ── -->
-  <div id="eval-wizard-wrap">
-    <!-- The wizard content is rendered by the existing scoring engine below -->
-  </div>
-</div>
-
 <div class="step" id="step-sprint">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
     <div class="s-title" style="margin:0">En marcha</div>
@@ -2005,6 +1853,9 @@
     
   </div>
   <div class="s-sub">Proyectos asignados al equipo · capacidad por pool · en curso</div>
+
+  <!-- Totales de proyectos en marcha por pool -->
+  <div id="sprint-pool-totals" style="margin-top:16px"></div>
 
   <!-- ── SPRINT TAB ──────────────────────────────────────── -->
   <div id="sprint-tab">
