@@ -115,7 +115,123 @@ function refreshChartsStep() {
   if(content) content.style.display='block';
   renderAnalyticsKPIs();
   renderStrategicValue();
+  renderVelocityFlow();
   renderCharts2();
+}
+
+// ══════════ VELOCIDAD Y CAPACIDAD DE ABSORCIÓN ══════════
+function _velClosedDate(p){ var d=p.adoClosedDate||p.adoCreatedDate; if(!d) return null; var t=new Date(d); return isNaN(t.getTime())?null:t; }
+function _velOpenDate(p){ var d=p.adoCreatedDate; if(!d) return null; var t=new Date(d); return isNaN(t.getTime())?null:t; }
+function _velMonthStart(d){ var x=new Date(d); x.setHours(0,0,0,0); x.setDate(1); return x; }
+function _velMonthLabel(d){ var m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return m[d.getMonth()]+' '+String(d.getFullYear()).slice(2); }
+
+// Umbrales de nivel (proyectos/mes) — configurables; por defecto razonables
+function getVelocityThresholds(){
+  try{
+    var s=localStorage.getItem('meso_velocity_thr');
+    if(s){ var o=JSON.parse(s); if(o&&o.mid&&o.high) return o; }
+  }catch(e){}
+  return { mid:2, high:5 }; // <2/mes bajo · 2–5 medio · >5 alto (editable en Config)
+}
+
+function renderVelocityFlow(){
+  var P=(Array.isArray(portfolioData)?portfolioData:[]);
+  var now=new Date();
+
+  // ── Ritmo real de cierre (últimos 6 meses) ──
+  var m6=new Date(now.getFullYear(),now.getMonth()-6,now.getDate());
+  var closedRecent=P.filter(function(p){ var d=_velClosedDate(p); return isProjClosed(p)&&d&&d>=m6; });
+  var closePerMonth=closedRecent.length/6;
+
+  // ── Óptimo = capacidad del equipo (slots por mes) ──
+  var cap={corto:0,medio:0,largo:0};
+  if(typeof getDevCapacity==='function'){ try{ cap=getDevCapacity(); }catch(e){} }
+  var optPerMonth=cap.corto+cap.medio+cap.largo; // slots simultáneos ≈ objetivo mensual de referencia
+  var eff = optPerMonth>0 ? Math.round(closePerMonth/optPerMonth*100) : null;
+
+  // ── Apertura vs cierre (últimos 6 meses) ──
+  var openRecent=P.filter(function(p){ var d=_velOpenDate(p); return d&&d>=m6; });
+  var openPerMonth=openRecent.length/6;
+  var net=openPerMonth-closePerMonth; // >0 → la demanda crece
+  var backlogOpen=P.filter(function(p){ return !isProjClosed(p); }).length;
+
+  // KPIs
+  var netColor = net>0.3 ? 'red' : (net<-0.3 ? 'green' : 'amber');
+  var effColor = eff==null?'navy':(eff>=90?'green':(eff>=60?'amber':'red'));
+  var cards=[
+    { k:'Ritmo de cierre', v:closePerMonth.toFixed(1), sub:'proyectos cerrados / mes (últ. 6m)', tone:'navy' },
+    { k:'Óptimo del equipo', v:optPerMonth||'—', sub:'capacidad configurada / mes', tone:'cyan' },
+    { k:'Eficiencia vs óptimo', v:eff!=null?eff+'%':'—', sub:'ritmo real ÷ óptimo', tone:effColor, bar:eff },
+    { k:'Ritmo de apertura', v:openPerMonth.toFixed(1), sub:'proyectos abiertos / mes (últ. 6m)', tone:'navy' },
+    { k:'Balance neto', v:(net>0?'+':'')+net.toFixed(1), sub:net>0?'entran más de los que salen':'se absorbe la demanda', tone:netColor },
+    { k:'Backlog abierto', v:backlogOpen, sub:'proyectos sin cerrar acumulados', tone:net>0?'red':'amber' },
+  ];
+  var grid=document.getElementById('an-velocity-grid');
+  if(grid) grid.innerHTML=cards.map(function(c){
+    var bar=(c.bar!=null&&!isNaN(c.bar))?'<div class="an-kpi-bar"><span style="width:'+Math.max(0,Math.min(100,c.bar))+'%"></span></div>':'';
+    return '<div class="an-kpi an-kpi--'+c.tone+'"><div class="an-kpi-k">'+c.k+'</div><div class="an-kpi-v">'+c.v+'</div><div class="an-kpi-sub">'+c.sub+'</div>'+bar+'</div>';
+  }).join('');
+
+  renderFlowChart(P);
+  renderMaturityGauge(closePerMonth, net);
+}
+
+// Gráfica de flujo abiertos/cerrados + backlog acumulado (SVG)
+function renderFlowChart(P){
+  var host=document.getElementById('an-flow-chart'); if(!host) return;
+  var now=new Date(), m0=_velMonthStart(now), buckets=[];
+  for(var i=5;i>=0;i--){ var d=new Date(m0.getFullYear(),m0.getMonth()-i,1); buckets.push({start:d.getTime(),label:_velMonthLabel(d)}); }
+  var opened=buckets.map(function(){return 0;}), closed=buckets.map(function(){return 0;});
+  P.forEach(function(p){
+    var od=_velOpenDate(p); if(od){ var b=_velMonthStart(od).getTime(); for(var k=0;k<buckets.length;k++){ if(b===buckets[k].start){opened[k]++;break;} } }
+    var cd=(isProjClosed(p)?_velClosedDate(p):null); if(cd){ var b2=_velMonthStart(cd).getTime(); for(var k2=0;k2<buckets.length;k2++){ if(b2===buckets[k2].start){closed[k2]++;break;} } }
+  });
+  // backlog acumulado aproximado: parte del backlog actual y retrocede
+  var backlogNow=P.filter(function(p){return !isProjClosed(p);}).length;
+  var backlog=[]; var run=backlogNow;
+  for(var j=buckets.length-1;j>=0;j--){ backlog[j]=run; run=run-opened[j]+closed[j]; }
+  var maxBar=Math.max(1,Math.max.apply(null,opened.concat(closed)));
+  var maxBl=Math.max(1,Math.max.apply(null,backlog));
+  var W=760,H=230,pad=34,gap=(W-pad*2)/buckets.length,bw=gap*0.28;
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible">';
+  svg+='<line x1="'+pad+'" y1="'+(H-26)+'" x2="'+(W-pad)+'" y2="'+(H-26)+'" stroke="#D8DCE3" stroke-width="1"/>';
+  // barras
+  for(var w=0;w<buckets.length;w++){
+    var cx=pad+gap*w+gap/2;
+    var ho=(opened[w]/maxBar)*(H-60), hc=(closed[w]/maxBar)*(H-60);
+    svg+='<rect x="'+(cx-bw-2).toFixed(1)+'" y="'+(H-26-ho).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+ho.toFixed(1)+'" fill="#C0392B" rx="1"><title>Abiertos: '+opened[w]+'</title></rect>';
+    svg+='<rect x="'+(cx+2).toFixed(1)+'" y="'+(H-26-hc).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hc.toFixed(1)+'" fill="#0E9C6A" rx="1"><title>Cerrados: '+closed[w]+'</title></rect>';
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle" font-size="9" fill="#6A6A70">'+buckets[w].label+'</text>';
+  }
+  // línea backlog
+  var pts=backlog.map(function(v,w){ var cx=pad+gap*w+gap/2; var y=(H-26)-(v/maxBl)*(H-60); return cx.toFixed(1)+','+y.toFixed(1); });
+  svg+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#1E4E8C" stroke-width="2.5"/>';
+  backlog.forEach(function(v,w){ var cx=pad+gap*w+gap/2; var y=(H-26)-(v/maxBl)*(H-60); svg+='<circle cx="'+cx.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="#1E4E8C"/><text x="'+cx.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#1E4E8C">'+v+'</text>'; });
+  svg+='</svg>';
+  host.innerHTML=svg;
+}
+
+// Medidor de nivel (bajo/medio/alto) con umbrales configurables
+function renderMaturityGauge(closePerMonth, net){
+  var host=document.getElementById('an-maturity'); if(!host) return;
+  var thr=getVelocityThresholds();
+  var level, color, pct;
+  if(closePerMonth < thr.mid){ level='Bajo'; color='#C0392B'; pct=25; }
+  else if(closePerMonth < thr.high){ level='Medio'; color='#C07800'; pct=58; }
+  else { level='Alto'; color='#0A7A50'; pct=88; }
+  host.innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">'
+    +'<div><div style="font-size:13px;font-weight:700;color:#0B1F3A">Nivel de velocidad de implantación</div>'
+    +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">según umbrales definidos por el equipo · '+thr.mid+' y '+thr.high+' proyectos/mes</div></div>'
+    +'<div style="font-size:22px;font-weight:700;color:'+color+'">'+level+'</div></div>'
+    +'<div style="position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,#C0392B 0%,#C0392B 33%,#C07800 33%,#C07800 66%,#0A7A50 66%,#0A7A50 100%);margin:8px 0 6px">'
+    +'<div style="position:absolute;top:-5px;left:'+pct+'%;transform:translateX(-50%);width:4px;height:20px;background:#0B1F3A;border-radius:2px;box-shadow:0 0 0 2px #fff"></div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:.04em"><span>Bajo</span><span>Medio</span><span>Alto</span></div>'
+    +'<div style="font-size:11px;color:var(--ink3);margin-top:12px;padding-top:12px;border-top:1px solid var(--b)">'
+    +'Ritmo actual: <b style="color:#0B1F3A">'+closePerMonth.toFixed(1)+' proyectos/mes</b>. '
+    +(net>0.3?'<b style="color:#C0392B">La demanda crece más rápido de lo que se absorbe</b>: el backlog aumentará si no se amplía la capacidad.':(net<-0.3?'El equipo absorbe la demanda actual con margen.':'La apertura y el cierre están equilibrados.'))
+    +'</div>'
+    +'<div style="font-size:9px;color:var(--ink4);margin-top:8px;font-style:italic">Los umbrales de nivel los define el equipo (no existe un estándar mundial único comparable); ajústalos según los objetivos internos o un benchmark propio con fuente.</div>';
 }
 
 // ══════════ VALOR ESTRATÉGICO EN ESPERA ══════════

@@ -28,6 +28,30 @@
     <div class="an-kpi-grid" id="an-strategic-grid" style="margin-bottom:14px"></div>
     <div id="an-strategic-note" style="font-size:11px;color:var(--ink3);background:#F4F6F9;border-left:3px solid #0E9CA8;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:24px"></div>
 
+    <!-- ── VELOCIDAD Y CAPACIDAD DE ABSORCIÓN ── -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:16px;font-weight:700;color:#0B1F3A">Velocidad y capacidad de absorción</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">Ritmo de ejecución frente al óptimo del equipo · si la demanda crece más rápido de lo que se cierra, aparece en rojo</div>
+    </div>
+    <div class="an-kpi-grid" id="an-velocity-grid" style="margin-bottom:16px"></div>
+
+    <!-- Gráfica de flujo abiertos vs cerrados -->
+    <div style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sh)">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:#0B1F3A">Flujo de la cartera · abiertos vs. cerrados</div>
+        <div style="font-size:10px;color:var(--ink4)">últimos 6 meses · la línea muestra el backlog acumulado</div>
+      </div>
+      <div id="an-flow-chart"></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--b)">
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#C0392B"></span>Abiertos (entran)</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#0E9C6A"></span>Cerrados (salen)</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink3)"><span style="width:14px;height:3px;background:#1E4E8C"></span>Backlog acumulado</span>
+      </div>
+    </div>
+
+    <!-- Medidor de nivel de velocidad -->
+    <div id="an-maturity" style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px 20px;margin-bottom:24px;box-shadow:var(--sh)"></div>
+
     <!-- ── KPIs DEL SISTEMA DE VALIDACIÓN ── -->
     <div class="an-kpi-grid" id="an-kpi-grid"></div>
 
