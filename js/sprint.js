@@ -392,7 +392,7 @@ function renderSprintScreen() {
         onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${nomClean}')))">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
           <span style="font-size:8px;background:#7A5AF0;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>
-          <span style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif;line-height:1">
+          <span style="font-size:14px;font-weight:600;color:${scColorHex(p.sf||0)};line-height:1">
             ${(p.sf||0).toFixed(1)}
           </span>
         </div>
@@ -417,98 +417,74 @@ function renderSprintScreen() {
     const cl = clsf(p.sf || 0);
     const _isP1 = parseInt(p.adoPriority) === 1;   // Prioridad 1 de ADO → marcado en rojo
     const border = _isP1 ? '2px solid #CC1F26' : (isActive ? '2px solid var(--d3)' : '1px dashed var(--b2)');
-    const opacity = isActive ? '1' : '0.65';
+    const opacity = isActive ? '1' : '0.6';
     const _enCurso = !!(p.adoStartDate && String(p.adoStartDate).trim() !== '');
-    const tag = _enCurso
-      ? '<span style="font-size:8px;background:#087B50;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🟢 EN CURSO</span>'
+    const statusTag = _enCurso
+      ? '<span class="spc-tag spc-tag--live">En curso</span>'
       : (isActive
-        ? '<span style="font-size:8px;background:var(--d3);color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">EN MARCHA</span>'
-        : '<span style="font-size:8px;background:var(--surf);color:var(--ink4);padding:2px 6px;border-radius:20px">PRÓXIMO</span>');
+        ? '<span class="spc-tag spc-tag--active">En marcha</span>'
+        : '<span class="spc-tag spc-tag--next">Próximo</span>');
+    var _fechasHTML = (function(){
+      var hoy = new Date(); hoy.setHours(0,0,0,0);
+      var adoStart = (p.adoStartDate && String(p.adoStartDate).trim()!=='') ? new Date(p.adoStartDate) : null;
+      if (adoStart && isNaN(+adoStart)) adoStart = null;
+      var yaEmpezado = adoStart && adoStart <= hoy;
+      var iniLabel, iniFecha;
+      if (adoStart) { iniLabel = yaEmpezado ? 'En curso desde' : 'Inicio est.'; iniFecha = pFmt(adoStart); }
+      else { iniLabel = 'Inicio est.'; iniFecha = _startDates[p.nom] ? pFmt(_startDates[p.nom]) : '\u2014'; }
+      var adoTarget = (p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? new Date(p.adoTargetDate) : null;
+      if (adoTarget && isNaN(+adoTarget)) adoTarget = null;
+      var pinned = isPlanPinned(p.nom);
+      var entLabel = adoTarget ? 'Target ADO' : 'Entrega est.';
+      var entFecha = adoTarget ? pFmt(adoTarget) : (_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '\u2014');
+      var pinBadge = pinned ? '<span class="spc-pin-badge">fijada</span>' : '';
+      return '<div class="spc-dates">'
+        + '<div class="spc-date-row"><span class="spc-date-lbl">'+iniLabel+'</span><span class="spc-date-val">'+iniFecha+'</span></div>'
+        + '<div class="spc-date-row"><span class="spc-date-lbl">'+entLabel+'</span><span class="spc-date-val spc-date-val--end">'+entFecha+' '+pinBadge+'</span></div>'
+        + '</div>';
+    })();
+    var _devHTML = (_devByProj[p.nom] && _devByProj[p.nom].name) ? (
+      '<div class="spc-meta-row">'
+      + '<span class="spc-meta-lbl">'+(_devByProj[p.nom].manual?'Dev fijado':'Dev asignado')+'</span>'
+      + '<span class="spc-meta-val">'+_devByProj[p.nom].name+'</span>'
+      + '<span onclick="event.stopPropagation();togglePlanPin(\''+p.nom.replace(/'/g,"\\'")+'\')" '
+      +   'title="'+(isPlanPinned(p.nom)?'Liberar fecha':'Fijar fecha')+'" class="spc-pin-toggle">'+(isPlanPinned(p.nom)?'\ud83d\udccc':'\ud83d\udccd')+'</span>'
+      + '</div>') : '';
+    var _accHTML = p.adoAcceptedBy ? (
+      '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>') : '';
+
     return `
-      <div style="padding:10px 12px;background:${_isP1?'#FFF7F6':'#fff'};border-radius:8px;border:${border};
-        cursor:pointer;opacity:${opacity};margin-bottom:6px"
+      <div class="spc-card${_isP1?' spc-card--p1':''}${isActive?'':' spc-card--next'}" style="opacity:${opacity}"
         title="${_liveTip(p, isActive)}"
-        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\'")}')))">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-          <div style="display:flex;gap:4px;align-items:center">
-            ${tag}
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:14px;font-weight:900;color:${scColorHex(p.sf||0)};font-family:'Playfair Display',serif;line-height:1">
-              ${(p.sf||0).toFixed(1)}
-            </div>
-            ${ordNum ? `<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden ${ordNum}</div>` : ''}
+        onclick="openProjectEdit(portfolioData.indexOf(portfolioData.find(x=>x.nom==='${p.nom.replace(/'/g,"\\'")}')))">
+        <div class="spc-top">
+          ${statusTag}
+          <div class="spc-score-wrap">
+            <span class="spc-score" style="color:${scColorHex(p.sf||0)}">${(p.sf||0).toFixed(1)}</span>
+            ${ordNum ? `<span class="spc-order">#${ordNum}</span>` : ''}
           </div>
         </div>
-        <div style="font-size:10px;font-weight:700;color:var(--ink);
-          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px" title="${p.nom}">
-          ${p.nom}
+        <div class="spc-name" title="${p.nom}">${p.nom}</div>
+        <div class="spc-info">
+          <span class="spc-area">${p.area||'\u2014'}</span>
+          <span class="spc-hours">${p.horas}h</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-size:9px;color:var(--ink3)">${p.area||'—'}</span>
-          <span style="font-size:8px;padding:2px 6px;border-radius:20px;
-            background:${cl.bg||'var(--surf)'};color:${cl.c||'var(--ink3)'}">${cl.et||'—'}</span>
-          <span style="font-size:9px;color:var(--ink3)">${p.horas}h</span>
-        </div>
-        ${(function(){
-          // Fecha de inicio: MPG Start Date de ADO manda, pero puede ser a FUTURO.
-          // Si ya ha empezado (fecha <= hoy) → "En curso desde"; si es a futuro → "Inicio est."
-          var hoy = new Date(); hoy.setHours(0,0,0,0);
-          var adoStart = (p.adoStartDate && String(p.adoStartDate).trim()!=='') ? new Date(p.adoStartDate) : null;
-          if (adoStart && isNaN(+adoStart)) adoStart = null;
-          var yaEmpezado = adoStart && adoStart <= hoy;
-          var iniLabel, iniColor, iniFecha;
-          if (adoStart) {
-            iniLabel = yaEmpezado ? '🟢 En curso desde:' : '📅 Inicio est.:';
-            iniColor = yaEmpezado ? 'var(--d3)' : 'var(--ink3)';
-            iniFecha = pFmt(adoStart);
-          } else {
-            iniLabel = isActive ? '🟢 Inicio:' : '📅 Inicio est.:';
-            iniColor = isActive ? 'var(--d3)' : 'var(--ink3)';
-            iniFecha = _startDates[p.nom] ? pFmt(_startDates[p.nom]) : '—';
-          }
-          // Entrega: si ADO tiene Target Date, esa manda; si no, la estimada del planificador.
-          var adoTarget = (p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? new Date(p.adoTargetDate) : null;
-          if (adoTarget && isNaN(+adoTarget)) adoTarget = null;
-          var entLabel = adoTarget ? '🎯 Target ADO:' : ('📦 Entrega est.:' + (isPlanPinned(p.nom)?' <span style="color:#0E7C86">🔒 fijada</span>':''));
-          var entColor = adoTarget ? '#B03A2E' : 'var(--ink)';
-          var entFecha = adoTarget ? pFmt(adoTarget) : (_endDates[p.nom] ? pFmt(_endDates[p.nom]) : '—');
-          return '<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
-              +'<span style="font-size:8px;color:var(--ink4)">'+iniLabel+'</span>'
-              +'<span style="font-size:9px;font-weight:700;color:'+iniColor+'">'+iniFecha+'</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:5px;padding-top:3px">'
-              +'<span style="font-size:8px;color:var(--ink4)">'+entLabel+'</span>'
-              +'<span style="font-size:9px;font-weight:800;color:'+entColor+'">'+entFecha+'</span>'
-            +'</div>';
-        })()}
-        ${_devByProj[p.nom] && _devByProj[p.nom].name ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
-          <span style="font-size:8px;color:var(--ink4)">${_devByProj[p.nom].manual?'📌 Dev fijado:':'👤 Dev asignado:'}</span>
-          <span style="font-size:9px;font-weight:700;color:#2E5B9A">${_devByProj[p.nom].name}</span>
-          <span onclick="event.stopPropagation();togglePlanPin('${p.nom.replace(/'/g,"\\'")}')"
-            title="${isPlanPinned(p.nom)?'Liberar fecha (volverá a recalcularse)':'Fijar esta fecha (no se moverá al replanificar)'}"
-            style="margin-left:auto;cursor:pointer;font-size:11px;user-select:none">${isPlanPinned(p.nom)?'📌':'📍'}</span>
-        </div>` : ''}
-        ${p.adoAcceptedBy ? `<div style="display:flex;align-items:center;gap:5px;padding-top:3px">
-          <span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>
-          <span style="font-size:9px;font-weight:700;color:#087B50">${p.adoAcceptedBy}</span>
-        </div>` : ''}
+        ${_fechasHTML}
+        ${_devHTML}
+        ${_accHTML}
       </div>`;
   };
 
   const renderCol = (active, next, capN) => {
     if (!active.length && !next.length) {
-      return '<div style="font-size:10px;color:var(--ink4);text-align:center;padding:20px 0">Sin proyectos</div>';
+      return '<div class="sp-empty">Sin proyectos</div>';
     }
     const slots = Array(Math.max(capN, active.length)).fill(null).map((_, i) => {
       if (i < active.length) return renderCard(active[i], true, ordMap[active[i].nom]);
-      return `<div style="padding:10px 12px;border:1px dashed var(--b2);border-radius:8px;
-        text-align:center;font-size:9px;color:var(--ink4);opacity:0.4">Hueco libre</div>`;
+      return `<div class="spc-slot-empty">Hueco libre</div>`;
     });
     const nextCards = next.map(p => renderCard(p, false, ordMap[p.nom]));
-    const sep = nextCards.length
-      ? '<div style="font-size:8px;color:var(--ink4);text-align:center;margin:8px 0;letter-spacing:.1em;text-transform:uppercase">· próximos ·</div>'
-      : '';
+    const sep = nextCards.length ? '<div class="sp-next-sep">Próximos</div>' : '';
     return slots.join('') + sep + nextCards.join('');
   };
 
@@ -688,7 +664,7 @@ function renderDashboard() {
         return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--b);cursor:pointer" onclick="goStep('summary')">
           <div style="font-size:11px;font-weight:700;color:var(--ink4);width:16px;flex-shrink:0">${i+1}</div>
           <div style="flex:1;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nom}">${p.nom}</div>
-          <div style="font-size:13px;font-weight:900;color:${c};font-family:'Playfair Display',serif">${(p.sf||0).toFixed(1)}</div>
+          <div style="font-size:13px;font-weight:600;color:${c}">${(p.sf||0).toFixed(1)}</div>
         </div>`;
       }).join('');
     }
@@ -925,7 +901,7 @@ function renderPriorityAnalysis() {
         +'<div style="font-size:10px;font-weight:700;color:#1C2B4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.nom+'</div>'
         +'<div style="font-size:8px;color:#999">'+(p.area||'—')+'</div>'
       +'</div>'
-      +'<div style="text-align:center"><span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf||0)+';font-family:\'Playfair Display\',serif">'+(p.sf||0).toFixed(1)+'</span></div>'
+      +'<div style="text-align:center"><span style="font-size:13px;font-weight:600;color:'+scColorHex(p.sf||0)+'">'+(p.sf||0).toFixed(1)+'</span></div>'
       +'<div style="text-align:center;font-size:10px;color:#666">'+(p.horas!=null?p.horas+'h':'—')+'</div>'
       +'<div style="text-align:center;font-size:9px;color:#666">'+(pk?poolTag(pk):'—')+'</div>'
       +'<div style="text-align:center;font-size:9px;font-weight:700;color:'+(bad?'#CC1F26':'#087B50')+'">'
@@ -1139,69 +1115,55 @@ function renderSprintSnapshotView() {
     return t;
   };
   const card = (p, active, ordNum)=>{
-    const cl = clsf(p.sf);
-    return '<div style="padding:10px 12px;background:#fff;border-radius:8px;border:'
-      +(active?'1.5px solid #1A1A1A':'1px solid #E5E5E3')+';margin-bottom:6px;opacity:'+(active?'1':'0.65')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
-        +'<div style="display:flex;gap:4px;align-items:center">'
-          +'<span style="font-size:8px;background:'+(active?'#1A1A1A':'#F2F2F0')+';color:'+(active?'#fff':'#8A8A86')+';padding:2px 6px;border-radius:20px;font-weight:700">'+(active?'EN MARCHA':'PRÓXIMO')+'</span>'
-        +'</div>'
-        +'<div style="text-align:right"><div style="font-size:14px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif;line-height:1">'+((p.sf)||0).toFixed(1)+'</div>'+(ordNum?'<div style="font-size:8px;color:var(--ink4);font-weight:700;margin-top:2px">orden '+ordNum+'</div>':'')+'</div>'
+    var st = p.adoStart ? new Date(p.adoStart) : null; if (st && isNaN(+st)) st = null;
+    var hoy=new Date();hoy.setHours(0,0,0,0);
+    var yaEmp = st && st <= hoy;
+    var iniLbl = st ? (yaEmp?'En curso desde':'Inicio est.') : 'Inicio est.';
+    var iniF = st ? pf(+st) : pf(p.start);
+    var tg = p.adoTarget ? new Date(p.adoTarget) : null; if (tg && isNaN(+tg)) tg = null;
+    var entLbl = tg?'Target ADO':'Entrega est.';
+    var entF = tg ? pf(+tg) : (p.end ? pf(+new Date(p.end)) : '\u2014');
+    var statusTag = active
+      ? '<span class="spc-tag spc-tag--active">En marcha</span>'
+      : '<span class="spc-tag spc-tag--next">En cola</span>';
+    var accHTML = p.adoAcceptedBy
+      ? '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>' : '';
+    return '<div class="spc-card'+(active?'':' spc-card--next')+'" style="opacity:'+(active?'1':'0.6')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
+      +'<div class="spc-top">'+statusTag
+        +'<div class="spc-score-wrap"><span class="spc-score" style="color:'+scColorHex(p.sf)+'">'+((p.sf)||0).toFixed(1)+'</span>'+(ordNum?'<span class="spc-order">#'+ordNum+'</span>':'')+'</div>'
       +'</div>'
-      +'<div style="font-size:10px;font-weight:'+(active?'800':'400')+';color:var(--ink);margin-bottom:3px">'+p.nom+'</div>'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-        +'<span style="font-size:9px;color:var(--ink3)">'+(p.area||'—')+'</span>'
-        +'<span style="font-size:11px;font-weight:700;color:var(--ink3)">'+p.horas+'h</span>'
+      +'<div class="spc-name" title="'+p.nom+'">'+p.nom+'</div>'
+      +'<div class="spc-info"><span class="spc-area">'+(p.area||'\u2014')+'</span><span class="spc-hours">'+p.horas+'h</span></div>'
+      +'<div class="spc-dates">'
+        +'<div class="spc-date-row"><span class="spc-date-lbl">'+iniLbl+'</span><span class="spc-date-val">'+iniF+'</span></div>'
+        +'<div class="spc-date-row"><span class="spc-date-lbl">'+entLbl+'</span><span class="spc-date-val spc-date-val--end">'+entF+'</span></div>'
       +'</div>'
-      +(function(){
-          var hoy=new Date();hoy.setHours(0,0,0,0);
-          var st = p.adoStart ? new Date(p.adoStart) : null;
-          if (st && isNaN(+st)) st = null;
-          var yaEmp = st && st <= hoy;
-          var iniLbl, iniCol, iniF;
-          if (st) { iniLbl = yaEmp?'🟢 En curso desde:':'📅 Inicio est.:'; iniCol = yaEmp?'#0E7C86':'#0B1F3A'; iniF = pf(+st); }
-          else { iniLbl = active?'🟢 Inicio:':'📅 Inicio est.:'; iniCol = active?'#0E7C86':'#0B1F3A'; iniF = pf(p.start); }
-          var tg = p.adoTarget ? new Date(p.adoTarget) : null;
-          if (tg && isNaN(+tg)) tg = null;
-          var entLbl = tg?'🎯 Target ADO:':'📦 Entrega est.:';
-          var entCol = tg?'#B03A2E':'#1A1A1A';
-          var entF = tg ? pf(+tg) : (p.end ? pf(+new Date(p.end)) : '—');
-          return '<div style="display:flex;align-items:center;gap:5px;padding-top:4px;border-top:1px solid var(--b2)">'
-              +'<span style="font-size:8px;color:var(--ink4)">'+iniLbl+'</span>'
-              +'<span style="font-size:11px;font-weight:800;color:'+iniCol+'">'+iniF+'</span>'
-            +'</div>'
-            +'<div style="display:flex;align-items:center;gap:5px;padding-top:3px">'
-              +'<span style="font-size:8px;color:var(--ink4)">'+entLbl+'</span>'
-              +'<span style="font-size:10px;font-weight:800;color:'+entCol+'">'+entF+'</span>'
-            +'</div>';
-        })()
-      +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
-        +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
-        +'<span style="font-size:9px;font-weight:700;color:#087B50">'+p.adoAcceptedBy+'</span>'
-      +'</div>':'')
+      +accHTML
       +'</div>';
   };
 
   const col = (title, arr, color, poolKey)=>{
     const active = arr.filter(p=>enMarcha.has(p.nom));
     const next = arr.filter(p=>!enMarcha.has(p.nom));
-    return '<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:800;color:'+color+';margin-bottom:8px;text-transform:uppercase">'+title+' ('+arr.length+')</div>'
+    return '<div class="sp-col">'
+      +'<div class="sp-col-header"><span class="sp-col-dot" style="background:'+color+'"></span>'
+        +'<span class="sp-col-name" style="color:'+color+'">'+title+'</span>'
+        +'<span class="sp-col-count" style="background:'+color+'18;color:'+color+'">'+arr.length+'</span></div>'
       +active.map(p=>card(p,true,ordMap[p.nom])).join('')
-      +(next.length?'<div style="font-size:9px;color:var(--ink4);margin:8px 0 6px;text-transform:uppercase">En cola ('+next.length+')</div>':'')
-      +next.map(p=>card(p,false,ordMap[p.nom])).join('')   // TODOS los de la cola, sin recortar
+      +(next.length?'<div class="sp-next-sep">En cola ('+next.length+')</div>':'')
+      +next.map(p=>card(p,false,ordMap[p.nom])).join('')
       +'</div>';
   };
 
   const fecha = new Date(snap.ts).toLocaleString('es-ES',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   cont.innerHTML =
-    '<div style="background:#fff;color:#1A1A1A;padding:20px 22px;border:1px solid #E5E5E3;border-bottom:3px solid #0E9CA8;border-radius:10px;margin-bottom:16px">'
-      +'<div style="font-size:15px;font-weight:800;letter-spacing:.01em;color:#1A1A1A;margin-bottom:8px">mesoestetic<span style="font-size:9px;vertical-align:super">®</span></div>'
-      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
-        +'<div><div style="font-size:20px;font-weight:300;letter-spacing:-.01em;color:#1A1A1A">Proyectos digitales de eficiencia y optimización de operativa</div>'
-        +'<div style="font-size:11px;color:#8A8A86;margin-top:2px">Vista compartida · snapshot del '+fecha+'</div>'
-        +'<div style="font-size:10px;color:#A0A09C;margin-top:4px;font-style:italic">Los proyectos en <b style="color:#1A1A1A">negrita</b> son los que están actualmente en marcha</div></div>'
-        +'<div style="font-size:11px;background:rgba(14,124,134,.16);color:#0E7C86;padding:6px 12px;border-radius:20px;font-weight:700">SOLO LECTURA</div>'
+    '<div class="dv-head">'
+      +'<div class="dv-brand">mesoestetic<span class="dv-brand-r">®</span></div>'
+      +'<div class="dv-head-row">'
+        +'<div><div class="dv-head-title">Proyectos digitales de eficiencia y optimización de operativa</div>'
+        +'<div class="dv-head-sub">Vista compartida · snapshot del '+fecha+'</div>'
+        +'<div class="dv-head-note">Los proyectos <b>en marcha</b> aparecen destacados; los demás están en cola</div></div>'
+        +'<div class="dv-readonly">Solo lectura</div>'
       +'</div></div>'
     +(typeof poolTotalsBarHTML==='function' ? poolTotalsBarHTML(fullSorted) : '')
     +(function(){
@@ -1214,8 +1176,8 @@ function renderSprintSnapshotView() {
         if (!ge) return '';
         const d=new Date(ge);
         const weeks=Math.max(0,Math.ceil((ge-Date.now())/(7*86400000)));
-        return '<div style="padding:10px 14px;background:#E7F6F8;border:1px solid #B7E3E7;border-radius:8px;margin-bottom:14px;font-size:11px;color:#1A1A1A">'
-          +'📅 Próximo día libre del equipo: <b style="font-size:13px">'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
+        return '<div class="dv-freeday">'
+          +'Próximo día libre del equipo: <b>'+d.toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})+'</b>'
           +' <span style="color:#0B7C86;font-size:9px">· hay proyectos planificados hasta esa fecha ('+weeks+' semanas)</span>'
         +'</div>';
       })()
@@ -1262,7 +1224,7 @@ function renderSprintSnapshotView() {
           return '<div style="padding:9px 11px;background:#FAF7F2;border:2px solid #0E9CA8;border-radius:8px;margin-bottom:6px">'
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">'
               +'<span style="font-size:8px;background:#0E9CA8;color:#fff;padding:2px 6px;border-radius:20px;font-weight:700">🚀 PRÓXIMAMENTE</span>'
-              +'<span style="font-size:13px;font-weight:900;color:'+scColorHex(p.sf)+';font-family:\'Playfair Display\',serif">'+((p.sf)||0).toFixed(1)+'</span>'
+              +'<span style="font-size:13px;font-weight:600;color:'+scColorHex(p.sf)+'">'+((p.sf)||0).toFixed(1)+'</span>'
             +'</div>'
             +'<div style="font-size:10px;font-weight:700;color:var(--ink);margin-bottom:4px">'+p.nom+'</div>'
             +'<div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">'
