@@ -2051,6 +2051,25 @@ function resetCfgPools() {
   syncThresholds('s',30); toast('Pools restaurados');
 }
 
+// ── Precio/hora (parámetro económico configurable) ──
+function getHourRate() {
+  try { var v = parseFloat(localStorage.getItem('meso_hour_rate')); if (!isNaN(v) && v>0) return v; } catch(e){}
+  return 80; // defecto: 80 €/h
+}
+function applyCfgHourRate() {
+  var el = document.getElementById('cfg-hour-rate');
+  var v = el ? parseFloat(el.value) : 80;
+  if (isNaN(v) || v<0) { toast('Precio/hora no válido'); return; }
+  try { localStorage.setItem('meso_hour_rate', String(v)); } catch(e){}
+  if (typeof toast==='function') toast('✓ Precio/hora guardado: '+v+' €');
+  // refrescar KPIs si estamos en análisis
+  if (typeof renderVelocityFlow==='function') { try{ renderEconomics(); }catch(e){} }
+}
+function loadHourRateField() {
+  var el = document.getElementById('cfg-hour-rate');
+  if (el) el.value = getHourRate();
+}
+
 /* upd() — clean version, only touches DOM that exists in wizard */
 function upd() {
   updateRegCountdown();

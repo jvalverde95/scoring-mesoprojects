@@ -654,6 +654,14 @@
     <!-- Medidor de nivel de velocidad -->
     <div id="an-maturity" style="background:var(--w);border:1px solid var(--b);border-radius:12px;padding:18px 20px;margin-bottom:24px;box-shadow:var(--sh)"></div>
 
+    <!-- ── VALORACIÓN ECONÓMICA ── -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:16px;font-weight:700;color:#0B1F3A">Valoración económica</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px" id="an-econ-sub">Importe de proyectos según precio/hora configurado</div>
+    </div>
+    <div class="an-kpi-grid" id="an-econ-grid" style="margin-bottom:16px"></div>
+    <div id="an-econ-note" style="font-size:11px;color:var(--ink3);background:#F4F6F9;border-left:3px solid #0E9CA8;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:24px"></div>
+
     <!-- ── KPIs DEL SISTEMA DE VALIDACIÓN ── -->
     <div class="an-kpi-grid" id="an-kpi-grid"></div>
 
@@ -968,6 +976,22 @@
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="cfg-apply" onclick="applyCfgPools()">✓ Aplicar umbrales pools</button>
           <button class="cfg-apply cfg-reset" onclick="resetCfgPools()">↺ Restaurar defecto</button>
+        </div>
+      </div>
+
+      <!-- Precio/hora para KPIs económicos -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">valoración económica</div>
+        <div class="cfg-sec-sub">Precio por hora usado para calcular el importe de los proyectos en la pantalla de Análisis.</div>
+        <div class="cfg-row">
+          <div class="cfg-field">
+            <label>Precio por hora (€)</label>
+            <input type="number" class="cfg-inp" id="cfg-hour-rate" value="80" min="0" step="1">
+            <div class="cfg-note">Se aplica a las horas de cada proyecto para estimar su importe</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="cfg-apply" onclick="applyCfgHourRate()">✓ Guardar precio/hora</button>
         </div>
       </div>
 

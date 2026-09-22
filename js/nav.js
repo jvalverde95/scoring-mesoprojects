@@ -63,7 +63,7 @@ function goStep(t) {
     if (t === 'charts')   refreshChartsStep();
     if (t === 'pools')    refreshPoolsStep();
     if (t === 'config') {
-      if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows(); if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays();
+      if(typeof renderConfigStep==='function') renderConfigStep(); if(typeof renderDevRows==='function') renderDevRows(); if(typeof renderAlgoParams==='function') renderAlgoParams(); if(typeof initOverdueDays==='function') initOverdueDays(); if(typeof loadHourRateField==='function') loadHourRateField();
       var _sk=document.getElementById('cfg-share-key'); if(_sk && typeof getShareKey==='function') _sk.value=getShareKey();
       var _ps=document.getElementById('pub-status'); if(_ps){var _t=localStorage.getItem('nexus_last_publish'); _ps.textContent=_t?('Última publicación: '+new Date(+_t).toLocaleString('es-ES')):'Sin publicaciones aún';}
       var _ss=document.getElementById('saved-status'); if(_ss && typeof loadPortfolioLocal==='function'){var _d=loadPortfolioLocal(); _ss.textContent=_d?('Guardado: '+_d.portfolio.length+' proyectos · '+new Date(_d.savedAt).toLocaleString('es-ES')):'Sin datos guardados';}
@@ -116,7 +116,60 @@ function refreshChartsStep() {
   renderAnalyticsKPIs();
   renderStrategicValue();
   renderVelocityFlow();
+  renderEconomics();
   renderCharts2();
+}
+
+// ══════════ VALORACIÓN ECONÓMICA ══════════
+function _eur(n){
+  if(n==null||isNaN(n)) return '—';
+  if(n>=1000000) return (n/1000000).toFixed(2).replace('.',',')+' M€';
+  if(n>=1000) return Math.round(n).toLocaleString('es-ES')+' €';
+  return Math.round(n)+' €';
+}
+function renderEconomics(){
+  var grid=document.getElementById('an-econ-grid'); if(!grid) return;
+  var rate=(typeof getHourRate==='function')?getHourRate():80;
+  var P=(Array.isArray(portfolioData)?portfolioData:[]);
+
+  var closed=P.filter(function(p){ return isProjClosed(p); });
+  var open=P.filter(function(p){ return !isProjClosed(p); });
+
+  var hClosed=closed.reduce(function(s,p){ return s+(parseFloat(p.horas)||0); },0);
+  var hOpen=open.reduce(function(s,p){ return s+(parseFloat(p.horas)||0); },0);
+  var impClosed=hClosed*rate, impOpen=hOpen*rate;
+
+  // importe pendiente de alto valor (score>=6)
+  var openHigh=open.filter(function(p){ return (p.sf||0)>=6; });
+  var hOpenHigh=openHigh.reduce(function(s,p){ return s+(parseFloat(p.horas)||0); },0);
+  var impOpenHigh=hOpenHigh*rate;
+
+  // importe cerrado últimos 6 meses (valor entregado reciente)
+  var now=new Date(), m6=new Date(now.getFullYear(),now.getMonth()-6,now.getDate());
+  var closed6=closed.filter(function(p){ var d=p.adoClosedDate?new Date(p.adoClosedDate):null; return d&&!isNaN(+d)&&d>=m6; });
+  var imp6=closed6.reduce(function(s,p){ return s+(parseFloat(p.horas)||0); },0)*rate;
+
+  var cards=[
+    { k:'Importe realizado', v:_eur(impClosed), sub:closed.length+' proyectos cerrados · '+hClosed.toLocaleString('es-ES')+' h', tone:'green' },
+    { k:'Valor entregado (6m)', v:_eur(imp6), sub:closed6.length+' cerrados en los últimos 6 meses', tone:'cyan' },
+    { k:'Importe pendiente', v:_eur(impOpen), sub:open.length+' proyectos abiertos · '+hOpen.toLocaleString('es-ES')+' h', tone:'amber' },
+    { k:'Pendiente de alto valor', v:_eur(impOpenHigh), sub:openHigh.length+' proyectos score ≥ 6 sin ejecutar', tone:'red' },
+    { k:'Horas pendientes', v:hOpen?hOpen.toLocaleString('es-ES')+' h':'—', sub:'esfuerzo total de la cola abierta', tone:'navy' },
+    { k:'Precio/hora aplicado', v:rate+' €', sub:'configurable en Config → valoración', tone:'navy' },
+  ];
+  grid.innerHTML=cards.map(function(c){
+    return '<div class="an-kpi an-kpi--'+c.tone+'"><div class="an-kpi-k">'+c.k+'</div><div class="an-kpi-v">'+c.v+'</div><div class="an-kpi-sub">'+c.sub+'</div></div>';
+  }).join('');
+
+  var sub=document.getElementById('an-econ-sub');
+  if(sub) sub.textContent='Importe de proyectos a '+rate+' €/hora · realizado vs. pendiente en la cola';
+
+  var note=document.getElementById('an-econ-note');
+  if(note){
+    note.innerHTML='<b>Lectura económica:</b> hay <b>'+_eur(impOpen)+'</b> de trabajo pendiente en la cola'
+      + (impOpenHigh>0? ', de los cuales <b style="color:#C0392B">'+_eur(impOpenHigh)+' corresponden a iniciativas de alto valor</b> que no pueden arrancar con la capacidad actual':'')
+      + '. Frente a ello, el equipo ha entregado <b>'+_eur(imp6)+'</b> en los últimos 6 meses. La diferencia dimensiona el retorno de ampliar el equipo.';
+  }
 }
 
 // ══════════ VELOCIDAD Y CAPACIDAD DE ABSORCIÓN ══════════

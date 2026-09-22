@@ -2129,11 +2129,15 @@ input:focus,select:focus,textarea:focus,.ado-field:focus,.cfg-field:focus{
 .sp-next-sep{font-size:9px;color:#9BAAC2;text-align:center;margin:10px 0 4px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
 
 /* ── Tarjeta de proyecto ── */
-.spc-card{padding:13px 14px;background:#fff;border-radius:11px;border:1px solid #E2E7EF;
+/* Base = EN MARCHA (activo): fondo turquesa suave + filete cyan a la izquierda */
+.spc-card{padding:13px 14px;background:#F1FAFB;border-radius:11px;border:1px solid #CDEAED;
+  border-left:3px solid #0E9CA8;
   cursor:pointer;transition:box-shadow .15s,transform .15s,border-color .15s}
-.spc-card:hover{box-shadow:0 4px 16px rgba(11,31,58,.10);transform:translateY(-1px);border-color:#5FC5D1}
+.spc-card:hover{box-shadow:0 4px 16px rgba(11,31,58,.10);transform:translateY(-1px);border-color:#5FC5D1;border-left-color:#0E9CA8}
 .spc-card--p1{border-left:3px solid #C0392B}
-.spc-card--next{border-style:dashed}
+/* PRÓXIMO (no en marcha): fondo blanco apagado, borde discontinuo gris, sin filete de color */
+.spc-card--next{background:#FBFCFD;border:1px dashed #D8DCE3;border-left:1px dashed #D8DCE3;opacity:.72}
+.spc-card--next:hover{opacity:1;border-color:#5FC5D1}
 .spc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .spc-tag{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
 .spc-tag--live{background:#E9F7F1;color:#0A7A50}

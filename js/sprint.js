@@ -1234,7 +1234,7 @@ function renderSprintSnapshotView() {
             +'</div>'
             +'<div style="display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px solid #E8DCC8">'
               +'<span style="font-size:8px;color:var(--ink4)">⏳ Pendiente de:</span>'
-              +'<span style="font-size:9px;font-weight:800;color:#0E7C86">'+pend+'</span>'
+              +'<span style="font-size:9px;font-weight:700;color:#0E7C86">'+pend+'</span>'
             +'</div>'
             +(p.adoAcceptedBy?'<div style="display:flex;align-items:center;gap:5px;padding-top:4px">'
               +'<span style="font-size:8px;color:var(--ink4)">✓ Aceptado por:</span>'
@@ -1253,7 +1253,7 @@ function renderSprintSnapshotView() {
             +'style="display:flex;align-items:center;gap:10px;margin-bottom:'+(window._snapProxHidden?'0':'14px')+';cursor:pointer;user-select:none;'
               +'background:#FAF7F2;border:1.5px solid #E8DCC8;border-left:4px solid #0E9CA8;border-radius:10px;padding:13px 16px;transition:all .18s">'
             +'<div style="width:12px;height:12px;border-radius:50%;background:#0E9CA8;flex-shrink:0"></div>'
-            +'<div style="font-weight:800;font-size:18px;color:#0E7C86;letter-spacing:-.01em">🚀 Próximamente en PRO</div>'
+            +'<div style="font-weight:600;font-size:18px;color:#0E7C86;letter-spacing:-.01em">Próximamente en PRO</div>'
             +'<div style="font-size:11px;font-weight:700;color:#fff;background:#0E9CA8;border-radius:20px;padding:2px 9px;flex-shrink:0">'+prox.length+'</div>'
             +'<div style="font-size:10px;color:#A8905C;display:none" class="_pxsub">— Prioridad 1 en fase avanzada</div>'
             +'<div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">'
@@ -1270,7 +1270,7 @@ function renderSprintSnapshotView() {
               +'</div>'
               : '<div style="font-size:10px;color:#A0A09C;padding:8px 0 4px">No hay proyectos de Prioridad 1 en fase avanzada ahora mismo.</div>'))
           +'<div style="border-top:2px solid #EEF0F4;margin:20px 0 6px"></div>'
-          +'<div style="font-weight:800;font-size:19px;color:#1A1A1A;margin-bottom:12px;letter-spacing:-.01em">🔧 En Marcha</div>'
+          +'<div style="font-weight:600;font-size:19px;color:#0B1F3A;margin-bottom:12px;letter-spacing:-.01em">En Marcha</div>'
         +'</div>';
       })()
     +'<div style="display:flex;gap:14px;align-items:flex-start">'

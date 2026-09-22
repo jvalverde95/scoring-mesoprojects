@@ -120,6 +120,22 @@
         </div>
       </div>
 
+      <!-- Precio/hora para KPIs económicos -->
+      <div class="cfg-section">
+        <div class="cfg-sec-title">valoración económica</div>
+        <div class="cfg-sec-sub">Precio por hora usado para calcular el importe de los proyectos en la pantalla de Análisis.</div>
+        <div class="cfg-row">
+          <div class="cfg-field">
+            <label>Precio por hora (€)</label>
+            <input type="number" class="cfg-inp" id="cfg-hour-rate" value="80" min="0" step="1">
+            <div class="cfg-note">Se aplica a las horas de cada proyecto para estimar su importe</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="cfg-apply" onclick="applyCfgHourRate()">✓ Guardar precio/hora</button>
+        </div>
+      </div>
+
       <!-- Azure DevOps connection section -->
       <div class="cfg-section" id="cfg-ado-section">
         <!-- Header -->
