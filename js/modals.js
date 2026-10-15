@@ -79,6 +79,28 @@ function pemSave() {
   else if (typeof renderPlanningSummary === 'function') renderPlanningSummary();
 }
 
+function pemDelete() {
+  const p = portfolioData[_pemIdx];
+  if (!p) return;
+  if (!confirm(`¿Eliminar "${p.nom}"?\n\nNo volverá a aparecer aunque se sincronice con Azure DevOps.`)) return;
+  // Registrar tombstone (no reaparece desde ADO ni al recargar) y persistir
+  if (typeof markDeleted === 'function') markDeleted(p);
+  portfolioData.splice(_pemIdx, 1);
+  if (typeof savePortfolio === 'function') savePortfolio();
+  // Cerrar modal y refrescar todas las vistas
+  const el = document.getElementById('proj-edit-overlay');
+  if (el) el.classList.remove('open');
+  if (typeof renderPortfolio === 'function') renderPortfolio();
+  if (typeof renderPools === 'function') renderPools();
+  if (typeof renderSprintScreen === 'function') renderSprintScreen();
+  if (typeof renderDashboard === 'function') renderDashboard();
+  if (typeof clearPlanningLocks === 'function') { try { clearPlanningLocks(); } catch(_){} }
+  if (typeof replanAndNotify === 'function') { try { replanAndNotify(); } catch(_){} }
+  if (typeof invalidatePlanCache === 'function') { try { invalidatePlanCache(); } catch(_){} }
+  if (typeof schedulePublish === 'function') { try { schedulePublish(); } catch(_){} }
+  if (typeof toast === 'function') toast(`✓ "${p.nom}" eliminado`);
+}
+
 function pemPrev() {
   if (_pemIdx > 0) { _pemIdx--; renderPemBody(); }
 }

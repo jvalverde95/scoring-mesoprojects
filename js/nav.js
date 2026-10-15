@@ -789,7 +789,7 @@ function enterApp() {
       } else {
         var d0 = JSON.parse(raw);
         if (d0 && d0.portfolio && d0.portfolio.length) {
-          portfolioData = d0.portfolio;
+          portfolioData = (typeof applyTombstones === 'function') ? applyTombstones(d0.portfolio) : d0.portfolio;
           if (d0.devTeam && d0.devTeam.length && typeof devTeam !== 'undefined') {
             devTeam = d0.devTeam;
             if (typeof saveDevTeam==='function') { try{saveDevTeam();}catch(_){} }
@@ -836,7 +836,7 @@ async function restoreLastPortfolio() {
         var d = loadPortfolioLocal();
         console.log('[restore] localStorage:', d ? (d.portfolio.length + ' proyectos') : 'vacío');
         if (d && d.portfolio && d.portfolio.length) {
-          portfolioData = d.portfolio;
+          portfolioData = (typeof applyTombstones === 'function') ? applyTombstones(d.portfolio) : d.portfolio;
           if (d.devTeam && d.devTeam.length && typeof devTeam !== 'undefined') { devTeam = d.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
           loadedLocal = true;
         }
@@ -859,7 +859,7 @@ async function restoreLastPortfolio() {
         var remoteAt = remote.publishedAt || 0;
         // Solo reemplaza si NO había local, o si el remoto es estrictamente más reciente
         if (!loadedLocal || remoteAt > localAt) {
-          portfolioData = remote.portfolio;
+          portfolioData = (typeof applyTombstones === 'function') ? applyTombstones(remote.portfolio) : remote.portfolio;
           if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') { devTeam = remote.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
           if (typeof savePortfolio === 'function') savePortfolio();
           _refreshAllViews();

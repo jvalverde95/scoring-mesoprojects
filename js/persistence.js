@@ -95,6 +95,19 @@ function unmarkDeleted(p) {
 function clearDeleted() {
   try { localStorage.removeItem(_DELETED_KEY); } catch(e) {}
 }
+// Filtra de una lista de proyectos los que el usuario marcó como eliminados.
+// Se aplica a CUALQUIER cartera que se restaure (local, remota o guardada),
+// para que un proyecto borrado no reaparezca venga de donde venga.
+function applyTombstones(list) {
+  if (!Array.isArray(list)) return list;
+  var del = getDeletedKeys();
+  if (!del.length) return list;
+  var out = list.filter(function(p){ return del.indexOf(_projKey(p)) === -1; });
+  if (out.length !== list.length) {
+    console.log('[tombstones] ocultados ' + (list.length - out.length) + ' proyecto(s) eliminado(s) al restaurar');
+  }
+  return out;
+}
 
 const _STORE_KEY = 'meso_scoring_cfg_v1';
 const _OBFUSCATE_SEED = 'meso2024scr';
