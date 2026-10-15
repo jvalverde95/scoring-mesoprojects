@@ -452,6 +452,11 @@ function renderSprintScreen() {
       + '</div>') : '';
     var _accHTML = p.adoAcceptedBy ? (
       '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>') : '';
+    var _adoUrl = (typeof adoWorkItemUrl === 'function') ? adoWorkItemUrl(p) : null;
+    var _adoLinkHTML = _adoUrl ? (
+      '<a class="spc-ado-link" href="'+_adoUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Abrir work item #'+p.adoId+' en Azure DevOps">'
+      + '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" style="vertical-align:-1px"><path d="M3 3h5M13 3v5M13 3L7 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      + 'Azure DevOps \u00b7 #'+p.adoId+'</a>') : '';
 
     return `
       <div class="spc-card${_isP1?' spc-card--p1':''}${isActive?'':' spc-card--next'}" style="opacity:${opacity}"
@@ -472,6 +477,7 @@ function renderSprintScreen() {
         ${_fechasHTML}
         ${_devHTML}
         ${_accHTML}
+        ${_adoLinkHTML}
       </div>`;
   };
 
@@ -969,7 +975,9 @@ function _buildSprintSnapshot() {
       adoState:p.adoState||'', adoAssigned:p.adoAssigned||'',    // estado y responsable
       adoAcceptedBy:p.adoAcceptedBy||'',                          // Aceptado por (CodeReview.AcceptedBy)
       adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null,
-      adoTarget:(p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? p.adoTargetDate : null };
+      adoTarget:(p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? p.adoTargetDate : null,
+      adoId:(p.adoId!=null?p.adoId:null),
+      adoUrl:(typeof adoWorkItemUrl==='function' ? adoWorkItemUrl(p) : null) };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre
   var freeSlots = {};
@@ -1128,6 +1136,12 @@ function renderSprintSnapshotView() {
       : '<span class="spc-tag spc-tag--next">En cola</span>';
     var accHTML = p.adoAcceptedBy
       ? '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>' : '';
+    var adoUrl = p.adoUrl || ((typeof adoWorkItemUrl==='function') ? adoWorkItemUrl(p) : null);
+    var adoLinkHTML = adoUrl
+      ? '<a class="spc-ado-link" href="'+adoUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Abrir work item '+(p.adoId?('#'+p.adoId):'')+' en Azure DevOps">'
+        + '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" style="vertical-align:-1px"><path d="M3 3h5M13 3v5M13 3L7 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        + 'Azure DevOps'+(p.adoId?(' \u00b7 #'+p.adoId):'')+'</a>'
+      : '';
     return '<div class="spc-card'+(active?'':' spc-card--next')+'" style="opacity:'+(active?'1':'0.6')+'" title="'+tipOf(p,active).replace(/"/g,'&quot;')+'">'
       +'<div class="spc-top">'+statusTag
         +'<div class="spc-score-wrap"><span class="spc-score" style="color:'+scColorHex(p.sf)+'">'+((p.sf)||0).toFixed(1)+'</span>'+(ordNum?'<span class="spc-order">#'+ordNum+'</span>':'')+'</div>'
@@ -1139,6 +1153,7 @@ function renderSprintSnapshotView() {
         +'<div class="spc-date-row"><span class="spc-date-lbl">'+entLbl+'</span><span class="spc-date-val spc-date-val--end">'+entF+'</span></div>'
       +'</div>'
       +accHTML
+      +adoLinkHTML
       +'</div>';
   };
 

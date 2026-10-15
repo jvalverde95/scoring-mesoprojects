@@ -40,8 +40,12 @@ function updateBulkDeleteBtn() {
 function dvDeleteOne(idx) {
   const p = portfolioData[idx];
   if (!p) return;
-  if (!confirm(`¿Eliminar "${p.nom}"?`)) return;
+  if (!confirm(`¿Eliminar "${p.nom}"?\n\nNo volverá a aparecer aunque se sincronice con Azure DevOps.`)) return;
+  // Registrar el borrado (tombstone) para que ADO no lo vuelva a añadir
+  if (typeof markDeleted === 'function') markDeleted(p);
   portfolioData.splice(idx, 1);
+  // Persistir inmediatamente para que no reaparezca al recargar
+  if (typeof savePortfolio === 'function') savePortfolio();
   renderPortfolio();
   renderPools();
   try { renderCharts(); } catch(_) {}
@@ -53,8 +57,12 @@ function dvDeleteOne(idx) {
 function dvDeleteSelected() {
   const selected = portfolioData.filter(p => p._selected);
   if (!selected.length) { toast('Selecciona proyectos para eliminar'); return; }
-  if (!confirm(`¿Eliminar ${selected.length} proyecto${selected.length>1?'s':''}?`)) return;
+  if (!confirm(`¿Eliminar ${selected.length} proyecto${selected.length>1?'s':''}?\n\nNo volverán a aparecer aunque se sincronice con Azure DevOps.`)) return;
+  // Registrar los borrados (tombstones) antes de quitarlos
+  if (typeof markDeleted === 'function') markDeleted(selected);
   portfolioData = portfolioData.filter(p => !p._selected);
+  // Persistir inmediatamente
+  if (typeof savePortfolio === 'function') savePortfolio();
   renderPortfolio();
   renderPools();
   try { renderCharts(); } catch(_) {}

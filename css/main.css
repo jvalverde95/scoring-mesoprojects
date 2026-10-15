@@ -2181,3 +2181,11 @@ input:focus,select:focus,textarea:focus,.ado-field:focus,.cfg-field:focus{
 .dv-readonly{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(95,197,209,.18);color:#5FC5D1;border:1px solid rgba(95,197,209,.4);padding:6px 14px;border-radius:20px;white-space:nowrap}
 .dv-freeday{padding:11px 15px;background:#E7F6F8;border:1px solid #B7E3E7;border-radius:10px;margin-bottom:16px;font-size:12px;color:#1C2B42}
 .dv-freeday b{font-size:13px;color:#0B7C86}
+
+/* ── Enlace al work item de Azure DevOps en las cards ── */
+.spc-ado-link{display:inline-flex;align-items:center;gap:5px;margin-top:9px;
+  font-size:10px;font-weight:600;color:#0B7C86;text-decoration:none;
+  background:#E7F6F8;border:1px solid #CDEAED;border-radius:7px;padding:4px 9px;
+  transition:background .15s,border-color .15s,color .15s}
+.spc-ado-link:hover{background:#0E9CA8;border-color:#0E9CA8;color:#fff}
+.spc-ado-link svg{flex-shrink:0}

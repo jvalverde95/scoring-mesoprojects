@@ -588,6 +588,36 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
     return proj;
   });
 
+  // ── TOMBSTONES: descartar los proyectos que el usuario eliminó ──
+  // Un proyecto borrado no debe reaparecer al sincronizar con ADO. Solo se permite
+  // "resucitarlo" cargándolo explícitamente desde Excel (origen _fromExcel), en cuyo
+  // caso se le quita la marca de borrado.
+  if (typeof getDeletedKeys === 'function') {
+    const _delKeys = getDeletedKeys();
+    if (_delKeys.length) {
+      const _keyOfInc = function(p){ return p.adoId != null ? ('id:'+p.adoId) : ('nom:'+(p.nom||'').trim().toLowerCase()); };
+      const _filtered = [];
+      let _blocked = 0;
+      incoming.forEach(function(np){
+        const k = _keyOfInc(np);
+        if (_delKeys.indexOf(k) !== -1) {
+          if (np._fromExcel) {
+            // El usuario lo recarga a propósito desde Excel → quitar tombstone
+            if (typeof unmarkDeleted === 'function') unmarkDeleted(np);
+            _filtered.push(np);
+          } else {
+            _blocked++;   // viene de ADO: bloquear, sigue borrado
+          }
+        } else {
+          _filtered.push(np);
+        }
+      });
+      if (_blocked) console.log('[tombstones] '+_blocked+' proyecto(s) eliminado(s) no se re-añadieron desde ADO');
+      incoming.length = 0;
+      Array.prototype.push.apply(incoming, _filtered);
+    }
+  }
+
   if (mergeMode && portfolioData.length) {
     // ── MERGE: actualiza coincidencias (por adoId o nombre), conserva el resto ──
     const keyOf = function(p){ return p.adoId != null ? ('id:'+p.adoId) : ('nom:'+(p.nom||'').trim().toLowerCase()); };

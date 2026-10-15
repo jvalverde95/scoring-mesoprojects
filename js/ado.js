@@ -689,6 +689,18 @@ const ADO_SCORE_FIELDS = {
 // Fallback for unknown types
 const ADO_SCORE_FIELD_DEFAULT = 'Custom.MPGScore';
 
+// Construye la URL al work item concreto en Azure DevOps.
+// https://dev.azure.com/{org}/{project}/_workitems/edit/{id}
+function adoWorkItemUrl(p) {
+  if (!p || p.adoId == null || p.adoId === '') return null;
+  var cfg = (typeof _readAdoCfgRaw === 'function') ? _readAdoCfgRaw() : null;
+  var org = cfg && cfg.org ? cfg.org : '';
+  var project = cfg && cfg.project ? cfg.project : '';
+  if (!org || !project) return null;
+  return 'https://dev.azure.com/' + encodeURIComponent(org) + '/' +
+         encodeURIComponent(project) + '/_workitems/edit/' + encodeURIComponent(p.adoId);
+}
+
 function adoScoreField(workItemType) {
   if (!workItemType) return ADO_SCORE_FIELD_DEFAULT;
   // Case-insensitive match

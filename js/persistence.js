@@ -55,6 +55,47 @@ function hasStoredPortfolio() {
   return !!loadPortfolioLocal();
 }
 
+/* ═══ TOMBSTONES — proyectos eliminados por el usuario ═══
+   Registra qué proyectos ha borrado el usuario para que NINGUNA sincronización
+   posterior con ADO los vuelva a añadir. Se guarda una clave estable por proyecto
+   (adoId si existe, si no el nombre normalizado). */
+var _DELETED_KEY = 'nexus_deleted_v1';
+function _projKey(p) {
+  if (!p) return '';
+  return (p.adoId != null && p.adoId !== '') ? ('id:' + p.adoId)
+       : ('nom:' + String(p.nom || '').trim().toLowerCase());
+}
+function getDeletedKeys() {
+  try {
+    var raw = localStorage.getItem(_DELETED_KEY);
+    if (!raw) return [];
+    var a = JSON.parse(raw);
+    return Array.isArray(a) ? a : [];
+  } catch(e) { return []; }
+}
+function isDeletedKey(k) {
+  if (!k) return false;
+  return getDeletedKeys().indexOf(k) !== -1;
+}
+function markDeleted(projects) {
+  if (!projects) return;
+  if (!Array.isArray(projects)) projects = [projects];
+  var set = getDeletedKeys();
+  projects.forEach(function(p){
+    var k = _projKey(p);
+    if (k && set.indexOf(k) === -1) set.push(k);
+  });
+  try { localStorage.setItem(_DELETED_KEY, JSON.stringify(set)); } catch(e) {}
+}
+function unmarkDeleted(p) {
+  var k = _projKey(p);
+  var set = getDeletedKeys().filter(function(x){ return x !== k; });
+  try { localStorage.setItem(_DELETED_KEY, JSON.stringify(set)); } catch(e) {}
+}
+function clearDeleted() {
+  try { localStorage.removeItem(_DELETED_KEY); } catch(e) {}
+}
+
 const _STORE_KEY = 'meso_scoring_cfg_v1';
 const _OBFUSCATE_SEED = 'meso2024scr';
 
