@@ -1,4 +1,15 @@
 /* ═══ PROJECT EDIT — renderPemBody ══════════════════════════ */
+// Dev que la app propone como responsable para un proyecto (de la planificación).
+function _pemAutoResp(p){
+  if(!p) return '';
+  try{
+    if(typeof planBuildTimeline==='function'){
+      var tl=planBuildTimeline();
+      for(var i=0;i<tl.length;i++){ if(tl[i].proj && tl[i].proj.nom===p.nom) return tl[i].devName||''; }
+    }
+  }catch(e){}
+  return '';
+}
 function renderPemBody(){
   const p=portfolioData[_pemIdx]; if(!p) return;
   const sf=p.sf||0, cl=clsf(sf);
@@ -18,7 +29,7 @@ function renderPemBody(){
   }).join('');
   const body=document.getElementById('pem-body'); if(!body) return;
   body.innerHTML=`<div class="pem-row"><div class="pem-field"><div class="pem-label">Nombre</div><input class="pem-inp" type="text" value="${p.nom.replace(/"/g,'&quot;')}" oninput="portfolioData[${_pemIdx}].nom=this.value"/></div><div class="pem-field"><div class="pem-label">Área</div><input class="pem-inp" type="text" value="${p.area||''}" list="mpg-area-list" oninput="portfolioData[${_pemIdx}].area=this.value"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Sponsor</div><input class="pem-inp" type="text" value="${p.sponsor||''}" oninput="portfolioData[${_pemIdx}].sponsor=this.value"/></div><div class="pem-field"><div class="pem-label">Horas estimadas</div><input class="pem-inp" type="number" min="1" value="${p.horas||''}" placeholder="horas" oninput="pemSetHoras(${_pemIdx},this.value)"/></div></div><div class="pem-row"><div class="pem-field"><div class="pem-label">Fecha de solicitud</div><input class="pem-inp" type="date" value="${p.reqDate||''}" oninput="portfolioData[${_pemIdx}].reqDate=this.value"/></div><div class="pem-field"><div class="pem-label">Clasificación</div><div style="padding:8px 11px;border-radius:6px;font-size:11px;font-weight:600;background:${cl.bg};color:${cl.c};border:1px solid ${cl.b}">${cl.et}</div></div></div>`
-    + `<div class="pem-row"><div class="pem-field"><div class="pem-label">Responsable del proyecto ${responsableIsManual(p)?'<span style="color:#0E9CA8;font-weight:700">· fijado</span>':'<span style="color:#9BAAC2">· automático</span>'}</div><div style="display:flex;gap:6px;align-items:center"><input class="pem-inp" type="text" value="${(p.responsable||'').replace(/"/g,'&quot;')}" placeholder="${(projResponsable(p)||'Sin asignar').replace(/"/g,'&quot;')} (auto)" oninput="portfolioData[${_pemIdx}].responsable=this.value" style="flex:1"/>${responsableIsManual(p)?`<button type="button" onclick="portfolioData[${_pemIdx}].responsable='';renderPemBody();" title="Volver al responsable automático (ADO)" style="padding:7px 10px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:10px;white-space:nowrap">↺ Auto</button>`:''}</div><div style="font-size:9px;color:#9BAAC2;margin-top:3px">Lo gestionas tú en la app · no se escribe en Azure DevOps</div></div><div class="pem-field"><div class="pem-label">Informativo (desde ADO)</div><div style="font-size:11px;color:var(--ink3);line-height:1.6;padding-top:3px">Asignado a: <b style="color:var(--ink)">${p.adoAssigned||'—'}</b><br>Aceptado por: <b style="color:var(--ink)">${p.adoAcceptedBy||'—'}</b></div></div></div>`
+    + `<div class="pem-row"><div class="pem-field"><div class="pem-label">Responsable del proyecto ${responsableIsManual(p)?'<span style="color:#0E9CA8;font-weight:700">· fijado</span>':'<span style="color:#9BAAC2">· propuesto por la app</span>'}</div><div style="display:flex;gap:6px;align-items:center"><input class="pem-inp" type="text" value="${(p.responsable||'').replace(/"/g,'&quot;')}" placeholder="${(_pemAutoResp(p)||'Lo propone la app').replace(/"/g,'&quot;')}" oninput="portfolioData[${_pemIdx}].responsable=this.value" style="flex:1"/>${responsableIsManual(p)?`<button type="button" onclick="portfolioData[${_pemIdx}].responsable='';renderPemBody();" title="Volver al responsable que propone la app" style="padding:7px 10px;border:1px solid #E5E5E5;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:10px;white-space:nowrap">↺ Auto</button>`:''}</div><div style="font-size:9px;color:#9BAAC2;margin-top:3px">Lo gestionas tú en la app · no se escribe en Azure DevOps</div></div><div class="pem-field"><div class="pem-label">Asignado (desde Azure DevOps)</div><div style="font-size:11px;color:var(--ink3);line-height:1.6;padding-top:3px">Asignado a: <b style="color:var(--ink)">${p.adoAssigned||'—'}</b><br>Aceptado por: <b style="color:var(--ink)">${p.adoAcceptedBy||'—'}</b></div></div></div>`
     + `<div style="font-size:9px;font-weight:700;color:#C0C0C0;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;padding-top:12px;border-top:1px solid #F0F0F0">criterios por dimensión</div>${dimSliders}`;
 }
 function pemSetScore(projIdx,critId,val,valSpan,dimIdx){

@@ -443,16 +443,19 @@ function renderSprintScreen() {
         + '<div class="spc-date-row"><span class="spc-date-lbl">'+entLabel+'</span><span class="spc-date-val spc-date-val--end">'+entFecha+' '+pinBadge+'</span></div>'
         + '</div>';
     })();
-    var _devHTML = (_devByProj[p.nom] && _devByProj[p.nom].name) ? (
+    // "Asignado" = persona asignada en Azure DevOps (System.AssignedTo). Informativo.
+    var _devHTML = p.adoAssigned ? (
       '<div class="spc-meta-row">'
-      + '<span class="spc-meta-lbl">'+(_devByProj[p.nom].manual?'Dev fijado':'Dev asignado')+'</span>'
-      + '<span class="spc-meta-val">'+_devByProj[p.nom].name+'</span>'
+      + '<span class="spc-meta-lbl">Asignado</span>'
+      + '<span class="spc-meta-val">'+p.adoAssigned+'</span>'
       + '<span onclick="event.stopPropagation();togglePlanPin(\''+p.nom.replace(/'/g,"\\'")+'\')" '
       +   'title="'+(isPlanPinned(p.nom)?'Liberar fecha':'Fijar fecha')+'" class="spc-pin-toggle">'+(isPlanPinned(p.nom)?'\ud83d\udccc':'\ud83d\udccd')+'</span>'
       + '</div>') : '';
     var _accHTML = p.adoAcceptedBy ? (
       '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>') : '';
-    var _resp = (typeof projResponsable === 'function') ? projResponsable(p) : (p.responsable || p.adoAssigned || '');
+    // "Responsable" = lo propone la app (dev de la planificación) salvo que el usuario lo fije.
+    var _autoDev = (_devByProj[p.nom] && _devByProj[p.nom].name) ? _devByProj[p.nom].name : '';
+    var _resp = (typeof projResponsable === 'function') ? projResponsable(p, _autoDev) : (p.responsable || _autoDev || '');
     var _respManual = (typeof responsableIsManual === 'function') ? responsableIsManual(p) : !!(p.responsable);
     var _respHTML = _resp ? (
       '<div class="spc-resp"><span class="spc-resp-lbl">Responsable</span>'
@@ -967,10 +970,10 @@ function _buildSprintSnapshot() {
   // Captura mínima necesaria para reconstruir la vista En Marcha
   const cap = getDevCapacity();
   const thr = getThr();
-  const startDates = {}, endDatesSnap = {};
+  const startDates = {}, endDatesSnap = {}, devByProj = {};
   try {
     if (typeof planBuildTimeline === 'function') {
-      planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom){ startDates[t.proj.nom]=+t.startDate; endDatesSnap[t.proj.nom]=+t.endDate; } });
+      planBuildTimeline().forEach(function(t){ if(t.proj&&t.proj.nom){ startDates[t.proj.nom]=+t.startDate; endDatesSnap[t.proj.nom]=+t.endDate; devByProj[t.proj.nom]=t.devName||''; } });
     }
   } catch(e){}
   const projects = portfolioData.filter(p=>p.horas!=null && !isProjClosed(p)).map(function(p){
@@ -986,7 +989,7 @@ function _buildSprintSnapshot() {
       adoTarget:(p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? p.adoTargetDate : null,
       adoId:(p.adoId!=null?p.adoId:null),
       adoUrl:(typeof adoWorkItemUrl==='function' ? adoWorkItemUrl(p) : null),
-      responsable:(typeof projResponsable==='function' ? projResponsable(p) : (p.responsable||p.adoAssigned||'')),
+      responsable:(typeof projResponsable==='function' ? projResponsable(p, devByProj[p.nom]) : (p.responsable||devByProj[p.nom]||'')),
       responsableManual:(typeof responsableIsManual==='function' ? responsableIsManual(p) : !!p.responsable) };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre

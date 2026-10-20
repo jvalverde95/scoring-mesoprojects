@@ -1085,16 +1085,17 @@ function getPool(p) {
 }
 
 // Responsable del proyecto (campo propio de la app, NO baja a ADO).
-// Si el usuario no lo ha fijado, el valor automático es la persona asignada en ADO
-// (System.AssignedTo) y, en su defecto, quien lo aceptó (AcceptedBy).
-function projResponsable(p) {
+// Regla: si el usuario ha fijado uno manualmente, ESE manda. Si no, el responsable
+// lo PROPONE la propia app: el desarrollador que la app asigna para ejecutarlo
+// (autoDev, calculado por la planificación). NO sale de ADO.
+// `autoDev` es opcional: la vista que conoce el dev propuesto lo pasa aquí.
+function projResponsable(p, autoDev) {
   if (!p) return '';
   if (p.responsable && String(p.responsable).trim()) return String(p.responsable).trim();
-  return (p.adoAssigned && String(p.adoAssigned).trim())
-      || (p.adoAcceptedBy && String(p.adoAcceptedBy).trim())
-      || '';
+  if (autoDev && String(autoDev).trim()) return String(autoDev).trim();
+  return '';
 }
-// ¿El responsable es manual (fijado por el usuario) o automático (heredado de ADO)?
+// ¿El responsable es manual (fijado por el usuario) o propuesto por la app?
 function responsableIsManual(p) {
   return !!(p && p.responsable && String(p.responsable).trim());
 }
