@@ -9,9 +9,75 @@
 const crypto = require('crypto');
 const {
   ssoConfigured, CLIENT_ID, REDIRECT_URI, AUTHORITY,
-  clearCookie, readSession, loadUsers, ensureAdmin,
+  clearCookie, readSession, loadUsers, saveUsers, ensureAdmin, requireAdmin,
   exchangeCodeForToken, graphMe, sessionCookie,
+  hashPassword, verifyPassword,
 } = require('./_lib/auth-lib');
+
+// Lee el cuerpo JSON de una petición (POST)
+function readBody(req) {
+  return new Promise((resolve) => {
+    if (req.body && typeof req.body === 'object') return resolve(req.body);
+    let data = '';
+    req.on('data', (c) => { data += c; });
+    req.on('end', () => { try { resolve(JSON.parse(data || '{}')); } catch { resolve({}); } });
+    req.on('error', () => resolve({}));
+  });
+}
+
+// ── login con usuario y contraseña ──
+async function passwordLogin(req, res) {
+  try {
+    const body = await readBody(req);
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    if (!email || !password) { res.status(400).json({ error: 'missing_credentials' }); return; }
+    const { users } = await loadUsers();
+    ensureAdmin(users);
+    const user = users[email];
+    if (!user || !user.allowed || !user.passwordHash) {
+      res.status(401).json({ error: 'invalid_login', message: 'Usuario o contraseña no válidos.' });
+      return;
+    }
+    if (!verifyPassword(password, user.passwordHash)) {
+      res.status(401).json({ error: 'invalid_login', message: 'Usuario o contraseña no válidos.' });
+      return;
+    }
+    res.setHeader('Set-Cookie', sessionCookie(email));
+    res.status(200).json({ ok: true, user: { email: user.email, name: user.name, role: user.role } });
+  } catch (e) {
+    res.status(500).json({ error: 'server_error', message: e.message });
+  }
+}
+
+// ── fijar/cambiar contraseña de un usuario (solo admin) ──
+async function setPassword(req, res) {
+  try {
+    const gate = await requireAdmin(req);
+    if (!gate.ok) { res.status(gate.code).json({ error: gate.error }); return; }
+    const body = await readBody(req);
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const name = String(body.name || '').trim();
+    if (!email || !password) { res.status(400).json({ error: 'missing_fields' }); return; }
+    if (password.length < 6) { res.status(400).json({ error: 'weak_password', message: 'Mínimo 6 caracteres.' }); return; }
+    const { users, sha } = await loadUsers();
+    ensureAdmin(users);
+    const existing = users[email] || {};
+    users[email] = Object.assign({}, existing, {
+      email,
+      name: name || existing.name || email.split('@')[0],
+      allowed: true,
+      role: existing.role || 'admin',
+      passwordHash: hashPassword(password),
+      updatedAt: new Date().toISOString(),
+    });
+    await saveUsers(users, sha);
+    res.status(200).json({ ok: true, email });
+  } catch (e) {
+    res.status(500).json({ error: 'server_error', message: e.message });
+  }
+}
 
 // ── login ──
 async function login(req, res) {
@@ -123,6 +189,8 @@ module.exports = async (req, res) => {
     case 'callback': return callback(req, res);
     case 'logout': return logout(req, res);
     case 'me': return me(req, res);
+    case 'password-login': return passwordLogin(req, res);
+    case 'set-password': return setPassword(req, res);
     default:
       res.status(404).json({ error: 'unknown_auth_action', action });
   }

@@ -50,6 +50,34 @@ async function adminRenderStatus() {
 }
 
 // ── Directorio de Entra ID ──
+// Fijar/cambiar la contraseña de acceso de un usuario (solo admin)
+async function adminSetPassword() {
+  var email = (document.getElementById('pwset-email') || {}).value || '';
+  var name  = (document.getElementById('pwset-name')  || {}).value || '';
+  var pass  = (document.getElementById('pwset-pass')  || {}).value || '';
+  var msg   = document.getElementById('pwset-msg');
+  email = email.trim().toLowerCase();
+  if (msg) { msg.style.color = '#C0392B'; msg.textContent = ''; }
+  if (!email || !pass) { if (msg) msg.textContent = 'Indica correo y contraseña.'; return; }
+  if (pass.length < 6)  { if (msg) msg.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+  try {
+    var r = await fetch('/api/auth/set-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, name: name, password: pass }),
+    });
+    var j = await r.json().catch(function(){ return {}; });
+    if (r.ok && j.ok) {
+      if (msg) { msg.style.color = '#0A7A50'; msg.textContent = '✓ Acceso guardado para ' + email + '. Ya puede entrar con su correo y contraseña.'; }
+      var pe = document.getElementById('pwset-pass'); if (pe) pe.value = '';
+      if (typeof adminLoadUsers === 'function') { try { adminLoadUsers(); } catch(_){} }
+    } else {
+      if (msg) msg.textContent = (j && j.message) || ('No se pudo guardar (' + r.status + ').');
+    }
+  } catch (e) {
+    if (msg) msg.textContent = 'Error de conexión: ' + (e && e.message || e);
+  }
+}
+
 async function adminLoadDirectory() {
   var btn = document.getElementById('dir-load-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Cargando…'; }

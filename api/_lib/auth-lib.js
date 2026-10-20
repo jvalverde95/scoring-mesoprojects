@@ -61,6 +61,27 @@ function readSession(req) {
   return verifySession(decodeURIComponent(raw[1]));
 }
 
+// ── Contraseñas (hash PBKDF2, sin dependencias externas) ───────────
+// Formato almacenado: "pbkdf2$<iteraciones>$<saltB64>$<hashB64>".
+// Nunca se guarda la contraseña en claro; solo esta huella.
+function hashPassword(plain) {
+  const iterations = 120000;
+  const salt = crypto.randomBytes(16);
+  const derived = crypto.pbkdf2Sync(String(plain), salt, iterations, 32, 'sha256');
+  return `pbkdf2$${iterations}$${salt.toString('base64')}$${derived.toString('base64')}`;
+}
+function verifyPassword(plain, stored) {
+  if (!plain || !stored) return false;
+  const parts = String(stored).split('$');
+  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+  const iterations = parseInt(parts[1], 10);
+  const salt = Buffer.from(parts[2], 'base64');
+  const expected = Buffer.from(parts[3], 'base64');
+  const derived = crypto.pbkdf2Sync(String(plain), salt, iterations, expected.length, 'sha256');
+  if (derived.length !== expected.length) return false;
+  return crypto.timingSafeEqual(derived, expected);
+}
+
 // ── Almacén de usuarios en GitHub ──────────────────────────────────
 function ghHeaders() {
   return { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'nexus-app' };
@@ -146,6 +167,7 @@ async function graphAppToken() {
 module.exports = {
   TENANT, CLIENT_ID, REDIRECT_URI, ADMIN_EMAIL, AUTHORITY, ssoConfigured,
   signSession, verifySession, sessionCookie, clearCookie, readSession,
+  hashPassword, verifyPassword,
   loadUsers, saveUsers, ensureAdmin, requireAdmin,
   exchangeCodeForToken, graphMe, graphAppToken,
 };

@@ -83,4 +83,26 @@
     Los usuarios importados entran <b>sin acceso</b>. Actívalo con el interruptor para que puedan entrar en NEXUS.
     El administrador siempre tiene acceso.
   </div>
+
+  <!-- ── Acceso con usuario y contraseña ── -->
+  <div class="cfg-section" style="margin-top:22px">
+    <div class="cfg-sec-title">🔑 Acceso con usuario y contraseña</div>
+    <div class="cfg-sec-sub">Crea o cambia la contraseña de acceso de una persona (para quien no entra con Microsoft). La contraseña se guarda cifrada (hash) en el repositorio, nunca en claro, y da acceso completo como administrador.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px">
+      <div style="flex:1;min-width:180px">
+        <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Correo</label>
+        <input id="pwset-email" type="email" class="cfg-inp" placeholder="persona@mesoestetic.com" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Nombre (opcional)</label>
+        <input id="pwset-name" type="text" class="cfg-inp" placeholder="Nombre a mostrar" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px">Contraseña (mín. 6)</label>
+        <input id="pwset-pass" type="text" class="cfg-inp" placeholder="Contraseña" style="width:100%;box-sizing:border-box"/>
+      </div>
+      <button class="cfg-apply" onclick="adminSetPassword()" style="white-space:nowrap">✓ Guardar acceso</button>
+    </div>
+    <div id="pwset-msg" style="font-size:11px;margin-top:10px;min-height:14px"></div>
+  </div>
 </div>
