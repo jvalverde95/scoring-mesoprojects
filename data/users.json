@@ -11,7 +11,7 @@
     "name": "Carlos",
     "allowed": true,
     "role": "admin",
-    "passwordHash": "pbkdf2$120000$m0zA43vOTURQtyfGQc8Gmg==$P+db4pKzIuFoNgqD+P6rw8QbGclqeTHF4VGKid8Uj6k=",
-    "updatedAt": "2026-10-20T15:46:09.963Z"
+    "passwordHash": "pbkdf2$120000$qyrFuY0aTUZ9K3/xjoahCA==$sjJVHyyhqd/Bu72st4bZEvPBNKV5kRaF5IhwuuzLP6I=",
+    "updatedAt": "2026-10-20T15:46:11.856Z"
   }
 }
