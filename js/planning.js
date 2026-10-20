@@ -2845,8 +2845,8 @@ function renderDevAssignPanel() {
         +'style="font-size:10px;padding:5px 6px;border:1px solid #DEDEDE;border-radius:6px;'
         +(isManual?'background:#1848A0;color:#fff;font-weight:700':'background:#fff')+'">'
         +devOptions(assigned)+'</select>'
-      +'<div style="font-size:9px;color:'+(isManual?'#1848A0':'#888')+';text-align:center" title="Dev en la planificación">'
-        +(isManual?'→ '+calcDev:'auto: '+calcDev)+'</div>'
+      +'<div style="font-size:9px;color:'+(isManual?'#1848A0':'#888')+';text-align:center" title="Responsable efectivo (el que se muestra en En marcha)">'
+        +(isManual?('✓ '+assigned):('auto: '+calcDev))+'</div>'
       +'<div style="font-size:9px;color:#888;text-align:center">'+start+'</div>'
     +'</div>';
   }).join('');

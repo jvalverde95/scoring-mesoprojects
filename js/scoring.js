@@ -1085,19 +1085,23 @@ function getPool(p) {
 }
 
 // Responsable del proyecto (campo propio de la app, NO baja a ADO).
-// Regla: si el usuario ha fijado uno manualmente, ESE manda. Si no, el responsable
-// lo PROPONE la propia app: el desarrollador que la app asigna para ejecutarlo
-// (autoDev, calculado por la planificación). NO sale de ADO.
-// `autoDev` es opcional: la vista que conoce el dev propuesto lo pasa aquí.
+// Prioridad: 1) responsable fijado explícitamente en la ficha (p.responsable),
+// 2) responsable asignado en la pantalla de Asignación (p.assignedDev),
+// 3) el que proponga la planificación (autoDev), como último recurso.
+// IMPORTANTE: p.assignedDev se muestra TAL CUAL se eligió, sin depender de que
+// esa persona tenga capacidad en el pool (es una asignación de responsable, no de carga).
+// NO sale nunca de ADO.
 function projResponsable(p, autoDev) {
   if (!p) return '';
   if (p.responsable && String(p.responsable).trim()) return String(p.responsable).trim();
+  if (p.assignedDev && String(p.assignedDev).trim()) return String(p.assignedDev).trim();
   if (autoDev && String(autoDev).trim()) return String(autoDev).trim();
   return '';
 }
-// ¿El responsable es manual (fijado por el usuario) o propuesto por la app?
+// ¿El responsable lo fijó el usuario (ficha o pantalla de Asignación) o lo propone la app?
 function responsableIsManual(p) {
-  return !!(p && p.responsable && String(p.responsable).trim());
+  return !!(p && ((p.responsable && String(p.responsable).trim()) ||
+                  (p.assignedDev && String(p.assignedDev).trim())));
 }
 function renderPoolTag(pool) {
   if (!pool) return '<span class="pool-none">—</span>';
