@@ -452,6 +452,13 @@ function renderSprintScreen() {
       + '</div>') : '';
     var _accHTML = p.adoAcceptedBy ? (
       '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>') : '';
+    var _resp = (typeof projResponsable === 'function') ? projResponsable(p) : (p.responsable || p.adoAssigned || '');
+    var _respManual = (typeof responsableIsManual === 'function') ? responsableIsManual(p) : !!(p.responsable);
+    var _respHTML = _resp ? (
+      '<div class="spc-resp"><span class="spc-resp-lbl">Responsable</span>'
+      + '<span class="spc-resp-val">'+_resp+'</span>'
+      + (_respManual ? '' : '<span class="spc-resp-auto">auto</span>')
+      + '</div>') : '';
     var _adoUrl = (typeof adoWorkItemUrl === 'function') ? adoWorkItemUrl(p) : null;
     var _adoLinkHTML = _adoUrl ? (
       '<a class="spc-ado-link" href="'+_adoUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Abrir work item #'+p.adoId+' en Azure DevOps">'
@@ -474,6 +481,7 @@ function renderSprintScreen() {
           <span class="spc-area">${p.area||'\u2014'}</span>
           <span class="spc-hours">${p.horas}h</span>
         </div>
+        ${_respHTML}
         ${_fechasHTML}
         ${_devHTML}
         ${_accHTML}
@@ -977,7 +985,9 @@ function _buildSprintSnapshot() {
       adoStart:(p.adoStartDate && String(p.adoStartDate).trim()!=='') ? p.adoStartDate : null,
       adoTarget:(p.adoTargetDate && String(p.adoTargetDate).trim()!=='') ? p.adoTargetDate : null,
       adoId:(p.adoId!=null?p.adoId:null),
-      adoUrl:(typeof adoWorkItemUrl==='function' ? adoWorkItemUrl(p) : null) };
+      adoUrl:(typeof adoWorkItemUrl==='function' ? adoWorkItemUrl(p) : null),
+      responsable:(typeof projResponsable==='function' ? projResponsable(p) : (p.responsable||p.adoAssigned||'')),
+      responsableManual:(typeof responsableIsManual==='function' ? responsableIsManual(p) : !!p.responsable) };
   });
   // Próximo slot libre por pool: la fecha más temprana en que algún dev queda libre
   var freeSlots = {};
@@ -1136,6 +1146,11 @@ function renderSprintSnapshotView() {
       : '<span class="spc-tag spc-tag--next">En cola</span>';
     var accHTML = p.adoAcceptedBy
       ? '<div class="spc-meta-row"><span class="spc-meta-lbl">Aceptado por</span><span class="spc-meta-val" style="color:#0A7A50">'+p.adoAcceptedBy+'</span></div>' : '';
+    var _dvResp = p.responsable || p.adoAssigned || '';
+    var _dvRespManual = !!p.responsableManual;
+    var respHTML = _dvResp
+      ? '<div class="spc-resp"><span class="spc-resp-lbl">Responsable</span><span class="spc-resp-val">'+_dvResp+'</span>'+(_dvRespManual?'':'<span class="spc-resp-auto">auto</span>')+'</div>'
+      : '';
     var adoUrl = p.adoUrl || ((typeof adoWorkItemUrl==='function') ? adoWorkItemUrl(p) : null);
     var adoLinkHTML = adoUrl
       ? '<a class="spc-ado-link" href="'+adoUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Abrir work item '+(p.adoId?('#'+p.adoId):'')+' en Azure DevOps">'
@@ -1148,6 +1163,7 @@ function renderSprintSnapshotView() {
       +'</div>'
       +'<div class="spc-name" title="'+p.nom+'">'+p.nom+'</div>'
       +'<div class="spc-info"><span class="spc-area">'+(p.area||'\u2014')+'</span><span class="spc-hours">'+p.horas+'h</span></div>'
+      +respHTML
       +'<div class="spc-dates">'
         +'<div class="spc-date-row"><span class="spc-date-lbl">'+iniLbl+'</span><span class="spc-date-val">'+iniF+'</span></div>'
         +'<div class="spc-date-row"><span class="spc-date-lbl">'+entLbl+'</span><span class="spc-date-val spc-date-val--end">'+entF+'</span></div>'

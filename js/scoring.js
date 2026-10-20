@@ -657,6 +657,9 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         np.adoAcceptedBy = _srcAdo ? (np.adoAcceptedBy || '') : (prev.adoAcceptedBy || np.adoAcceptedBy);
         np.adoAssigned = _srcAdo ? (np.adoAssigned || '') : (prev.adoAssigned || np.adoAssigned);
         np.adoIteration= _srcAdo ? (np.adoIteration|| '') : (prev.adoIteration|| np.adoIteration);
+        // Responsable (campo propio de la app): se conserva SIEMPRE el que fijó el usuario.
+        // ADO nunca lo trae ni lo pisa; solo se pierde si el usuario lo borra a mano.
+        if (prev.responsable != null && String(prev.responsable).trim()) np.responsable = prev.responsable;
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
@@ -1079,6 +1082,21 @@ function getPool(p) {
   if (h < s)  return 'S';
   if (h < m)  return 'M';
   return 'L';
+}
+
+// Responsable del proyecto (campo propio de la app, NO baja a ADO).
+// Si el usuario no lo ha fijado, el valor automático es la persona asignada en ADO
+// (System.AssignedTo) y, en su defecto, quien lo aceptó (AcceptedBy).
+function projResponsable(p) {
+  if (!p) return '';
+  if (p.responsable && String(p.responsable).trim()) return String(p.responsable).trim();
+  return (p.adoAssigned && String(p.adoAssigned).trim())
+      || (p.adoAcceptedBy && String(p.adoAcceptedBy).trim())
+      || '';
+}
+// ¿El responsable es manual (fijado por el usuario) o automático (heredado de ADO)?
+function responsableIsManual(p) {
+  return !!(p && p.responsable && String(p.responsable).trim());
 }
 function renderPoolTag(pool) {
   if (!pool) return '<span class="pool-none">—</span>';
