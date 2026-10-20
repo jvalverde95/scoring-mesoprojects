@@ -659,7 +659,9 @@ function applyProjects(projects, filename, mergeMode, allowAdd) {
         np.adoIteration= _srcAdo ? (np.adoIteration|| '') : (prev.adoIteration|| np.adoIteration);
         // Responsable (campo propio de la app): se conserva SIEMPRE el que fijó el usuario.
         // ADO nunca lo trae ni lo pisa; solo se pierde si el usuario lo borra a mano.
+        // Incluye tanto el responsable de la ficha como el asignado en la pantalla de Asignación.
         if (prev.responsable != null && String(prev.responsable).trim()) np.responsable = prev.responsable;
+        if (prev.assignedDev != null && String(prev.assignedDev).trim()) np.assignedDev = prev.assignedDev;
         // Descripción: la de ADO manda si el Excel no trae una propia
         if (!np.adoDesc && prev.adoDesc) np.adoDesc = prev.adoDesc;
         if (!np.descripcion && (prev.descripcion || prev.adoDesc)) np.descripcion = prev.descripcion || prev.adoDesc;
@@ -1091,14 +1093,18 @@ function getPool(p) {
 // IMPORTANTE: p.assignedDev se muestra TAL CUAL se eligió, sin depender de que
 // esa persona tenga capacidad en el pool (es una asignación de responsable, no de carga).
 // NO sale nunca de ADO.
+// El Responsable sale EXCLUSIVAMENTE de la propia app y de forma estable:
+//  1) el responsable fijado en la ficha del proyecto (p.responsable), o
+//  2) el responsable asignado en la pantalla de Asignación (p.assignedDev).
+// NUNCA de ADO ni de un cálculo de la planificación (que cambia al sincronizar).
+// El 2º argumento (autoDev) se ignora a propósito; se mantiene por compatibilidad de llamadas.
 function projResponsable(p, autoDev) {
   if (!p) return '';
   if (p.responsable && String(p.responsable).trim()) return String(p.responsable).trim();
   if (p.assignedDev && String(p.assignedDev).trim()) return String(p.assignedDev).trim();
-  if (autoDev && String(autoDev).trim()) return String(autoDev).trim();
-  return '';
+  return '';   // sin asignar → vacío (no se hereda de ADO ni del cálculo)
 }
-// ¿El responsable lo fijó el usuario (ficha o pantalla de Asignación) o lo propone la app?
+// El responsable siempre lo fija el usuario (ficha o pantalla de Asignación).
 function responsableIsManual(p) {
   return !!(p && ((p.responsable && String(p.responsable).trim()) ||
                   (p.assignedDev && String(p.assignedDev).trim())));
