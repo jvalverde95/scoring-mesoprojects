@@ -1,0 +1,17 @@
+{
+  "jvalverde@mesoestetic.com": {
+    "email": "jvalverde@mesoestetic.com",
+    "name": "Administrador",
+    "allowed": true,
+    "role": "admin",
+    "importedAt": "2026-10-20T15:46:09.902Z"
+  },
+  "ccano@mesoestetic.com": {
+    "email": "ccano@mesoestetic.com",
+    "name": "Carlos",
+    "allowed": true,
+    "role": "admin",
+    "passwordHash": "pbkdf2$120000$m0zA43vOTURQtyfGQc8Gmg==$P+db4pKzIuFoNgqD+P6rw8QbGclqeTHF4VGKid8Uj6k=",
+    "updatedAt": "2026-10-20T15:46:09.963Z"
+  }
+}
