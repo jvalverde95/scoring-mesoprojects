@@ -809,6 +809,11 @@ function enterApp() {
   }
   window._restoreDiag = _diag;
 
+  // Volcar las asignaciones de responsable (nexus_devassign → p.assignedDev) ANTES de
+  // pintar vistas: "En marcha" y la vista de directores leen p.assignedDev para el
+  // Responsable, así que debe estar listo aunque no se haya abierto Planificación.
+  if (typeof loadDevAssignments === 'function') { try { loadDevAssignments(); } catch(_){} }
+
   goStep('dashboard');
 
   // Refrescar vistas con los datos restaurados + replanificar según los scores guardados
@@ -881,6 +886,9 @@ async function restoreLastPortfolio() {
 }
 
 function _refreshAllViews() {
+  // Garantizar que las asignaciones de responsable estén volcadas a p.assignedDev
+  // antes de pintar (En marcha / directores las necesitan).
+  if (typeof loadDevAssignments === 'function') { try { loadDevAssignments(); } catch(_){} }
   // Llamada DIRECTA (no via window[]) para que funcione con funciones declaradas
   // en scripts clásicos, y con los errores visibles en consola para diagnóstico.
   var calls = [
@@ -903,10 +911,10 @@ function _refreshAllViews() {
 }
 
 // Modal obligatorio de carga de Excel al iniciar sesión (no se puede cerrar sin cargar)
-function showMandatoryExcelUpload() {
+async function showMandatoryExcelUpload() {
   if (window._sharedViewLocked || window._sprintSnapshot) return;  // vista de directores: nunca pedir Excel
   if (portfolioData && portfolioData.length > 0) return;  // ya hay datos
-  // Último intento: si hay copia guardada, restaurarla en vez de pedir el Excel
+  // Último intento 1: si hay copia guardada en el navegador, restaurarla
   try {
     var raw = localStorage.getItem('nexus_portfolio_v1');
     if (raw) {
@@ -920,6 +928,21 @@ function showMandatoryExcelUpload() {
       }
     }
   } catch(e) { console.error('[modal] restore intento:', e); }
+  // Último intento 2: descargar la cartera compartida del servidor (por sesión).
+  // Así, si estás autenticado, recuperas tu cartera sin pedirte Excel ni clave.
+  try {
+    if (typeof fetchPublishedCartera === 'function') {
+      var rem = await fetchPublishedCartera();
+      if (rem && rem.portfolio && rem.portfolio.length) {
+        portfolioData = (typeof applyTombstones === 'function') ? applyTombstones(rem.portfolio) : rem.portfolio;
+        if (rem.devTeam && rem.devTeam.length && typeof devTeam !== 'undefined') { devTeam = rem.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
+        if (typeof savePortfolio === 'function') savePortfolio();
+        if (typeof _refreshAllViews === 'function') _refreshAllViews();
+        if (typeof toast === 'function') toast('☁ Cartera compartida cargada · ' + portfolioData.length + ' proyectos');
+        return;   // no mostrar el modal
+      }
+    }
+  } catch(e) { console.error('[modal] fetch remoto:', e); }
   var ov = document.getElementById('mandatory-excel-overlay');
   if (ov) { ov.style.display = 'flex'; return; }
   ov = document.createElement('div');
