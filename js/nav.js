@@ -849,29 +849,33 @@ async function restoreLastPortfolio() {
     if (typeof toast === 'function') toast('✓ Cartera restaurada · ' + portfolioData.length + ' proyectos');
   }
 
-  // Sincronización en segundo plano con el almacén web (SOLO si mejora lo local, nunca lo borra)
+  // Sincronización con el almacén web (SIEMPRE se intenta: con clave o por sesión).
+  // Así, cualquier usuario autenticado que entre sin datos locales (otro equipo,
+  // navegador nuevo) recibe la cartera compartida y NO se le pide el Excel.
   try {
-    if (typeof getShareKey === 'function' && getShareKey() && typeof fetchPublishedCartera === 'function') {
+    if (typeof fetchPublishedCartera === 'function') {
       var remote = await fetchPublishedCartera();
       if (remote && remote.portfolio && remote.portfolio.length) {
         var localAt = 0;
         try { var ld = loadPortfolioLocal(); localAt = (ld && ld.savedAt) || 0; } catch(_){}
         var remoteAt = remote.publishedAt || 0;
-        // Solo reemplaza si NO había local, o si el remoto es estrictamente más reciente
+        // Reemplaza si NO había local, o si el remoto es estrictamente más reciente
         if (!loadedLocal || remoteAt > localAt) {
           portfolioData = (typeof applyTombstones === 'function') ? applyTombstones(remote.portfolio) : remote.portfolio;
           if (remote.devTeam && remote.devTeam.length && typeof devTeam !== 'undefined') { devTeam = remote.devTeam; if (typeof saveDevTeam==='function') try{saveDevTeam();}catch(_){} }
           if (typeof savePortfolio === 'function') savePortfolio();
+          loadedLocal = true;
           _refreshAllViews();
-          if (typeof toast === 'function') toast('☁ Sincronizado con la versión publicada');
+          if (typeof toast === 'function') toast('☁ Cartera compartida cargada · ' + portfolioData.length + ' proyectos');
         }
       }
     }
   } catch(e) { console.error('[restore] error remoto:', e); }
 
-  // Si no había nada en ninguna parte → pedir el Excel
+  // Si no había nada ni en local ni en el almacén compartido → pedir el Excel.
+  // Esto solo debería ocurrir la primera vez (cuando aún nadie ha publicado cartera).
   if (!portfolioData || portfolioData.length === 0) {
-    console.log('[restore] sin datos en ninguna parte → pedir Excel');
+    console.log('[restore] sin datos en local ni en el almacén compartido → pedir Excel');
     setTimeout(showMandatoryExcelUpload, 300);
   }
 }

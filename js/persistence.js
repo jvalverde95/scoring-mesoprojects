@@ -285,8 +285,7 @@ function directorsLink() {
 }
 
 async function publishCartera(silent) {
-  var k = getShareKey();
-  if (!k) { if (!silent) toast('⚠ Configura la clave de publicación en Configuración'); return false; }
+  var k = getShareKey();   // opcional: si no hay clave, se publica por sesión (usuario logueado)
   if (!portfolioData || !portfolioData.length) { if (!silent) toast('⚠ No hay cartera que publicar'); return false; }
   try {
     var snapshot = (typeof _buildSprintSnapshot === 'function') ? _buildSprintSnapshot() : null;
@@ -302,8 +301,9 @@ async function publishCartera(silent) {
     var payload = { v:2, publishedAt:Date.now(), snapshot:snapshot, portfolio:portfolio,
       devTeam:(typeof devTeam!=='undefined'?devTeam:[]),
       thr:(typeof getThr==='function'?getThr():{s:10,m:50}) };
-    var r = await fetch('/api/store?k='+encodeURIComponent(k), {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    var _pubUrl = k ? ('/api/store?k='+encodeURIComponent(k)) : '/api/store';
+    var r = await fetch(_pubUrl, {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body: JSON.stringify(payload) });
     if (!r.ok) { var j=await r.json().catch(function(){return{};}); throw new Error(j.error||('HTTP '+r.status)); }
     localStorage.setItem('nexus_last_publish', String(Date.now()));
     var st = document.getElementById('pub-status');
@@ -319,18 +319,23 @@ async function publishCartera(silent) {
 // Auto-publicación con debounce: se llama tras cargar Excel / cambiar notas / replanificar
 var _pubTimer = null;
 function schedulePublish() {
-  if (!getShareKey()) return;                 // sin clave configurada, no publica
   if (window._sharedViewLocked) return;       // la vista de directores nunca publica
+  // Publica por sesión (usuario logueado) aunque no haya clave local configurada
   if (_pubTimer) clearTimeout(_pubTimer);
   _pubTimer = setTimeout(function(){ publishCartera(true); }, 4000);   // 4s tras el último cambio
 }
 
 async function fetchPublishedCartera(key) {
   var k = key || getShareKey();
-  if (!k) return null;
-  var r = await fetch('/api/store?k='+encodeURIComponent(k), { cache:'no-store' });
-  if (!r.ok) return null;
-  return await r.json();
+  // Con clave → la usamos (enlaces de directores). Sin clave → intentamos por sesión:
+  // /api/store devuelve la cartera si el usuario está autenticado, sin necesidad de
+  // tener la share key en este navegador (caso de entrar desde otro equipo).
+  var url = k ? ('/api/store?k='+encodeURIComponent(k)) : '/api/store';
+  try {
+    var r = await fetch(url, { cache:'no-store', credentials:'same-origin' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
 }
 
 // Restaura la última cartera publicada en la app (para no depender del Excel local)

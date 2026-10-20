@@ -10,9 +10,11 @@
 // GET  /api/store?k=<clave>   → devuelve el JSON publicado (vista de directores, precarga)
 // POST /api/store?k=<clave>   → publica el JSON (body = cartera). Sobrescribe data/cartera.json en el repo.
 
+const { readSession } = require('./_lib/auth-lib');
+
 const FILE_PATH = 'data/cartera.json';
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -27,11 +29,19 @@ export default async function handler(req, res) {
   if (!token || !repo) {
     return res.status(500).json({ error: 'Almacén no configurado. Faltan GITHUB_TOKEN / GITHUB_REPO en Vercel.' });
   }
-  // Clave compartida: protege tanto la lectura (directores) como la publicación (app)
+  // Autorización: se permite el acceso de DOS formas
+  //   1) con la clave compartida ?k=<NEXUS_SHARE_KEY>  (vista de directores, enlaces)
+  //   2) con una sesión válida (usuario logueado por Microsoft o usuario/contraseña)
+  // Así, cualquier usuario autenticado carga la cartera compartida sin tener que
+  // llevar la clave en su navegador (p. ej. al entrar desde otro equipo).
   const k = (req.query && req.query.k) || '';
-  if (!shareKey || k !== shareKey) {
-    return res.status(401).json({ error: 'Clave inválida.' });
+  const hasValidKey = shareKey && k === shareKey;
+  let hasSession = false;
+  try { hasSession = !!readSession(req); } catch (_) { hasSession = false; }
+  if (!hasValidKey && !hasSession) {
+    return res.status(401).json({ error: 'No autorizado: inicia sesión o usa un enlace válido.' });
   }
+  // La publicación (POST) sin clave exige sesión válida (ya garantizado arriba).
 
   const apiUrl = `https://api.github.com/repos/${repo}/contents/${FILE_PATH}?ref=${encodeURIComponent(branch)}`;
   const ghHeaders = {
