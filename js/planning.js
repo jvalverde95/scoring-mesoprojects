@@ -2753,8 +2753,30 @@ function assignDevToProject(nom, devName) {
     portfolioData.forEach(function(x){ if (x.assignedDev) map[x.nom] = x.assignedDev; });
     localStorage.setItem('nexus_devassign', JSON.stringify(map));
   } catch(e){}
+  // Un lock previo (arrastre en el Gantt) tiene prioridad sobre assignedDev en el
+  // timeline, así que al reasignar hay que actualizarlo; si no, la card de "En marcha"
+  // y la planificación seguirían mostrando el dev antiguo.
+  if (typeof lockedAssignments !== 'undefined' && Array.isArray(lockedAssignments)) {
+    if (p.assignedDev) {
+      // Si hay fecha fijada (pinned), conservarla pero cambiar el dev. Si no, soltar el lock
+      // para que la nueva asignación recalcule libremente.
+      lockedAssignments = lockedAssignments.filter(function(l){
+        if (l.nom !== nom) return true;
+        if (l.pinned) { l.devName = p.assignedDev; return true; }  // respeta la fecha fijada
+        return false;                                              // suelta el lock no fijado
+      });
+    } else {
+      // Vuelta a automático: soltar cualquier lock no fijado de este proyecto
+      lockedAssignments = lockedAssignments.filter(function(l){ return l.nom !== nom || l.pinned; });
+    }
+    if (typeof saveLocked === 'function') saveLocked();
+  }
   // Recalcular TODA la planificación con la nueva asignación
+  if (typeof invalidatePlanCache === 'function') { try { invalidatePlanCache(); } catch(_){} }
   recalcAndRenderPlanning();
+  // Asegurar refresco de En Marcha (y persistir, por si la card lee de la cartera guardada)
+  if (typeof renderSprintScreen === 'function') { try { renderSprintScreen(); } catch(_){} }
+  if (typeof savePortfolio === 'function') { try { savePortfolio(); } catch(_){} }
   toast(p.assignedDev ? ('✓ '+nom.substring(0,30)+' → '+p.assignedDev) : ('↺ '+nom.substring(0,30)+' → automático'));
 }
 
